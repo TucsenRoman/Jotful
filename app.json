@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Unsorted",
+    "slug": "unsorted",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yourcompany.unsorted"
+    },
+    "android": {
+      "package": "com.yourcompany.unsorted"
+    },
+    "plugins": [
+      [
+        "expo-sqlite",
+        {
+          "enableFTS": true
+        }
+      ],
+      "expo-status-bar"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "4a223528-463e-4cd0-a5b8-3871cceae8e1"
+      }
+    }
+  }
+}
