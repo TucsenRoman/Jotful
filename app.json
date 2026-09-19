@@ -7,10 +7,13 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourcompany.unsorted"
+      "bundleIdentifier": "com.tucsenroman.unsorted",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
-      "package": "com.yourcompany.unsorted"
+      "package": "com.tucsenroman.unsorted"
     },
     "plugins": [
       [
@@ -28,3 +31,4 @@
     }
   }
 }
+
