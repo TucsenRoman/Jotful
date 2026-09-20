@@ -6,7 +6,7 @@ Unsorted
 
 ## Subtitle
 
-A private inbox for every thought
+Private inbox for thoughts
 
 ## Promotional text
 
