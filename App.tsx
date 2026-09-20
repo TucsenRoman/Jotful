@@ -1,59 +1,107 @@
-import { StatusBar } from 'expo-status-bar';
-import { useEffect, useMemo, useState } from 'react';
-import { Alert, Linking, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { classifyThought, splitThoughts, type ThoughtKind } from './src/segmentation';
-import { createThought, deleteThought, initializeDatabase, listThoughts, moveThought, type Thought } from './src/storage';
+import './global.css';
 
+import { StatusBar } from 'expo-status-bar';
+import { Check, ChevronDown, Folder, MoreHorizontal, Search, X } from 'lucide-react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Animated, Keyboard, Linking, PanResponder, Platform, Pressable, SafeAreaView, ScrollView, Text, TextInput, View } from 'react-native';
+import { classifyThought, splitThoughts, type ThoughtKind } from './src/segmentation';
+import { createThought, deleteThought, initializeDatabase, listThoughts, moveThought, toggleResolved, type Thought } from './src/storage';
+
+const workspaces = ['All thoughts', 'Product ideas', 'Personal', 'Work', 'Tasks'];
 const kindLabel: Record<ThoughtKind, string> = { question: 'Question', idea: 'Idea', task: 'Task', thought: 'Thought' };
 const kindIcon: Record<ThoughtKind, string> = { question: '?', idea: '✦', task: '✓', thought: '•' };
+const sheetTravel = 212;
 
 export default function App() {
   const [draft, setDraft] = useState('');
   const [search, setSearch] = useState('');
   const [thoughts, setThoughts] = useState<Thought[]>([]);
+  const [workspace, setWorkspace] = useState('All thoughts');
+  const [workspaceOpen, setWorkspaceOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const inputRef = useRef<TextInput>(null);
+  const sheetOffset = useRef(new Animated.Value(sheetTravel)).current;
+  const keyboardLift = useRef(new Animated.Value(0)).current;
   const preview = useMemo(() => splitThoughts(draft), [draft]);
+  const refresh = () => setThoughts(listThoughts(search, workspace));
 
-  const refresh = () => setThoughts(listThoughts(search));
   useEffect(() => { initializeDatabase(); refresh(); }, []);
-  useEffect(() => { refresh(); }, [search]);
+  useEffect(() => { refresh(); }, [search, workspace]);
+  useEffect(() => {
+    Animated.timing(sheetOffset, { toValue: sheetOpen ? 0 : sheetTravel, duration: 190, useNativeDriver: true }).start();
+  }, [sheetOpen]);
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const show = Keyboard.addListener(showEvent, (event) => {
+      Animated.timing(keyboardLift, { toValue: sheetOpen ? event.endCoordinates.height - 8 : 0, duration: event.duration ?? 180, useNativeDriver: true }).start();
+    });
+    const hide = Keyboard.addListener(hideEvent, (event) => {
+      Animated.timing(keyboardLift, { toValue: 0, duration: event.duration ?? 180, useNativeDriver: true }).start();
+    });
+    return () => { show.remove(); hide.remove(); };
+  }, [sheetOpen]);
 
-  const saveDraft = () => {
-    preview.forEach((text) => createThought(text, classifyThought(text)));
+  const panResponder = useRef(PanResponder.create({
+    onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dy) > 8,
+    onPanResponderRelease: (_, gesture) => {
+      if (gesture.dy < -12) openSheet();
+      if (gesture.dy > 28) closeSheet();
+    }
+  })).current;
+
+  function openSheet() {
+    setSheetOpen(true);
+    setTimeout(() => inputRef.current?.focus(), 200);
+  }
+
+  function closeSheet() {
+    Keyboard.dismiss();
+    setSheetOpen(false);
+  }
+
+  function saveDraft() {
+    preview.forEach((text) => createThought(text, classifyThought(text), workspace === 'All thoughts' ? null : workspace));
     setDraft('');
+    closeSheet();
     refresh();
-  };
+  }
 
-  const sendTo = async (service: 'search' | 'ai', text: string) => {
+  async function sendTo(service: 'search' | 'ai', text: string) {
     const prompt = service === 'ai' ? `Help me think through: ${text}` : text;
     const base = service === 'ai' ? 'https://chatgpt.com/?q=' : 'https://www.google.com/search?q=';
     await Linking.openURL(`${base}${encodeURIComponent(prompt)}`);
-  };
+  }
 
-  const actions = (thought: Thought) => Alert.alert('Thought actions', 'Your full note stays on this device.', [
-    { text: 'Search web', onPress: () => void sendTo('search', thought.text) },
-    { text: 'Ask AI', onPress: () => Alert.alert('Send this thought to AI?', 'Only this thought will be opened in your browser.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Continue', onPress: () => void sendTo('ai', thought.text) }]) },
-    { text: 'Move to Ideas', onPress: () => { moveThought(thought.id, 'Ideas'); refresh(); } },
-    { text: 'Make task', onPress: () => { moveThought(thought.id, 'Tasks', 'task'); refresh(); } },
-    { text: 'Delete', style: 'destructive', onPress: () => { deleteThought(thought.id); refresh(); } },
-    { text: 'Cancel', style: 'cancel' }
-  ]);
+  function showActions(thought: Thought) {
+    Alert.alert('Thought actions', 'Your full note stays on this device.', [
+      { text: 'Move to Product ideas', onPress: () => { moveThought(thought.id, 'Product ideas'); refresh(); } },
+      { text: 'Move to Work', onPress: () => { moveThought(thought.id, 'Work'); refresh(); } },
+      { text: 'Move to Personal', onPress: () => { moveThought(thought.id, 'Personal'); refresh(); } },
+      { text: thought.resolvedAt ? 'Reopen thought' : 'Mark resolved', onPress: () => { toggleResolved(thought.id, thought.resolvedAt ? null : Date.now()); refresh(); } },
+      { text: 'Delete', style: 'destructive', onPress: () => { deleteThought(thought.id); refresh(); } },
+      { text: 'Cancel', style: 'cancel' }
+    ]);
+  }
 
-  return <SafeAreaView style={styles.safe}><StatusBar style="dark" />
-    <View style={styles.header}><View><Text style={styles.brand}>Unsorted</Text><Text style={styles.date}>Your private thought inbox</Text></View><Text style={styles.lock}>⌁ Offline</Text></View>
-    <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      <View style={styles.composer}><TextInput value={draft} onChangeText={setDraft} placeholder="Dump questions, thoughts, or ideas here…" placeholderTextColor="#839086" multiline style={styles.input} textAlignVertical="top" />
-        <View style={styles.composerFooter}><Text style={styles.hint}>{preview.length ? `Found ${preview.length} separate ${preview.length === 1 ? 'thought' : 'thoughts'}` : 'Saved only on this device'}</Text><Pressable disabled={!preview.length} onPress={saveDraft} style={[styles.save, !preview.length && styles.saveDisabled]}><Text style={styles.saveText}>Save</Text></Pressable></View>
-      </View>
-      <TextInput value={search} onChangeText={setSearch} placeholder="Search your thoughts" placeholderTextColor="#839086" style={styles.search} />
-      {thoughts.length === 0 ? <View style={styles.empty}><Text style={styles.emptyTitle}>Give your mind some room.</Text><Text style={styles.emptyText}>Write naturally above. Unsorted separates each thought when you save it.</Text></View> : thoughts.map((thought) => <View key={thought.id} style={styles.card}>
-        <View style={styles.cardTop}><Text style={styles.kind}>{kindIcon[thought.kind]}  {kindLabel[thought.kind].toUpperCase()}</Text><Pressable onPress={() => actions(thought)} hitSlop={12}><Text style={styles.ellipsis}>•••</Text></Pressable></View>
-        <Text selectable style={styles.thought}>{thought.text}</Text>
-        <View style={styles.inlineActions}><Pressable onPress={() => void sendTo('search', thought.text)} style={styles.secondaryAction}><Text style={styles.secondaryActionText}>Search web</Text></Pressable><Pressable onPress={() => Alert.alert('Send this thought to AI?', 'Only this thought will be opened in your browser.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Continue', onPress: () => void sendTo('ai', thought.text) }])} style={styles.primaryAction}><Text style={styles.primaryActionText}>Ask AI</Text></Pressable><Pressable onPress={() => actions(thought)} style={styles.secondaryAction}><Text style={styles.secondaryActionText}>More</Text></Pressable>{thought.collection && <Text style={styles.collection}>{thought.collection}</Text>}</View>
+  return <SafeAreaView className="flex-1 bg-unsorted-canvas"><StatusBar style="dark" />
+    <View className="z-10 min-h-[66px] flex-row items-center gap-2 px-5 pb-3 pt-2">
+      {searchOpen ? <><TextInput autoFocus value={search} onChangeText={setSearch} placeholder="Search thoughts" placeholderTextColor="#899389" className="flex-1 py-2 text-base text-unsorted-ink" /><Pressable onPress={() => { setSearch(''); setSearchOpen(false); }} hitSlop={12}><X size={23} color="#637063" /></Pressable></> : <><Text className="mr-auto text-[28px] font-bold tracking-[-0.7px] text-unsorted-ink">Unsorted</Text><Pressable onPress={() => setWorkspaceOpen((open) => !open)} className="max-w-[144px] flex-row items-center gap-1 rounded-lg bg-unsorted-soft px-2.5 py-2" hitSlop={6}><Folder size={14} color="#374438" /><Text numberOfLines={1} className="shrink text-[13px] font-semibold text-[#374438]">{workspace}</Text><ChevronDown size={14} color="#374438" /></Pressable><Pressable onPress={() => setSearchOpen(true)} className="h-9 w-9 items-center justify-center" hitSlop={10}><Search size={21} color="#526052" /></Pressable></>}
+    </View>
+    {workspaceOpen && <View className="absolute right-12 top-[62px] z-20 min-w-[184px] rounded-xl border border-[#DFE4DC] bg-white p-1.5 shadow-lg">{workspaces.map((item) => <Pressable key={item} onPress={() => { setWorkspace(item); setWorkspaceOpen(false); }} className={`flex-row items-center justify-between rounded-lg px-3 py-2.5 ${item === workspace ? 'bg-[#EAF0E7]' : ''}`}><Text className="text-sm text-[#263027]">{item}</Text>{item === workspace && <Check size={15} color="#315D35" strokeWidth={3} />}</Pressable>)}</View>}
+    <ScrollView contentContainerClassName="px-5 pb-24" keyboardShouldPersistTaps="handled">
+      <Text className="mb-1 mt-1 text-[11px] font-bold uppercase tracking-[0.7px] text-[#839083]">{workspace} · {thoughts.length}</Text>
+      {thoughts.length === 0 ? <View className="items-center px-7 py-20"><Text className="text-lg font-bold text-[#273227]">Give your mind some room.</Text><Text className="mt-2 text-center leading-5 text-unsorted-muted">Pull up the sheet below to capture a thought.</Text></View> : thoughts.map((thought) => <View key={thought.id} className={`border-b border-unsorted-line py-4 ${thought.resolvedAt !== null ? 'opacity-60' : ''}`}>
+        <View className="flex-row items-center justify-between"><Text className="text-[11px] font-bold uppercase tracking-[0.8px] text-[#718472]">{kindIcon[thought.kind]}  {kindLabel[thought.kind]}</Text><Pressable onPress={() => showActions(thought)} hitSlop={12}><MoreHorizontal size={20} color="#718071" /></Pressable></View>
+        <Text selectable className={`mt-2 text-lg leading-[26px] tracking-[-0.1px] text-unsorted-ink ${thought.resolvedAt !== null ? 'text-[#657064] line-through' : ''}`}>{thought.text}</Text>
+        <View className="mt-3 flex-row flex-wrap gap-2"><Pressable onPress={() => void sendTo('search', thought.text)} className="rounded-lg bg-unsorted-mist px-3 py-2"><Text className="text-xs font-semibold text-[#425243]">Search</Text></Pressable><Pressable onPress={() => Alert.alert('Send this thought to AI?', 'Only this thought will be opened in your browser.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Continue', onPress: () => void sendTo('ai', thought.text) }])} className="rounded-lg bg-unsorted-pine px-3 py-2"><Text className="text-xs font-bold text-white">Ask AI</Text></Pressable><Pressable onPress={() => { toggleResolved(thought.id, thought.resolvedAt ? null : Date.now()); refresh(); }} className="rounded-lg bg-unsorted-mist px-3 py-2"><Text className="text-xs font-semibold text-[#425243]">{thought.resolvedAt ? 'Reopen' : '✓ Resolve'}</Text></Pressable></View>
       </View>)}
     </ScrollView>
+    <Animated.View {...panResponder.panHandlers} className="absolute bottom-2 left-2 right-2 min-h-[292px] rounded-[21px] bg-white px-4 pb-5 pt-2.5 shadow-xl" style={{ transform: [{ translateY: Animated.add(sheetOffset, Animated.multiply(keyboardLift, -1)) }] }}>
+      <View className="mb-2.5 h-1 w-[34px] self-center rounded-full bg-[#D3D9D0]" />
+      <TextInput ref={inputRef} value={draft} onChangeText={setDraft} onFocus={() => setSheetOpen(true)} placeholder="Capture a thought…" placeholderTextColor="#879186" multiline className={`w-full px-1 text-unsorted-ink ${sheetOpen ? 'h-[126px] pt-1 text-[17px] leading-6' : 'h-[42px] py-2 text-[15px] leading-[22px]'}`} textAlignVertical="top" />
+      {sheetOpen && <><Text className="mb-3 text-xs text-[#839083]">{preview.length ? `${preview.length} separate ${preview.length === 1 ? 'thought' : 'thoughts'} found locally` : 'Thoughts are separated on this device.'}</Text><View className="flex-row items-center justify-between"><View className="flex-row items-center gap-1"><Folder size={14} color="#607360" /><Text className="text-[13px] font-semibold text-[#607360]">{workspace}</Text></View><Pressable onPress={saveDraft} disabled={preview.length === 0} className={`rounded-lg px-3.5 py-2.5 ${preview.length ? 'bg-unsorted-pine' : 'bg-[#C8CEC7]'}`}><Text className="text-[13px] font-bold text-white">Save thoughts</Text></Pressable></View></>}
+    </Animated.View>
   </SafeAreaView>;
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F5F7F1' }, header: { paddingHorizontal: 22, paddingTop: Platform.OS === 'android' ? 20 : 8, paddingBottom: 18, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, brand: { fontSize: 30, fontWeight: '700', color: '#1C261C' }, date: { marginTop: 2, fontSize: 14, color: '#68746A' }, lock: { color: '#527657', fontSize: 13, fontWeight: '600', backgroundColor: '#E5EEE1', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 99 }, content: { padding: 14, paddingBottom: 46 }, composer: { backgroundColor: '#FFFEFA', borderRadius: 20, padding: 14, shadowColor: '#36523A', shadowOpacity: 0.09, shadowRadius: 12, elevation: 2 }, input: { minHeight: 120, fontSize: 18, lineHeight: 26, color: '#1C261C' }, composerFooter: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#DEE6DB', paddingTop: 11, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, hint: { color: '#718071', fontSize: 12, flex: 1 }, save: { backgroundColor: '#315D35', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 9 }, saveDisabled: { backgroundColor: '#B9C4B8' }, saveText: { color: '#FFF', fontWeight: '700' }, search: { backgroundColor: '#E8EEE5', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, marginTop: 18, fontSize: 15, color: '#1C261C' }, empty: { paddingVertical: 60, paddingHorizontal: 30, alignItems: 'center' }, emptyTitle: { color: '#273227', fontSize: 18, fontWeight: '700' }, emptyText: { color: '#718071', lineHeight: 21, textAlign: 'center', marginTop: 8 }, card: { marginTop: 12, padding: 16, borderRadius: 18, backgroundColor: '#FFFEFA', borderWidth: 1, borderColor: '#E4E9E0' }, cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, kind: { color: '#557258', fontSize: 11, fontWeight: '700', letterSpacing: 0.7 }, ellipsis: { color: '#526052', fontWeight: '700', letterSpacing: 1 }, thought: { fontSize: 17, lineHeight: 25, color: '#1C261C', marginTop: 10 }, inlineActions: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 14, flexWrap: 'wrap' }, primaryAction: { backgroundColor: '#315D35', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 9 }, primaryActionText: { color: '#FFF', fontSize: 13, fontWeight: '700' }, secondaryAction: { backgroundColor: '#EAF0E7', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 9 }, secondaryActionText: { color: '#38503A', fontSize: 13, fontWeight: '600' }, collection: { color: '#617361', fontSize: 12, paddingHorizontal: 6 }
-});
