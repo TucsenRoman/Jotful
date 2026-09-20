@@ -22,7 +22,11 @@
           "enableFTS": true
         }
       ],
-      "expo-status-bar"
+      "expo-status-bar",
+      "expo-sharing",
+      "expo-audio",
+      "expo-secure-store",
+      "expo-asset"
     ],
     "extra": {
       "eas": {
@@ -31,4 +35,3 @@
     }
   }
 }
-
