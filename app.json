@@ -41,8 +41,7 @@
               "description": "A private place to capture a thought.",
               "ios": {
                 "supportedFamilies": [
-                  "systemSmall",
-                  "systemMedium"
+                  "systemSmall"
                 ]
               }
             }
