@@ -30,7 +30,7 @@ FEATURES
 - Open a selected thought with AI only when you choose to
 - Resolve thoughts when they are done
 - Search everything locally
-- Keep a quiet count of loose thoughts on your Home Screen
+- Keep capture one tap away from your Home Screen
 - No account. No ads. No analytics.
 
 Unsorted is for capturing first and deciding later.

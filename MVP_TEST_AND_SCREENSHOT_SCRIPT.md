@@ -14,9 +14,8 @@ Run this script in the installed development build before creating the productio
    I should ask three friends to try the beta.
    ```
 
-4. Confirm the sheet reports **3 separate thoughts found locally**.
-5. Tap **Save thoughts**.
-6. Confirm that three cards appear, labelled Question, Idea, and Thought.
+4. Confirm the **Save thoughts** control becomes active, then tap it.
+5. Confirm that three cards appear, labelled Question, Idea, and Thought.
 
 Screenshot A: the three resulting thought cards and their inline actions.
 
@@ -24,15 +23,16 @@ Screenshot A: the three resulting thought cards and their inline actions.
 
 1. Tap **Search** on the question. Confirm a browser opens only after the tap.
 2. Tap **Ask AI** on the idea. Confirm the consent alert appears before a browser opens.
-3. Tap the ellipsis on the idea and choose **Mark resolved**. Confirm its state changes.
-4. Tap **Reopen thought**. Confirm it returns to the loose-thought count.
+3. Tap **Copy** beside Ask AI. Confirm the thought is available to paste elsewhere.
+4. Tap the ellipsis on the idea and choose **Settle this thought**. Confirm its state changes.
+5. Tap **Bring it back**. Confirm the thought returns to the active list.
 
 Screenshot B: a thought with Search, Ask AI, and Resolve actions.
 
 ## Test 3 — Voice and local search
 
-1. Tap the capture footer, then tap **Voice**. Grant microphone permission when iOS asks.
-2. Speak: `Could a daily review help people return to ideas?` Confirm the transcript appears and is saved as one Question.
+1. Tap the capture footer, then the microphone control. Grant microphone permission when iOS asks.
+2. Speak: `Could a daily review help people return to ideas?` Pause for at least five seconds, then continue speaking. Confirm recording continues until the stop control is tapped; save the resulting thought.
 3. Tap the header search icon and search `beta`. Confirm the matching thought is found.
 4. Clear search and verify all thoughts return.
 
@@ -50,8 +50,8 @@ Screenshot D: the empty-state screen with the branded capture footer, or the cap
 ## Test 5 — Home Screen widget
 
 1. Long-press the iPhone Home Screen and add **Unsorted** in the widget gallery.
-2. Confirm the widget shows the current number of loose thoughts.
-3. Capture and resolve a thought, return to the Home Screen, and confirm the number refreshes.
+2. Confirm the widget has the clean Unsorted moth mark on a neutral background plus circular write and microphone controls.
+3. Tap each action: write should open the capture sheet ready to type, and the microphone should open it ready to record.
 
 ## Release decision
 
