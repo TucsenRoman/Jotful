@@ -89,13 +89,18 @@ function UnsortedApp() {
   useEffect(() => {
     async function shareWidgetMoth() {
       if (Platform.OS !== 'ios' || !widgetsDirectory) return;
-      const asset = Asset.fromModule(require('./assets/widget-moth.png'));
-      await asset.downloadAsync();
-      if (!asset.localUri) return;
-      const destination = `${widgetsDirectory}unsorted-moth.png`;
-      await FileSystem.copyAsync({ from: asset.localUri, to: destination });
-      widgetMothUri.current = destination;
-      updateWidget();
+      try {
+        const asset = Asset.fromModule(require('./assets/widget-moth.png'));
+        await asset.downloadAsync();
+        if (!asset.localUri) return;
+        const destination = `${widgetsDirectory}unsorted-moth.png`;
+        if (asset.localUri.startsWith('file://')) await FileSystem.copyAsync({ from: asset.localUri, to: destination });
+        else await FileSystem.downloadAsync(asset.localUri, destination);
+        widgetMothUri.current = destination;
+        updateWidget();
+      } catch (error) {
+        console.warn('Unable to share the widget moth image.', error);
+      }
     }
     void shareWidgetMoth();
   }, []);
