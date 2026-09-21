@@ -7,10 +7,10 @@ type CaptureWidgetProps = { thoughtCount: number };
 function CaptureWidget(_props: CaptureWidgetProps, _environment: WidgetEnvironment) {
   'widget';
   const moth = (
-    <ZStack modifiers={[frame({ width: 66, height: 60 }), rotationEffect(-35)]}>
-      <Ellipse modifiers={[frame({ width: 38, height: 24 }), background({ type: 'linearGradient', colors: ['#EF705A', '#F5F0E6'], startPoint: { x: 0, y: 0 }, endPoint: { x: 1, y: 1 } }), offset({ x: -12, y: -5 })]} />
-      <Ellipse modifiers={[frame({ width: 38, height: 24 }), background({ type: 'linearGradient', colors: ['#F5F0E6', '#EF705A'], startPoint: { x: 0, y: 0 }, endPoint: { x: 1, y: 1 } }), offset({ x: 12, y: 5 })]} />
-      <Ellipse modifiers={[frame({ width: 5, height: 24 }), background('#F5F0E6')]} />
+    <ZStack modifiers={[frame({ width: 64, height: 56 })]}>
+      <Ellipse modifiers={[frame({ width: 29, height: 43 }), background({ type: 'linearGradient', colors: ['#EF705A', '#EF705A', '#F5F0E6'], startPoint: { x: 0, y: 1 }, endPoint: { x: 1, y: 0 } }), rotationEffect(-34), offset({ x: -10, y: 3 })]} />
+      <Ellipse modifiers={[frame({ width: 29, height: 43 }), background({ type: 'linearGradient', colors: ['#F5F0E6', '#F5F0E6', '#EF705A'], startPoint: { x: 0, y: 0 }, endPoint: { x: 1, y: 1 } }), rotationEffect(34), offset({ x: 10, y: -3 })]} />
+      <Ellipse modifiers={[frame({ width: 7, height: 25 }), background('#242019'), rotationEffect(23)]} />
     </ZStack>
   );
 

@@ -1,7 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120" fill="none">
-  <rect width="160" height="120" rx="28" fill="#242019"/>
-  <path d="M97 75C85 96 58 104 36 90 16 77 18 53 37 48c18-5 31 6 26 18-4 10-17 12-23 4" stroke="#F5F0E6" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>
-  <ellipse cx="83" cy="47" rx="12" ry="29" fill="#EF705A" transform="rotate(-45 83 47)"/>
-  <ellipse cx="116" cy="57" rx="12" ry="29" fill="#F5F0E6" transform="rotate(45 116 57)"/>
-  <ellipse cx="101" cy="65" rx="3.7" ry="11" fill="#F5F0E6" transform="rotate(-18 101 65)"/>
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M19.7 19.8C12 33.2 3.60001 30.5 5.70001 19.7C7.50001 10.3 15.9 11.2 19.7 18.4V19.8Z" fill="url(#paint0_linear_22_9)"/>
+<path d="M20.3 20.2001C28 6.80012 36.4 9.50012 34.3 20.3001C32.5 29.7001 24.1 28.8001 20.3 21.6001V20.2001Z" fill="url(#paint1_linear_22_9)"/>
+<path d="M22.5275 13.8402C23.6205 14.3041 23.2645 17.6063 21.7324 21.2158C20.2002 24.8254 18.0721 27.3753 16.9791 26.9114C15.8861 26.4474 16.242 23.1452 17.7742 19.5357C19.3063 15.9262 21.4344 13.3762 22.5275 13.8402Z" fill="#242019"/>
+<path d="M4 36.5C9.5 42 10.3079 31.6026 16 33.5C17.5 34 17.5 35.5 16 36C11.3137 37.5621 9 31.5 16 29.5" stroke="#F5F0E6" stroke-linecap="round"/>
+<defs>
+<linearGradient id="paint0_linear_22_9" x1="5.00001" y1="32" x2="25" y2="11" gradientUnits="userSpaceOnUse">
+<stop stop-color="#EF705A"/>
+<stop offset="0.72" stop-color="#EF705A"/>
+<stop offset="1" stop-color="#F5F0E6"/>
+</linearGradient>
+<linearGradient id="paint1_linear_22_9" x1="35" y1="9.00012" x2="15.0001" y2="30.0001" gradientUnits="userSpaceOnUse">
+<stop stop-color="#F5F0E6"/>
+<stop offset="0.72" stop-color="#F5F0E6"/>
+<stop offset="1" stop-color="#EF705A"/>
+</linearGradient>
+</defs>
 </svg>
