@@ -22,6 +22,31 @@
         {
           "enableFTS": true
         }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow Unsorted to use the microphone for private on-device voice input.",
+          "speechRecognitionPermission": "Allow Unsorted to recognize your speech on-device."
+        }
+      ],
+      [
+        "expo-widgets",
+        {
+          "widgets": [
+            {
+              "name": "UnsortedCapture",
+              "displayName": "Unsorted",
+              "description": "A private place to capture a thought.",
+              "ios": {
+                "supportedFamilies": [
+                  "systemSmall",
+                  "systemMedium"
+                ]
+              }
+            }
+          ]
+        }
       ]
     ],
     "extra": {

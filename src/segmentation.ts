@@ -1,4 +1,4 @@
-export type ThoughtKind = 'question' | 'idea' | 'task' | 'thought';
+export type ThoughtKind = 'question' | 'idea' | 'thought';
 
 const thoughtStarter = /^(how|what|why|where|when|who|can|could|should|would|is|are|do|does|did|maybe|perhaps|i wonder|idea\b|what if|remember|todo\b|to do\b|need to\b|i need to\b|call\b|buy\b|send\b|schedule\b|we should\b|let's\b)/i;
 
@@ -31,7 +31,6 @@ export function splitThoughts(input: string): string[] {
 export function classifyThought(text: string): ThoughtKind {
   const normalized = text.trim().toLowerCase();
   if (text.trim().endsWith('?') || /^(how|what|why|where|when|who|can|should|could)\b/.test(normalized)) return 'question';
-  if (/^(todo|to do|remember|need to|i need to|we should|let's|call|buy|send|schedule)\b/.test(normalized)) return 'task';
   if (/^(idea|what if|maybe|could|i wonder)\b/.test(normalized) || normalized.includes('idea')) return 'idea';
   return 'thought';
 }

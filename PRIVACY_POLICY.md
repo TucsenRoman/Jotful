@@ -6,11 +6,15 @@ Unsorted is an offline-first notes application. This policy explains how the app
 
 ## Information stored by the app
 
-The notes, thoughts, labels, and collections you create in Unsorted are stored locally on your device using the app's local database. Unsorted does not provide user accounts or cloud synchronization in the current version.
+The notes and thoughts you create in Unsorted are stored locally on your device using the app's local database. Unsorted does not provide user accounts or cloud synchronization in the current version.
 
 ## Information we collect
 
 Unsorted does not collect, transmit, sell, share, or use your notes or personal information for analytics, advertising, tracking, or profiling.
+
+## Optional voice input
+
+When you tap Voice, Unsorted asks for microphone permission and requests on-device speech recognition only when your iPhone supports it. The app does not upload or retain your audio or transcription. If on-device recognition is unavailable, voice input is unavailable and you can continue typing.
 
 ## Optional external actions
 

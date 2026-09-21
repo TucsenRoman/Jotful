@@ -5,7 +5,6 @@ export type Thought = {
   id: number;
   text: string;
   kind: ThoughtKind;
-  collection: string | null;
   createdAt: number;
   resolvedAt: number | null;
 };
@@ -28,22 +27,18 @@ export function initializeDatabase() {
   }
 }
 
-export function listThoughts(search = '', workspace = 'All thoughts'): Thought[] {
+type StoredThought = Omit<Thought, 'kind'> & { kind: ThoughtKind | 'task'; collection?: string | null };
+
+export function listThoughts(search = ''): Thought[] {
   const filter = `%${search}%`;
-  const workspaceFilter = workspace === 'All thoughts' ? '' : ' AND collection = ?';
-  return db.getAllSync<Thought>(
-    `SELECT id, text, kind, collection, createdAt, resolvedAt FROM thoughts WHERE text LIKE ?${workspaceFilter} ORDER BY CASE WHEN resolvedAt IS NULL THEN 0 ELSE 1 END, createdAt DESC`,
-    ...(workspace === 'All thoughts' ? [filter] : [filter, workspace])
-  );
+  return db.getAllSync<StoredThought>(
+    'SELECT id, text, kind, collection, createdAt, resolvedAt FROM thoughts WHERE text LIKE ? ORDER BY CASE WHEN resolvedAt IS NULL THEN 0 ELSE 1 END, createdAt DESC',
+    filter
+  ).map(({ kind, ...thought }) => ({ ...thought, kind: kind === 'task' ? 'thought' : kind }));
 }
 
-export function createThought(text: string, kind: ThoughtKind, collection: string | null = null) {
-  db.runSync('INSERT INTO thoughts (text, kind, collection, createdAt) VALUES (?, ?, ?, ?)', text, kind, collection, Date.now());
-}
-
-export function moveThought(id: number, collection: string, kind?: ThoughtKind) {
-  if (kind) db.runSync('UPDATE thoughts SET collection = ?, kind = ? WHERE id = ?', collection, kind, id);
-  else db.runSync('UPDATE thoughts SET collection = ? WHERE id = ?', collection, id);
+export function createThought(text: string, kind: ThoughtKind) {
+  db.runSync('INSERT INTO thoughts (text, kind, createdAt) VALUES (?, ?, ?)', text, kind, Date.now());
 }
 
 export function deleteThought(id: number) {

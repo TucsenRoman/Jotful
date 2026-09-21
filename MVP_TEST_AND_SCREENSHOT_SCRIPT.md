@@ -4,19 +4,19 @@ Run this script in the installed development build before creating the productio
 
 ## Test 1 — The core capture loop
 
-1. Start with an empty All thoughts workspace.
-2. Tap the thin capture footer. It should stay inset from the screen edges, rise above the keyboard, and never float mid-screen.
+1. Start with an empty Unsorted inbox.
+2. Tap the thin capture footer. It should be full width, docked to the screen edge, rise above the keyboard, and never float mid-screen.
 3. Enter this exact brain dump:
 
    ```text
    What should the first Unsorted launch include?
    Maybe a daily review could help people return to ideas.
-   Remember to ask three friends to try the beta.
+   I should ask three friends to try the beta.
    ```
 
 4. Confirm the sheet reports **3 separate thoughts found locally**.
 5. Tap **Save thoughts**.
-6. Confirm that three cards appear, labelled Question, Idea, and Task.
+6. Confirm that three cards appear, labelled Question, Idea, and Thought.
 
 Screenshot A: the three resulting thought cards and their inline actions.
 
@@ -24,18 +24,19 @@ Screenshot A: the three resulting thought cards and their inline actions.
 
 1. Tap **Search** on the question. Confirm a browser opens only after the tap.
 2. Tap **Ask AI** on the idea. Confirm the consent alert appears before a browser opens.
-3. Tap the ellipsis on the idea and choose **Make a task**. Confirm it moves into Tasks and the card label changes to Task.
-4. Tap **Resolve** on any card, then **Reopen**. Confirm both state changes work.
+3. Tap the ellipsis on the idea and choose **Mark resolved**. Confirm its state changes.
+4. Tap **Reopen thought**. Confirm it returns to the loose-thought count.
 
-Screenshot B: an open Thought actions menu showing Make an idea / Make a task / Move / Resolve choices.
+Screenshot B: a thought with Search, Ask AI, and Resolve actions.
 
-## Test 3 — Workspace and local search
+## Test 3 — Voice and local search
 
-1. Use the workspace pill in the header and select **Tasks**. Confirm only task cards are visible.
-2. Tap the header search icon and search `beta`. Confirm the matching task is found.
-3. Clear search, switch back to **All thoughts**, and verify all cards return.
+1. Tap the capture footer, then tap **Voice**. Grant microphone permission when iOS asks.
+2. Speak: `Could a daily review help people return to ideas?` Confirm the transcript appears and is saved as one Question.
+3. Tap the header search icon and search `beta`. Confirm the matching thought is found.
+4. Clear search and verify all thoughts return.
 
-Screenshot C: the expanded header search with a filtered thought.
+Screenshot C: voice capture or the expanded header search with a filtered thought.
 
 ## Test 4 — Offline and persistence
 
@@ -45,6 +46,12 @@ Screenshot C: the expanded header search with a filtered thought.
 4. Confirm the thought remains. Turn off Airplane Mode afterwards.
 
 Screenshot D: the empty-state screen with the branded capture footer, or the capture sheet open with a messy draft.
+
+## Test 5 — Home Screen widget
+
+1. Long-press the iPhone Home Screen and add **Unsorted** in the widget gallery.
+2. Confirm the widget shows the current number of loose thoughts.
+3. Capture and resolve a thought, return to the Home Screen, and confirm the number refreshes.
 
 ## Release decision
 
