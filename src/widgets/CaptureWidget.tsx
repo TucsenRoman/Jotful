@@ -17,7 +17,7 @@ function CaptureWidget(_props: CaptureWidgetProps, _environment: WidgetEnvironme
   return (
     <VStack
       alignment="leading"
-      modifiers={[padding({ all: 18 }), containerBackground('#242019', 'widget')]}
+      modifiers={[padding({ all: 18 }), containerBackground('#DED6C7', 'widget')]}
     >
       {moth}
       <Spacer />
