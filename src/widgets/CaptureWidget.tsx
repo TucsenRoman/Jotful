@@ -24,12 +24,12 @@ function CaptureWidget(_props: CaptureWidgetProps, _environment: WidgetEnvironme
       <HStack spacing={10}>
         <Link destination="unsorted://capture?mode=write">
           <ZStack modifiers={[frame({ width: 54, height: 44 }), background('#EF705A'), cornerRadius(14)]}>
-            <Image systemName="pencil" size={18} color="#242019" />
+            <Image systemName="square.and.pencil" size={18} color="#242019" />
           </ZStack>
         </Link>
         <Link destination="unsorted://capture?mode=voice">
           <ZStack modifiers={[frame({ width: 54, height: 44 }), background('#F5F0E6'), cornerRadius(14)]}>
-            <Image systemName="mic.fill" size={18} color="#242019" />
+            <Image systemName="mic" size={18} color="#242019" />
           </ZStack>
         </Link>
       </HStack>
