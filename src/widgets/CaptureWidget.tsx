@@ -2,9 +2,9 @@ import { Ellipse, HStack, Image, Link, Spacer, VStack, ZStack } from '@expo/ui/s
 import { background, containerBackground, cornerRadius, frame, offset, padding, rotationEffect } from '@expo/ui/swift-ui/modifiers';
 import { createWidget, type WidgetEnvironment } from 'expo-widgets';
 
-type CaptureWidgetProps = { thoughtCount: number };
+type CaptureWidgetProps = { thoughtCount: number; mothUri: string | null };
 
-function CaptureWidget(_props: CaptureWidgetProps, _environment: WidgetEnvironment) {
+function CaptureWidget(props: CaptureWidgetProps, _environment: WidgetEnvironment) {
   'widget';
   const moth = (
     <ZStack modifiers={[frame({ width: 64, height: 56 })]}>
@@ -19,7 +19,7 @@ function CaptureWidget(_props: CaptureWidgetProps, _environment: WidgetEnvironme
       alignment="leading"
       modifiers={[padding({ all: 18 }), containerBackground('#DED6C7', 'widget')]}
     >
-      {moth}
+      {props.mothUri ? <Image uiImage={props.mothUri} modifiers={[frame({ width: 64, height: 56 })]} /> : moth}
       <Spacer />
       <HStack spacing={12}>
         <Link destination="unsorted://capture?mode=write">

@@ -3,12 +3,15 @@ import './global.css';
 import { Fraunces_600SemiBold, useFonts as useFraunces } from '@expo-google-fonts/fraunces';
 import { DMSans_400Regular, DMSans_500Medium, DMSans_700Bold, useFonts as useDMSans } from '@expo-google-fonts/dm-sans';
 import { StatusBar } from 'expo-status-bar';
+import { Asset } from 'expo-asset';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Haptics from 'expo-haptics';
 import { Mic, MoreHorizontal, Search, Square, X } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Animated, Keyboard, Linking, PanResponder, Platform, Pressable, ScrollView, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
+import { widgetsDirectory } from 'expo-widgets';
 import Svg, { Defs, LinearGradient, Stop, Text as SvgText } from 'react-native-svg';
 import { MothMark } from './src/brand/MothMark';
 import CaptureWidget from './src/widgets/CaptureWidget';
@@ -50,6 +53,7 @@ function UnsortedApp() {
   const [capturePromptIndex, setCapturePromptIndex] = useState(() => Math.floor(Math.random() * capturePrompts.length));
   const inputRef = useRef<TextInput>(null);
   const voiceBase = useRef('');
+  const widgetMothUri = useRef<string | null>(null);
   const sheetTranslateY = useRef(new Animated.Value(0)).current;
   const listeningOpacity = useRef(new Animated.Value(1)).current;
   const insets = useSafeAreaInsets();
@@ -78,9 +82,23 @@ function UnsortedApp() {
     const hide = Keyboard.addListener(hideEvent, () => setKeyboardHeight(0));
     return () => { show.remove(); hide.remove(); };
   }, []);
+  const updateWidget = () => {
+    if (Platform.OS === 'ios') CaptureWidget.updateSnapshot({ thoughtCount: thoughts.filter((thought) => thought.resolvedAt === null).length, mothUri: widgetMothUri.current });
+  };
+  useEffect(() => { updateWidget(); }, [thoughts]);
   useEffect(() => {
-    if (Platform.OS === 'ios') CaptureWidget.updateSnapshot({ thoughtCount: thoughts.filter((thought) => thought.resolvedAt === null).length });
-  }, [thoughts]);
+    async function shareWidgetMoth() {
+      if (Platform.OS !== 'ios' || !widgetsDirectory) return;
+      const asset = Asset.fromModule(require('./assets/widget-moth.png'));
+      await asset.downloadAsync();
+      if (!asset.localUri) return;
+      const destination = `${widgetsDirectory}unsorted-moth.png`;
+      await FileSystem.copyAsync({ from: asset.localUri, to: destination });
+      widgetMothUri.current = destination;
+      updateWidget();
+    }
+    void shareWidgetMoth();
+  }, []);
   useEffect(() => {
     if (!listening) {
       listeningOpacity.stopAnimation();
