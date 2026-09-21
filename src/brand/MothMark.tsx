@@ -1,4 +1,4 @@
-import Svg, { Defs, Ellipse, LinearGradient, Path, Stop } from 'react-native-svg';
+import Svg, { Ellipse } from 'react-native-svg';
 
 type MothMarkProps = {
   size?: number;
@@ -11,21 +11,9 @@ export function MothMark({ size = 32, dark = false }: MothMarkProps) {
 
   return (
     <Svg width={size} height={size} viewBox="0 0 40 40" fill="none" accessibilityLabel="Unsorted moth mark">
-      <Defs>
-        <LinearGradient id="moth-persimmon" x1="5" y1="8" x2="25" y2="29" gradientUnits="userSpaceOnUse">
-          <Stop offset="0" stopColor="#EF705A" />
-          <Stop offset="0.72" stopColor="#EF705A" />
-          <Stop offset="1" stopColor={cream} />
-        </LinearGradient>
-        <LinearGradient id="moth-cream" x1="35" y1="31" x2="15" y2="10" gradientUnits="userSpaceOnUse">
-          <Stop offset="0" stopColor={cream} />
-          <Stop offset="0.72" stopColor={cream} />
-          <Stop offset="1" stopColor="#EF705A" />
-        </LinearGradient>
-      </Defs>
-      <Path d="M19.7 20.2C12 6.8 3.6 9.5 5.7 20.3c1.8 9.4 10.2 8.5 14 1.3Z" fill="url(#moth-persimmon)" />
-      <Path d="M20.3 19.8c7.7 13.4 16.1 10.7 14-0.1-1.8-9.4-10.2-8.5-14-1.3Z" fill="url(#moth-cream)" />
-      <Ellipse cx="20" cy="20" rx="2.15" ry="7.1" fill={body} transform="rotate(-45 20 20)" />
+      <Ellipse cx="15.8" cy="16.5" rx="5.9" ry="14.5" fill="#EF705A" transform="rotate(-45 15.8 16.5)" />
+      <Ellipse cx="25.4" cy="20.4" rx="5.9" ry="14.5" fill={cream} transform="rotate(45 25.4 20.4)" />
+      <Ellipse cx="20.7" cy="19.6" rx="2.25" ry="7.1" fill={body} transform="rotate(-18 20.7 19.6)" />
     </Svg>
   );
 }

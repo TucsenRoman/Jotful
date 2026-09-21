@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none">
+  <defs>
+    <linearGradient id="persimmonWing" x1="5" y1="8" x2="25" y2="29" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#EF705A"/>
+      <stop offset=".72" stop-color="#EF705A"/>
+      <stop offset="1" stop-color="#F5F0E6"/>
+    </linearGradient>
+    <linearGradient id="creamWing" x1="35" y1="31" x2="15" y2="10" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F5F0E6"/>
+      <stop offset=".72" stop-color="#F5F0E6"/>
+      <stop offset="1" stop-color="#EF705A"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(0 40) scale(1 -1)">
+    <path d="M19.7 20.2C12 6.8 3.6 9.5 5.7 20.3c1.8 9.4 10.2 8.5 14 1.3Z" fill="url(#persimmonWing)"/>
+    <path d="M20.3 19.8c7.7 13.4 16.1 10.7 14-.1-1.8-9.4-10.2-8.5-14-1.3Z" fill="url(#creamWing)"/>
+    <ellipse cx="20" cy="20" rx="2.15" ry="7.1" fill="#242019" transform="rotate(-45 20 20)"/>
+  </g>
+</svg>
