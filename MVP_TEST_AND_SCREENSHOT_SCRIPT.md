@@ -50,7 +50,7 @@ Screenshot D: the empty-state screen with the branded capture footer, or the cap
 ## Test 5 — Home Screen widget
 
 1. Long-press the iPhone Home Screen and add **Unsorted** in the widget gallery.
-2. Confirm the widget has the clean Unsorted moth mark on a neutral background plus circular write and microphone controls.
+2. Confirm the widget renders on its neutral background with circular write and microphone controls, without crashing the app.
 3. Tap each action: write should open the capture sheet ready to type, and the microphone should open it ready to record.
 
 ## Release decision
