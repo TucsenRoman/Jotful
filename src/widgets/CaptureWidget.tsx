@@ -21,14 +21,14 @@ function CaptureWidget(_props: CaptureWidgetProps, _environment: WidgetEnvironme
     >
       {moth}
       <Spacer />
-      <HStack spacing={10}>
+      <HStack spacing={12}>
         <Link destination="unsorted://capture?mode=write">
-          <ZStack modifiers={[frame({ width: 54, height: 44 }), background('#EF705A'), cornerRadius(14)]}>
+          <ZStack modifiers={[frame({ width: 44, height: 44 }), background('#EF705A'), cornerRadius(22)]}>
             <Image systemName="square.and.pencil" size={18} color="#242019" />
           </ZStack>
         </Link>
         <Link destination="unsorted://capture?mode=voice">
-          <ZStack modifiers={[frame({ width: 54, height: 44 }), background('#F5F0E6'), cornerRadius(14)]}>
+          <ZStack modifiers={[frame({ width: 44, height: 44 }), background('#F5F0E6'), cornerRadius(22)]}>
             <Image systemName="mic" size={18} color="#242019" />
           </ZStack>
         </Link>
