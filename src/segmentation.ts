@@ -1,6 +1,6 @@
 export type ThoughtKind = 'question' | 'idea' | 'thought';
 
-const thoughtStarter = /^(how|what|why|where|when|who|can|could|should|would|is|are|do|does|did|maybe|perhaps|i wonder|idea\b|what if|remember|todo\b|to do\b|need to\b|i need to\b|call\b|buy\b|send\b|schedule\b|we should\b|let's\b)/i;
+const thoughtStarter = /^(how|what|why|where|when|who|can|could|should|would|is|are|do|does|did|maybe|perhaps|i wonder|idea\b|what if|remember|todo\b|to do\b|need to\b|i need to\b|i should\b|call\b|buy\b|send\b|schedule\b|we should\b|let's\b)/i;
 
 export function splitThoughts(input: string): string[] {
   const paragraphs = input

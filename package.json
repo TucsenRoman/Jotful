@@ -6,7 +6,8 @@
     "start": "expo start",
     "ios": "expo start --ios",
     "android": "expo start --android",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "verify:segmentation": "node scripts/check-segmentation.cjs"
   },
   "dependencies": {
     "@expo-google-fonts/dm-sans": "^0.4.2",
