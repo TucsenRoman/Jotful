@@ -100,22 +100,20 @@ function UnsortedApp() {
     animation.start();
     return () => animation.stop();
   }, [listening, listeningOpacity]);
-  useEffect(() => {
-    if (!sheetOpen || draft.trim() || listening) return;
-    const rotation = setInterval(() => setCapturePromptIndex((index) => (index + 1) % capturePrompts.length), 4600);
-    return () => clearInterval(rotation);
-  }, [sheetOpen, draft, listening]);
-
   function openSheet(mode: 'write' | 'voice' = 'write') {
+    const continueIntoCapture = () => {
+      if (mode === 'voice') void toggleVoiceInput();
+      else inputRef.current?.focus();
+    };
     if (!sheetOpen) {
       setSheetOpen(true);
       sheetTranslateY.setValue(collapsedTranslateY);
-      Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: true, damping: 22, stiffness: 210, mass: 0.8 }).start();
+      Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: true, damping: 24, stiffness: 190, mass: 0.85, overshootClamping: true }).start(({ finished }) => {
+        if (finished) continueIntoCapture();
+      });
+      return;
     }
-    setTimeout(() => {
-      if (mode === 'voice') void toggleVoiceInput();
-      else inputRef.current?.focus();
-    }, 250);
+    continueIntoCapture();
   }
 
   useEffect(() => {
@@ -130,9 +128,11 @@ function UnsortedApp() {
 
   function closeSheet() {
     if (listening) ExpoSpeechRecognitionModule.stop();
-    Keyboard.dismiss();
     Animated.spring(sheetTranslateY, { toValue: collapsedTranslateY, useNativeDriver: true, damping: 28, stiffness: 260, mass: 0.75, overshootClamping: true }).start(({ finished }) => {
-      if (finished) setSheetOpen(false);
+      if (finished) {
+        setSheetOpen(false);
+        Keyboard.dismiss();
+      }
     });
   }
 
@@ -203,7 +203,7 @@ function UnsortedApp() {
         <View className="mt-3 flex-row flex-wrap gap-2"><Pressable onPress={() => void sendTo('search', thought.text)} className="rounded-full border border-unsorted-line bg-unsorted-canvas px-3 py-2"><Text className="text-xs text-unsorted-ink" style={{ fontFamily: 'DMSans_500Medium' }}>Search</Text></Pressable><Pressable onPress={() => Alert.alert('Open with AI?', 'Only this thought will be opened in your browser.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Continue', onPress: () => void sendTo('ai', thought.text) }])} className="rounded-full bg-unsorted-roast px-3 py-2"><Text className="text-xs text-unsorted-cream" style={{ fontFamily: 'DMSans_700Bold' }}>Ask AI</Text></Pressable><Pressable onPress={() => void copyThought(thought.text)} className="flex-row items-center rounded-full border border-unsorted-line bg-unsorted-canvas px-3 py-2" accessibilityLabel="Copy thought"><Copy size={13} color={colors.roast} /><Text className="ml-1.5 text-xs text-unsorted-ink" style={{ fontFamily: 'DMSans_500Medium' }}>Copy</Text></Pressable><Pressable onPress={() => { toggleResolved(thought.id, thought.resolvedAt ? null : Date.now()); refresh(); }} className="rounded-full border border-unsorted-line bg-unsorted-canvas px-3 py-2"><Text className="text-xs text-unsorted-moss" style={{ fontFamily: 'DMSans_500Medium' }}>{thought.resolvedAt ? 'Bring back' : 'Settle'}</Text></Pressable></View>
       </View>)}
     </ScrollView>
-    {!sheetOpen && <View className="border-t border-unsorted-line bg-unsorted-cream px-5 pt-3 shadow-xl" style={{ position: 'absolute', bottom: -insets.bottom, left: 0, right: 0, height: collapsedSheetHeight + insets.bottom, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingBottom: insets.bottom + 12 }}><View className="flex-row items-center justify-between"><Pressable onPress={() => openSheet()} className="flex-1 py-1" accessibilityLabel="Open thought capture"><Text numberOfLines={1} className="text-[15px] text-unsorted-moss" style={{ fontFamily: 'DMSans_400Regular' }}>{capturePrompts[capturePromptIndex]}</Text></Pressable><Pressable onPress={() => openSheet('voice')} className="h-10 w-10 items-center justify-center rounded-full bg-unsorted-persimmon" hitSlop={10} accessibilityLabel="Speak a thought"><Mic size={18} color={colors.roast} /></Pressable></View></View>}
-    {sheetOpen && <Animated.View className="bg-unsorted-cream px-5 pt-3 shadow-xl" style={{ position: 'absolute', bottom: -insets.bottom, left: 0, right: 0, height: expandedHeight, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingBottom: insets.bottom + 18, transform: [{ translateY: sheetTranslateY }] }}><View className="absolute left-0 right-0 items-center" style={{ top: -60 }}><Pressable onPress={() => { void Haptics.selectionAsync(); closeSheet(); }} className="h-12 w-12 items-center justify-center rounded-full shadow-xl" style={{ backgroundColor: 'rgba(36, 32, 25, 0.8)' }} hitSlop={12} accessibilityLabel="Collapse thought capture"><ChevronDown size={23} color={colors.cream} /></Pressable></View><View className="relative"><TextInput ref={inputRef} value={draft} onChangeText={setDraft} placeholder={capturePrompts[capturePromptIndex]} placeholderTextColor={colors.moss} multiline className="h-[166px] w-full pr-14 pt-1 text-[17px] leading-6 text-unsorted-ink" style={{ fontFamily: 'DMSans_400Regular' }} textAlignVertical="top" /><Pressable onPress={() => void toggleVoiceInput()} className={'absolute right-0 top-0 h-10 w-10 items-center justify-center rounded-full ' + (listening ? 'bg-[#F8D8D1]' : 'bg-unsorted-persimmon')} hitSlop={10} accessibilityLabel={listening ? 'Stop voice input' : 'Speak a thought'}>{listening ? <Square size={13} fill={colors.roast} color={colors.roast} /> : <Mic size={18} color={colors.roast} />}</Pressable></View><View className="mb-3 h-[14px]" /><View className="items-center"><Pressable onPress={saveDraft} disabled={preview.length === 0 || listening} className={'items-center rounded-full px-6 py-3 ' + (listening ? 'bg-[#F8D8D1]' : preview.length ? 'bg-unsorted-persimmon' : 'bg-[#E4DCCE]')} style={{ opacity: listening || preview.length ? 1 : 0.52 }}>{listening ? <Animated.Text className="text-[14px] text-unsorted-roast" style={{ fontFamily: 'DMSans_700Bold', opacity: listeningOpacity }}>Listening</Animated.Text> : <Text className={'text-[14px] ' + (preview.length ? 'text-unsorted-roast' : 'text-[#8F8478]')} style={{ fontFamily: 'DMSans_700Bold' }}>{preview.length === 1 ? 'Save thought' : 'Save thoughts'}</Text>}</Pressable>{draft.trim().length > 0 && !listening && <Pressable onPress={confirmClearDraft} className="mt-2 border-b border-[#BDB4A9] pb-0.5" hitSlop={10} accessibilityLabel="Clear thought"><Text className="text-[13px] text-[#9B9187]" style={{ fontFamily: 'DMSans_500Medium' }}>Clear thought</Text></Pressable>}</View></Animated.View>}
+    {!sheetOpen && <View className="border-t border-unsorted-line bg-unsorted-cream px-5 pt-3 shadow-xl" style={{ position: 'absolute', bottom: -insets.bottom, left: 0, right: 0, height: collapsedSheetHeight + insets.bottom, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingBottom: insets.bottom + 12 }}><View className="flex-row items-center gap-2 rounded-2xl border border-unsorted-line bg-unsorted-canvas px-3 py-2"><Pressable onPress={() => openSheet()} className="flex-1 py-1" accessibilityLabel="Open thought capture"><Text numberOfLines={1} className="text-[16px] leading-6 text-unsorted-moss" style={{ fontFamily: 'DMSans_400Regular' }}>{capturePrompts[capturePromptIndex]}</Text></Pressable><Pressable onPress={() => openSheet('voice')} className="h-10 w-10 items-center justify-center rounded-full bg-unsorted-persimmon" hitSlop={10} accessibilityLabel="Speak a thought"><Mic size={18} color={colors.roast} /></Pressable></View></View>}
+    {sheetOpen && <Animated.View className="bg-unsorted-cream px-5 pt-3 shadow-xl" style={{ position: 'absolute', bottom: -insets.bottom, left: 0, right: 0, height: expandedHeight, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingBottom: insets.bottom + 18, transform: [{ translateY: sheetTranslateY }] }}><View className="absolute left-0 right-0 items-center" style={{ top: -48 }}><Pressable onPress={() => { void Haptics.selectionAsync(); closeSheet(); }} className="h-9 w-16 items-center justify-center rounded-full shadow-xl" style={{ backgroundColor: 'rgba(36, 32, 25, 0.6)' }} hitSlop={12} accessibilityLabel="Collapse thought capture"><ChevronDown size={22} color={colors.cream} /></Pressable></View><View className="relative rounded-2xl border border-unsorted-line bg-unsorted-canvas px-3 py-2"><TextInput ref={inputRef} value={draft} onChangeText={setDraft} placeholder={capturePrompts[capturePromptIndex]} placeholderTextColor={colors.moss} multiline className="h-[146px] w-full pr-12 py-0 text-[16px] leading-6 text-unsorted-ink" style={{ fontFamily: 'DMSans_400Regular' }} textAlignVertical="top" /><Pressable onPress={() => void toggleVoiceInput()} className={'absolute right-3 top-2 h-10 w-10 items-center justify-center rounded-full ' + (listening ? 'bg-[#F8D8D1]' : 'bg-unsorted-persimmon')} hitSlop={10} accessibilityLabel={listening ? 'Stop voice input' : 'Speak a thought'}>{listening ? <Square size={13} fill={colors.roast} color={colors.roast} /> : <Mic size={18} color={colors.roast} />}</Pressable></View><View className="mb-3 h-[14px]" /><View className="items-center"><Pressable onPress={saveDraft} disabled={preview.length === 0 || listening} className={'items-center rounded-full px-6 py-3 ' + (listening ? 'bg-[#F8D8D1]' : preview.length ? 'bg-unsorted-persimmon' : 'bg-[#E4DCCE]')} style={{ opacity: listening || preview.length ? 1 : 0.52 }}>{listening ? <Animated.Text className="text-[14px] text-unsorted-roast" style={{ fontFamily: 'DMSans_700Bold', opacity: listeningOpacity }}>Listening</Animated.Text> : <Text className={'text-[14px] ' + (preview.length ? 'text-unsorted-roast' : 'text-[#8F8478]')} style={{ fontFamily: 'DMSans_700Bold' }}>{preview.length === 1 ? 'Save thought' : 'Save thoughts'}</Text>}</Pressable>{draft.trim().length > 0 && !listening && <Pressable onPress={confirmClearDraft} className="mt-2 border-b border-[#BDB4A9] pb-0.5" hitSlop={10} accessibilityLabel="Clear thought"><Text className="text-[13px] text-[#9B9187]" style={{ fontFamily: 'DMSans_500Medium' }}>Clear thought</Text></Pressable>}</View></Animated.View>}
   </View>;
 }
