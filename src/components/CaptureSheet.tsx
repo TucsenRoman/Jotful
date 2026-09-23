@@ -86,8 +86,8 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(function CaptureSheet
 
   return <Animated.View className="bg-unsorted-cream px-5 pt-3 shadow-xl" style={[{ position: 'absolute', bottom: -insets.bottom, left: 0, right: 0, height: sheetHeight, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingBottom: insets.bottom + 18 }, sheetStyle]}>
     <Animated.View style={[{ position: 'absolute', top: 12, left: 20, right: 20 }, collapsedStyle]}>
-      <View className="flex-row items-center gap-2 rounded-2xl border border-unsorted-line bg-unsorted-canvas px-3 py-2">
-        <Pressable onPress={() => open()} className="flex-1 py-1" accessibilityLabel="Open thought capture">
+      <View className="flex-row items-center gap-2">
+        <Pressable onPress={() => open()} className="h-14 flex-1 justify-center rounded-full border border-unsorted-line bg-unsorted-canvas px-4" accessibilityLabel="Open thought capture">
           <Text numberOfLines={1} className="text-[16px] leading-6 text-unsorted-moss" style={{ fontFamily: 'DMSans_400Regular' }}>{prompt}</Text>
         </Pressable>
         <Pressable onPress={() => open('voice')} className="h-10 w-10 items-center justify-center rounded-full bg-unsorted-persimmon" hitSlop={10} accessibilityLabel="Speak a thought"><Mic size={18} color={colors.roast} /></Pressable>
@@ -97,11 +97,11 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(function CaptureSheet
       <View className="absolute left-0 right-0 items-center" style={{ top: -60 }}>
         <Pressable onPress={close} className="h-9 w-16 items-center justify-center rounded-full shadow-xl" style={{ backgroundColor: 'rgba(36, 32, 25, 0.6)' }} hitSlop={12} accessibilityLabel="Collapse thought capture"><ChevronDown size={22} color={colors.cream} /></Pressable>
       </View>
-      <View className="flex-row items-start gap-2">
-        <View className="h-[166px] flex-1 rounded-2xl border border-unsorted-line bg-unsorted-canvas px-3 py-2">
-          <TextInput ref={inputRef} value={draft} onChangeText={onDraftChange} placeholder={prompt} placeholderTextColor={colors.moss} multiline className="h-full w-full py-0 text-[16px] leading-6 text-unsorted-ink" style={{ fontFamily: 'DMSans_400Regular' }} textAlignVertical="top" />
+      <View className="flex-row items-center gap-2">
+        <View className="h-14 flex-1 justify-center rounded-full border border-unsorted-line bg-unsorted-canvas px-4">
+          <TextInput ref={inputRef} value={draft} onChangeText={onDraftChange} placeholder={prompt} placeholderTextColor={colors.moss} multiline scrollEnabled className="h-full w-full py-0 text-[16px] leading-6 text-unsorted-ink" style={{ fontFamily: 'DMSans_400Regular' }} textAlignVertical="center" />
         </View>
-        <Pressable onPress={onToggleVoice} className={'mt-2 h-10 w-10 items-center justify-center rounded-full ' + (listening ? 'bg-[#F8D8D1]' : 'bg-unsorted-persimmon')} hitSlop={10} accessibilityLabel={listening ? 'Stop voice input' : 'Speak a thought'}>{listening ? <Square size={13} fill={colors.roast} color={colors.roast} /> : <Mic size={18} color={colors.roast} />}</Pressable>
+        <Pressable onPress={onToggleVoice} className={'h-10 w-10 items-center justify-center rounded-full ' + (listening ? 'bg-[#F8D8D1]' : 'bg-unsorted-persimmon')} hitSlop={10} accessibilityLabel={listening ? 'Stop voice input' : 'Speak a thought'}>{listening ? <Square size={13} fill={colors.roast} color={colors.roast} /> : <Mic size={18} color={colors.roast} />}</Pressable>
       </View>
       <View className="mt-4 items-center"><Pressable onPress={onSave} disabled={previewCount === 0 || listening} className={'items-center rounded-full px-6 py-3 ' + (listening ? 'bg-[#F8D8D1]' : previewCount ? 'bg-unsorted-persimmon' : 'bg-[#E4DCCE]')} style={{ opacity: listening || previewCount ? 1 : 0.52 }}>{listening ? <Text className="text-[14px] text-unsorted-roast" style={{ fontFamily: 'DMSans_700Bold' }}>Listening</Text> : <Text className={'text-[14px] ' + (previewCount ? 'text-unsorted-roast' : 'text-[#8F8478]')} style={{ fontFamily: 'DMSans_700Bold' }}>{previewCount === 1 ? 'Save thought' : 'Save thoughts'}</Text>}</Pressable>{draft.trim().length > 0 && !listening && <Pressable onPress={onClear} className="mt-2 border-b border-[#BDB4A9] pb-0.5" hitSlop={10} accessibilityLabel="Clear thought"><Text className="text-[13px] text-[#9B9187]" style={{ fontFamily: 'DMSans_500Medium' }}>Clear thought</Text></Pressable>}</View>
     </Animated.View>
