@@ -5,20 +5,19 @@ import { DMSans_400Regular, DMSans_500Medium, DMSans_700Bold, useFonts as useDMS
 import { StatusBar } from 'expo-status-bar';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
-import { ChevronDown, Copy, Mic, MoreHorizontal, Search, Square, X } from 'lucide-react-native';
+import { Copy, MoreHorizontal, Search, X } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Animated, Keyboard, Linking, Platform, Pressable, ScrollView, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { Alert, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import Svg, { Defs, LinearGradient, Stop, Text as SvgText } from 'react-native-svg';
 import { MothMark } from './src/brand/MothMark';
+import CaptureSheet, { type CaptureSheetHandle } from './src/components/CaptureSheet';
 import CaptureWidget from './src/widgets/CaptureWidget';
 import RecentsWidget from './src/widgets/RecentsWidget';
 import { classifyThought, splitThoughts, type ThoughtKind } from './src/segmentation';
 import { createThought, deleteThought, initializeDatabase, listRecentThoughts, listThoughts, toggleResolved, type Thought } from './src/storage';
 
-const collapsedSheetHeight = 84;
-const openSheetHeight = 292;
 const colors = { cream: '#F5F0E6', roast: '#242019', moss: '#74876A', persimmon: '#EF705A', line: '#DED6C7' };
 const capturePrompts = [
   'Say it without organizing it…', 'Drop the thought here…', 'Before it slips away…', 'Start in the middle…',
@@ -46,20 +45,13 @@ function UnsortedApp() {
   const [search, setSearch] = useState('');
   const [thoughts, setThoughts] = useState<Thought[]>([]);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [sheetOpen, setSheetOpen] = useState(true);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [listening, setListening] = useState(false);
-  const [capturePromptIndex, setCapturePromptIndex] = useState(() => Math.floor(Math.random() * capturePrompts.length));
-  const inputRef = useRef<TextInput>(null);
+  const [capturePromptIndex] = useState(() => Math.floor(Math.random() * capturePrompts.length));
+  const sheetRef = useRef<CaptureSheetHandle>(null);
   const voiceBase = useRef('');
-  const sheetTranslateY = useRef(new Animated.Value(0)).current;
-  const listeningOpacity = useRef(new Animated.Value(1)).current;
   const insets = useSafeAreaInsets();
-  const { height: viewportHeight } = useWindowDimensions();
   const preview = useMemo(() => splitThoughts(draft), [draft]);
   const refresh = () => setThoughts(listThoughts(search));
-  const expandedHeight = Math.min(viewportHeight - insets.top - 12, openSheetHeight + keyboardHeight + insets.bottom);
-  const collapsedTranslateY = expandedHeight - (collapsedSheetHeight + insets.bottom);
 
   useSpeechRecognitionEvent('start', () => setListening(true));
   useSpeechRecognitionEvent('end', () => setListening(false));
@@ -75,45 +67,12 @@ function UnsortedApp() {
   useEffect(() => { initializeDatabase(); refresh(); }, []);
   useEffect(() => { refresh(); }, [search]);
   useEffect(() => {
-    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-    const show = Keyboard.addListener(showEvent, (event) => setKeyboardHeight(event.endCoordinates.height));
-    const hide = Keyboard.addListener(hideEvent, () => setKeyboardHeight(0));
-    return () => { show.remove(); hide.remove(); };
-  }, []);
-  useEffect(() => {
     if (Platform.OS !== 'ios') return;
     CaptureWidget.updateSnapshot({ thoughtCount: thoughts.filter((thought) => thought.resolvedAt === null).length });
     RecentsWidget.updateSnapshot({ items: listRecentThoughts(5).map(({ id, text, kind }) => ({ id, text, kind })) });
   }, [thoughts]);
-  useEffect(() => {
-    if (!listening) {
-      listeningOpacity.stopAnimation();
-      listeningOpacity.setValue(1);
-      return;
-    }
-    const flash = (dot: Animated.Value) => Animated.sequence([
-      Animated.timing(dot, { toValue: 0.32, duration: 620, useNativeDriver: true }),
-      Animated.timing(dot, { toValue: 1, duration: 620, useNativeDriver: true })
-    ]);
-    const animation = Animated.loop(flash(listeningOpacity));
-    animation.start();
-    return () => animation.stop();
-  }, [listening, listeningOpacity]);
   function openSheet(mode: 'write' | 'voice' = 'write') {
-    const continueIntoCapture = () => {
-      if (mode === 'voice') void toggleVoiceInput();
-      else inputRef.current?.focus();
-    };
-    if (!sheetOpen) {
-      setSheetOpen(true);
-      sheetTranslateY.setValue(collapsedTranslateY);
-      Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: true, damping: 24, stiffness: 190, mass: 0.85, overshootClamping: true }).start(({ finished }) => {
-        if (finished) continueIntoCapture();
-      });
-      return;
-    }
-    continueIntoCapture();
+    sheetRef.current?.open(mode);
   }
 
   useEffect(() => {
@@ -127,13 +86,7 @@ function UnsortedApp() {
   }, []);
 
   function closeSheet() {
-    if (listening) ExpoSpeechRecognitionModule.stop();
-    Animated.spring(sheetTranslateY, { toValue: collapsedTranslateY, useNativeDriver: true, damping: 28, stiffness: 260, mass: 0.75, overshootClamping: true }).start(({ finished }) => {
-      if (finished) {
-        setSheetOpen(false);
-        Keyboard.dismiss();
-      }
-    });
+    sheetRef.current?.close();
   }
 
   async function toggleVoiceInput() {
@@ -203,7 +156,6 @@ function UnsortedApp() {
         <View className="mt-3 flex-row flex-wrap gap-2"><Pressable onPress={() => void sendTo('search', thought.text)} className="rounded-full border border-unsorted-line bg-unsorted-canvas px-3 py-2"><Text className="text-xs text-unsorted-ink" style={{ fontFamily: 'DMSans_500Medium' }}>Search</Text></Pressable><Pressable onPress={() => Alert.alert('Open with AI?', 'Only this thought will be opened in your browser.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Continue', onPress: () => void sendTo('ai', thought.text) }])} className="rounded-full bg-unsorted-roast px-3 py-2"><Text className="text-xs text-unsorted-cream" style={{ fontFamily: 'DMSans_700Bold' }}>Ask AI</Text></Pressable><Pressable onPress={() => void copyThought(thought.text)} className="flex-row items-center rounded-full border border-unsorted-line bg-unsorted-canvas px-3 py-2" accessibilityLabel="Copy thought"><Copy size={13} color={colors.roast} /><Text className="ml-1.5 text-xs text-unsorted-ink" style={{ fontFamily: 'DMSans_500Medium' }}>Copy</Text></Pressable><Pressable onPress={() => { toggleResolved(thought.id, thought.resolvedAt ? null : Date.now()); refresh(); }} className="rounded-full border border-unsorted-line bg-unsorted-canvas px-3 py-2"><Text className="text-xs text-unsorted-moss" style={{ fontFamily: 'DMSans_500Medium' }}>{thought.resolvedAt ? 'Bring back' : 'Settle'}</Text></Pressable></View>
       </View>)}
     </ScrollView>
-    {!sheetOpen && <View className="border-t border-unsorted-line bg-unsorted-cream px-5 pt-3 shadow-xl" style={{ position: 'absolute', bottom: -insets.bottom, left: 0, right: 0, height: collapsedSheetHeight + insets.bottom, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingBottom: insets.bottom + 12 }}><View className="flex-row items-center gap-2 rounded-2xl border border-unsorted-line bg-unsorted-canvas px-3 py-2"><Pressable onPress={() => openSheet()} className="flex-1 py-1" accessibilityLabel="Open thought capture"><Text numberOfLines={1} className="text-[16px] leading-6 text-unsorted-moss" style={{ fontFamily: 'DMSans_400Regular' }}>{capturePrompts[capturePromptIndex]}</Text></Pressable><Pressable onPress={() => openSheet('voice')} className="h-10 w-10 items-center justify-center rounded-full bg-unsorted-persimmon" hitSlop={10} accessibilityLabel="Speak a thought"><Mic size={18} color={colors.roast} /></Pressable></View></View>}
-    {sheetOpen && <Animated.View className="bg-unsorted-cream px-5 pt-3 shadow-xl" style={{ position: 'absolute', bottom: -insets.bottom, left: 0, right: 0, height: expandedHeight, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingBottom: insets.bottom + 18, transform: [{ translateY: sheetTranslateY }] }}><View className="absolute left-0 right-0 items-center" style={{ top: -48 }}><Pressable onPress={() => { void Haptics.selectionAsync(); closeSheet(); }} className="h-9 w-16 items-center justify-center rounded-full shadow-xl" style={{ backgroundColor: 'rgba(36, 32, 25, 0.6)' }} hitSlop={12} accessibilityLabel="Collapse thought capture"><ChevronDown size={22} color={colors.cream} /></Pressable></View><View className="relative rounded-2xl border border-unsorted-line bg-unsorted-canvas px-3 py-2"><TextInput ref={inputRef} value={draft} onChangeText={setDraft} placeholder={capturePrompts[capturePromptIndex]} placeholderTextColor={colors.moss} multiline className="h-[146px] w-full pr-12 py-0 text-[16px] leading-6 text-unsorted-ink" style={{ fontFamily: 'DMSans_400Regular' }} textAlignVertical="top" /><Pressable onPress={() => void toggleVoiceInput()} className={'absolute right-3 top-2 h-10 w-10 items-center justify-center rounded-full ' + (listening ? 'bg-[#F8D8D1]' : 'bg-unsorted-persimmon')} hitSlop={10} accessibilityLabel={listening ? 'Stop voice input' : 'Speak a thought'}>{listening ? <Square size={13} fill={colors.roast} color={colors.roast} /> : <Mic size={18} color={colors.roast} />}</Pressable></View><View className="mb-3 h-[14px]" /><View className="items-center"><Pressable onPress={saveDraft} disabled={preview.length === 0 || listening} className={'items-center rounded-full px-6 py-3 ' + (listening ? 'bg-[#F8D8D1]' : preview.length ? 'bg-unsorted-persimmon' : 'bg-[#E4DCCE]')} style={{ opacity: listening || preview.length ? 1 : 0.52 }}>{listening ? <Animated.Text className="text-[14px] text-unsorted-roast" style={{ fontFamily: 'DMSans_700Bold', opacity: listeningOpacity }}>Listening</Animated.Text> : <Text className={'text-[14px] ' + (preview.length ? 'text-unsorted-roast' : 'text-[#8F8478]')} style={{ fontFamily: 'DMSans_700Bold' }}>{preview.length === 1 ? 'Save thought' : 'Save thoughts'}</Text>}</Pressable>{draft.trim().length > 0 && !listening && <Pressable onPress={confirmClearDraft} className="mt-2 border-b border-[#BDB4A9] pb-0.5" hitSlop={10} accessibilityLabel="Clear thought"><Text className="text-[13px] text-[#9B9187]" style={{ fontFamily: 'DMSans_500Medium' }}>Clear thought</Text></Pressable>}</View></Animated.View>}
+    <CaptureSheet ref={sheetRef} prompt={capturePrompts[capturePromptIndex]} draft={draft} previewCount={preview.length} listening={listening} onDraftChange={setDraft} onToggleVoice={() => void toggleVoiceInput()} onStopVoice={() => ExpoSpeechRecognitionModule.stop()} onSave={saveDraft} onClear={confirmClearDraft} onCollapseHaptic={() => void Haptics.selectionAsync()} />
   </View>;
 }
