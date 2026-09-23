@@ -54,4 +54,6 @@ Productivity (primary); Utilities (secondary)
 
 Support contact: romanforgedllc@gmail.com
 
-Publish [SUPPORT.md](./SUPPORT.md) and [PRIVACY_POLICY.md](./PRIVACY_POLICY.md) at public HTTPS URLs before submission.
+Support URL: https://tucsenroman.github.io/unsorted-support/
+
+Privacy policy URL: https://tucsenroman.github.io/unsorted-support/privacy.html

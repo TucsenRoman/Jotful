@@ -4,8 +4,8 @@ This is the remaining owner-operated work before public submission. The app’s 
 
 ## Prepare outside the codebase
 
-- [ ] Publish [PRIVACY_POLICY.md](./PRIVACY_POLICY.md) at a public HTTPS URL and replace `[DATE]` and `[SUPPORT EMAIL]` with real values.
-- [ ] Publish a support page at a public HTTPS URL that includes a working contact email. Apple requires the Support URL to lead to actual contact information.
+- [x] Publish the privacy policy: https://tucsenroman.github.io/unsorted-support/privacy.html
+- [x] Publish the support page: https://tucsenroman.github.io/unsorted-support/
 - [ ] Run [MVP_TEST_AND_SCREENSHOT_SCRIPT.md](./MVP_TEST_AND_SCREENSHOT_SCRIPT.md) on the iPhone and retain the four anonymized screenshots.
 - [ ] Commit the current icon, visual polish, voice capture, widget, and action changes after the on-device check passes.
 
