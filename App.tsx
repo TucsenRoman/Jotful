@@ -5,7 +5,7 @@ import { DMSans_400Regular, DMSans_500Medium, DMSans_700Bold, useFonts as useDMS
 import { StatusBar } from 'expo-status-bar';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
-import { ChevronDown, ChevronUp, Copy, Mic, MoreHorizontal, Search, Square, X } from 'lucide-react-native';
+import { ChevronDown, Copy, Mic, MoreHorizontal, Search, Square, X } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Animated, Keyboard, Linking, Platform, Pressable, ScrollView, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -59,6 +59,7 @@ function UnsortedApp() {
   const preview = useMemo(() => splitThoughts(draft), [draft]);
   const refresh = () => setThoughts(listThoughts(search));
   const expandedHeight = Math.min(viewportHeight - insets.top - 12, openSheetHeight + keyboardHeight + insets.bottom);
+  const collapsedTranslateY = expandedHeight - (collapsedSheetHeight + insets.bottom);
 
   useSpeechRecognitionEvent('start', () => setListening(true));
   useSpeechRecognitionEvent('end', () => setListening(false));
@@ -108,7 +109,7 @@ function UnsortedApp() {
   function openSheet(mode: 'write' | 'voice' = 'write') {
     if (!sheetOpen) {
       setSheetOpen(true);
-      sheetTranslateY.setValue(expandedHeight - collapsedSheetHeight);
+      sheetTranslateY.setValue(collapsedTranslateY);
       Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: true, damping: 22, stiffness: 210, mass: 0.8 }).start();
     }
     setTimeout(() => {
@@ -130,7 +131,7 @@ function UnsortedApp() {
   function closeSheet() {
     if (listening) ExpoSpeechRecognitionModule.stop();
     Keyboard.dismiss();
-    Animated.spring(sheetTranslateY, { toValue: expandedHeight - collapsedSheetHeight, useNativeDriver: true, damping: 28, stiffness: 260, mass: 0.75, overshootClamping: true }).start(({ finished }) => {
+    Animated.spring(sheetTranslateY, { toValue: collapsedTranslateY, useNativeDriver: true, damping: 28, stiffness: 260, mass: 0.75, overshootClamping: true }).start(({ finished }) => {
       if (finished) setSheetOpen(false);
     });
   }
@@ -202,7 +203,7 @@ function UnsortedApp() {
         <View className="mt-3 flex-row flex-wrap gap-2"><Pressable onPress={() => void sendTo('search', thought.text)} className="rounded-full border border-unsorted-line bg-unsorted-canvas px-3 py-2"><Text className="text-xs text-unsorted-ink" style={{ fontFamily: 'DMSans_500Medium' }}>Search</Text></Pressable><Pressable onPress={() => Alert.alert('Open with AI?', 'Only this thought will be opened in your browser.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Continue', onPress: () => void sendTo('ai', thought.text) }])} className="rounded-full bg-unsorted-roast px-3 py-2"><Text className="text-xs text-unsorted-cream" style={{ fontFamily: 'DMSans_700Bold' }}>Ask AI</Text></Pressable><Pressable onPress={() => void copyThought(thought.text)} className="flex-row items-center rounded-full border border-unsorted-line bg-unsorted-canvas px-3 py-2" accessibilityLabel="Copy thought"><Copy size={13} color={colors.roast} /><Text className="ml-1.5 text-xs text-unsorted-ink" style={{ fontFamily: 'DMSans_500Medium' }}>Copy</Text></Pressable><Pressable onPress={() => { toggleResolved(thought.id, thought.resolvedAt ? null : Date.now()); refresh(); }} className="rounded-full border border-unsorted-line bg-unsorted-canvas px-3 py-2"><Text className="text-xs text-unsorted-moss" style={{ fontFamily: 'DMSans_500Medium' }}>{thought.resolvedAt ? 'Bring back' : 'Settle'}</Text></Pressable></View>
       </View>)}
     </ScrollView>
-    {!sheetOpen && <View className="border-t border-unsorted-line bg-unsorted-cream px-5 pt-2 shadow-xl" style={{ position: 'absolute', bottom: -insets.bottom, left: 0, right: 0, height: collapsedSheetHeight + insets.bottom, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingBottom: insets.bottom + 12 }}><View className="items-center pb-1"><Pressable onPress={() => { void Haptics.selectionAsync(); openSheet(); }} className="h-7 w-10 items-center justify-center rounded-full bg-unsorted-mist" hitSlop={10} accessibilityLabel="Expand thought capture"><ChevronUp size={17} color={colors.roast} /></Pressable></View><View className="flex-row items-center justify-between"><Pressable onPress={() => openSheet()} className="flex-1 py-1" accessibilityLabel="Open thought capture"><Text numberOfLines={1} className="text-[15px] text-unsorted-moss" style={{ fontFamily: 'DMSans_400Regular' }}>{capturePrompts[capturePromptIndex]}</Text></Pressable><Pressable onPress={() => openSheet('voice')} className="h-10 w-10 items-center justify-center rounded-full bg-unsorted-persimmon" hitSlop={10} accessibilityLabel="Speak a thought"><Mic size={18} color={colors.roast} /></Pressable></View></View>}
+    {!sheetOpen && <View className="border-t border-unsorted-line bg-unsorted-cream px-5 pt-3 shadow-xl" style={{ position: 'absolute', bottom: -insets.bottom, left: 0, right: 0, height: collapsedSheetHeight + insets.bottom, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingBottom: insets.bottom + 12 }}><View className="flex-row items-center justify-between"><Pressable onPress={() => openSheet()} className="flex-1 py-1" accessibilityLabel="Open thought capture"><Text numberOfLines={1} className="text-[15px] text-unsorted-moss" style={{ fontFamily: 'DMSans_400Regular' }}>{capturePrompts[capturePromptIndex]}</Text></Pressable><Pressable onPress={() => openSheet('voice')} className="h-10 w-10 items-center justify-center rounded-full bg-unsorted-persimmon" hitSlop={10} accessibilityLabel="Speak a thought"><Mic size={18} color={colors.roast} /></Pressable></View></View>}
     {sheetOpen && <Animated.View className="bg-unsorted-cream px-5 pt-2 shadow-xl" style={{ position: 'absolute', bottom: -insets.bottom, left: 0, right: 0, height: expandedHeight, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingBottom: insets.bottom + 18, transform: [{ translateY: sheetTranslateY }] }}><View className="items-center pb-1"><Pressable onPress={() => { void Haptics.selectionAsync(); closeSheet(); }} className="h-7 w-10 items-center justify-center rounded-full bg-unsorted-mist" hitSlop={10} accessibilityLabel="Collapse thought capture"><ChevronDown size={17} color={colors.roast} /></Pressable></View><View className="relative"><TextInput ref={inputRef} value={draft} onChangeText={setDraft} placeholder={capturePrompts[capturePromptIndex]} placeholderTextColor={colors.moss} multiline className="h-[166px] w-full pr-14 pt-1 text-[17px] leading-6 text-unsorted-ink" style={{ fontFamily: 'DMSans_400Regular' }} textAlignVertical="top" /><Pressable onPress={() => void toggleVoiceInput()} className={'absolute right-0 top-0 h-10 w-10 items-center justify-center rounded-full ' + (listening ? 'bg-[#F8D8D1]' : 'bg-unsorted-persimmon')} hitSlop={10} accessibilityLabel={listening ? 'Stop voice input' : 'Speak a thought'}>{listening ? <Square size={13} fill={colors.roast} color={colors.roast} /> : <Mic size={18} color={colors.roast} />}</Pressable></View><View className="mb-3 h-[14px]" /><View className="items-center"><Pressable onPress={saveDraft} disabled={preview.length === 0 || listening} className={'items-center rounded-full px-6 py-3 ' + (listening ? 'bg-[#F8D8D1]' : preview.length ? 'bg-unsorted-persimmon' : 'bg-[#E4DCCE]')} style={{ opacity: listening || preview.length ? 1 : 0.52 }}>{listening ? <Animated.Text className="text-[14px] text-unsorted-roast" style={{ fontFamily: 'DMSans_700Bold', opacity: listeningOpacity }}>Listening</Animated.Text> : <Text className={'text-[14px] ' + (preview.length ? 'text-unsorted-roast' : 'text-[#8F8478]')} style={{ fontFamily: 'DMSans_700Bold' }}>{preview.length === 1 ? 'Save thought' : 'Save thoughts'}</Text>}</Pressable>{draft.trim().length > 0 && !listening && <Pressable onPress={confirmClearDraft} className="mt-2 border-b border-[#BDB4A9] pb-0.5" hitSlop={10} accessibilityLabel="Clear thought"><Text className="text-[13px] text-[#9B9187]" style={{ fontFamily: 'DMSans_500Medium' }}>Clear thought</Text></Pressable>}</View></Animated.View>}
   </View>;
 }
