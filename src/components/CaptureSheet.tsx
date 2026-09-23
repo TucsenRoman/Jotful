@@ -1,3 +1,4 @@
+import { BlurView } from 'expo-blur';
 import { ChevronDown, Mic, Square } from 'lucide-react-native';
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Keyboard, Platform, Pressable, Text, TextInput, useWindowDimensions, View } from 'react-native';
@@ -99,7 +100,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(function CaptureSheet
     </Animated.View>
     <Animated.View style={expandedStyle} pointerEvents="auto">
       <View className="absolute left-0 right-0 items-center" style={{ top: -60 }}>
-        <Pressable onPress={close} className="h-9 w-16 items-center justify-center rounded-full shadow-xl" style={{ backgroundColor: 'rgba(36, 32, 25, 0.6)' }} hitSlop={12} accessibilityLabel="Collapse thought capture"><ChevronDown size={22} color={colors.cream} /></Pressable>
+        <Pressable onPress={close} className="h-9 w-16 items-center justify-center overflow-hidden rounded-full shadow-xl" style={{ backgroundColor: 'rgba(36, 32, 25, 0.6)' }} hitSlop={12} accessibilityLabel="Collapse thought capture"><BlurView intensity={20} tint="dark" className="absolute inset-0" /><ChevronDown size={22} color={colors.cream} /></Pressable>
       </View>
       <View className="flex-row items-center gap-2">
         <View className="flex-1 rounded-2xl border border-unsorted-line bg-unsorted-canvas px-4" style={{ height: inputHeight }}>
