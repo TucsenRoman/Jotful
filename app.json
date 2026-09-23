@@ -44,6 +44,18 @@
                   "systemSmall"
                 ]
               }
+            },
+            {
+              "name": "UnsortedRecents",
+              "displayName": "Unsorted Recents",
+              "description": "Your latest captured thoughts.",
+              "ios": {
+                "supportedFamilies": [
+                  "systemSmall",
+                  "systemMedium",
+                  "systemLarge"
+                ]
+              }
             }
           ]
         }

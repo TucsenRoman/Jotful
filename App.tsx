@@ -13,8 +13,9 @@ import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-spe
 import Svg, { Defs, LinearGradient, Stop, Text as SvgText } from 'react-native-svg';
 import { MothMark } from './src/brand/MothMark';
 import CaptureWidget from './src/widgets/CaptureWidget';
+import RecentsWidget from './src/widgets/RecentsWidget';
 import { classifyThought, splitThoughts, type ThoughtKind } from './src/segmentation';
-import { createThought, deleteThought, initializeDatabase, listThoughts, toggleResolved, type Thought } from './src/storage';
+import { createThought, deleteThought, initializeDatabase, listRecentThoughts, listThoughts, toggleResolved, type Thought } from './src/storage';
 
 const collapsedSheetHeight = 84;
 const openSheetHeight = 292;
@@ -80,7 +81,9 @@ function UnsortedApp() {
     return () => { show.remove(); hide.remove(); };
   }, []);
   useEffect(() => {
-    if (Platform.OS === 'ios') CaptureWidget.updateSnapshot({ thoughtCount: thoughts.filter((thought) => thought.resolvedAt === null).length });
+    if (Platform.OS !== 'ios') return;
+    CaptureWidget.updateSnapshot({ thoughtCount: thoughts.filter((thought) => thought.resolvedAt === null).length });
+    RecentsWidget.updateSnapshot({ items: listRecentThoughts(5).map(({ id, text, kind }) => ({ id, text, kind })) });
   }, [thoughts]);
   useEffect(() => {
     if (!listening) {

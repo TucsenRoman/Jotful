@@ -37,6 +37,13 @@ export function listThoughts(search = ''): Thought[] {
   ).map(({ kind, ...thought }) => ({ ...thought, kind: kind === 'task' ? 'thought' : kind }));
 }
 
+export function listRecentThoughts(limit = 5): Thought[] {
+  return db.getAllSync<StoredThought>(
+    'SELECT id, text, kind, collection, createdAt, resolvedAt FROM thoughts ORDER BY createdAt DESC LIMIT ?',
+    limit
+  ).map(({ kind, ...thought }) => ({ ...thought, kind: kind === 'task' ? 'thought' : kind }));
+}
+
 export function createThought(text: string, kind: ThoughtKind) {
   db.runSync('INSERT INTO thoughts (text, kind, createdAt) VALUES (?, ?, ?)', text, kind, Date.now());
 }
