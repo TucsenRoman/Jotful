@@ -85,7 +85,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(function CaptureSheet
   }), [keyboardHeight, listening, onCollapseHaptic, onStopVoice]);
 
   return <Animated.View className="bg-unsorted-cream px-5 pt-3 shadow-xl" style={[{ position: 'absolute', bottom: -insets.bottom, left: 0, right: 0, height: sheetHeight, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingBottom: insets.bottom + 18 }, sheetStyle]}>
-    <Animated.View style={[{ position: 'absolute', bottom: insets.bottom + 12, left: 20, right: 20 }, collapsedStyle]}>
+    <Animated.View style={[{ position: 'absolute', top: 12, left: 20, right: 20 }, collapsedStyle]}>
       <View className="flex-row items-center gap-2 rounded-2xl border border-unsorted-line bg-unsorted-canvas px-3 py-2">
         <Pressable onPress={() => open()} className="flex-1 py-1" accessibilityLabel="Open thought capture">
           <Text numberOfLines={1} className="text-[16px] leading-6 text-unsorted-moss" style={{ fontFamily: 'DMSans_400Regular' }}>{prompt}</Text>
