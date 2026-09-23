@@ -1,6 +1,6 @@
 # Unsorted Privacy Policy
 
-Effective date: [DATE]
+Effective date: September 22, 2026
 
 Unsorted is an offline-first notes application. This policy explains how the app handles information.
 
@@ -34,4 +34,4 @@ If this policy changes, the effective date above will be updated. A material cha
 
 ## Contact
 
-For questions about this policy, contact: [SUPPORT EMAIL]
+For questions about this policy, contact: romanforgedllc@gmail.com

@@ -50,6 +50,8 @@ Productivity (primary); Utilities (secondary)
 3. Inline actions: Search web, Ask AI, and More.
 4. Voice capture, local search, and the offline privacy promise.
 
-## Support URL placeholder
+## Support
 
-Replace with a public support page before submission, for example `https://YOUR-DOMAIN.example/support`.
+Support contact: romanforgedllc@gmail.com
+
+Publish [SUPPORT.md](./SUPPORT.md) and [PRIVACY_POLICY.md](./PRIVACY_POLICY.md) at public HTTPS URLs before submission.
