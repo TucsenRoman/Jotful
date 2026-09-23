@@ -32,6 +32,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(function CaptureSheet
   const inputRef = useRef<TextInput>(null);
   const pendingCollapse = useRef(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [inputHeight, setInputHeight] = useState(40);
   // 0 is open and 1 is collapsed. The sheet never unmounts or changes its view tree.
   const progress = useSharedValue(0);
   const sheetHeight = Math.min(viewportHeight - insets.top - 12, expandedBaseHeight + keyboardHeight + insets.bottom);
@@ -78,6 +79,9 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(function CaptureSheet
     });
     return () => { show.remove(); hide.remove(); };
   }, []);
+  useEffect(() => {
+    if (!draft) setInputHeight(40);
+  }, [draft]);
 
   useImperativeHandle(ref, () => ({
     open,
@@ -87,7 +91,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(function CaptureSheet
   return <Animated.View className="bg-unsorted-cream px-5 pt-3 shadow-xl" style={[{ position: 'absolute', bottom: -insets.bottom, left: 0, right: 0, height: sheetHeight, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingBottom: insets.bottom + 18 }, sheetStyle]}>
     <Animated.View style={[{ position: 'absolute', top: 12, left: 20, right: 20 }, collapsedStyle]}>
       <View className="flex-row items-center gap-2">
-        <Pressable onPress={() => open()} className="h-10 flex-1 justify-center rounded-full border border-unsorted-line bg-unsorted-canvas px-4" accessibilityLabel="Open thought capture">
+        <Pressable onPress={() => open()} className="h-10 flex-1 justify-center rounded-2xl border border-unsorted-line bg-unsorted-canvas px-4" accessibilityLabel="Open thought capture">
           <Text numberOfLines={1} className="text-[16px] leading-6 text-unsorted-moss" style={{ fontFamily: 'DMSans_400Regular' }}>{prompt}</Text>
         </Pressable>
         <Pressable onPress={() => open('voice')} className="h-10 w-10 items-center justify-center rounded-full bg-unsorted-persimmon" hitSlop={10} accessibilityLabel="Speak a thought"><Mic size={18} color={colors.roast} /></Pressable>
@@ -98,8 +102,8 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(function CaptureSheet
         <Pressable onPress={close} className="h-9 w-16 items-center justify-center rounded-full shadow-xl" style={{ backgroundColor: 'rgba(36, 32, 25, 0.6)' }} hitSlop={12} accessibilityLabel="Collapse thought capture"><ChevronDown size={22} color={colors.cream} /></Pressable>
       </View>
       <View className="flex-row items-center gap-2">
-        <View className="h-10 flex-1 justify-center rounded-full border border-unsorted-line bg-unsorted-canvas px-4">
-          <TextInput ref={inputRef} value={draft} onChangeText={onDraftChange} placeholder={prompt} placeholderTextColor={colors.moss} className="h-full w-full py-0 text-[16px] text-unsorted-ink" style={{ fontFamily: 'DMSans_400Regular' }} />
+        <View className="flex-1 rounded-2xl border border-unsorted-line bg-unsorted-canvas px-4" style={{ height: inputHeight }}>
+          <TextInput ref={inputRef} value={draft} onChangeText={onDraftChange} onContentSizeChange={(event) => setInputHeight(Math.min(132, Math.max(40, event.nativeEvent.contentSize.height + 16)))} placeholder={prompt} placeholderTextColor={colors.moss} multiline scrollEnabled className="h-full w-full py-0 text-[16px] leading-6 text-unsorted-ink" style={{ fontFamily: 'DMSans_400Regular', paddingTop: inputHeight === 40 ? 8 : 7 }} textAlignVertical="top" />
         </View>
         <Pressable onPress={onToggleVoice} className={'h-10 w-10 items-center justify-center rounded-full ' + (listening ? 'bg-[#F8D8D1]' : 'bg-unsorted-persimmon')} hitSlop={10} accessibilityLabel={listening ? 'Stop voice input' : 'Speak a thought'}>{listening ? <Square size={13} fill={colors.roast} color={colors.roast} /> : <Mic size={18} color={colors.roast} />}</Pressable>
       </View>
