@@ -19,15 +19,14 @@ import AudioTimeline from './src/components/AudioTimeline';
 import CaptureWidget from './src/widgets/CaptureWidget';
 import RecentsWidget from './src/widgets/RecentsWidget';
 import { classifyThought, splitThoughts, type ThoughtKind } from './src/segmentation';
-import { createAttachmentThoughts, createThought, deleteThought, getPreference, initializeDatabase, listRecentThoughts, listThoughts, setPreference, togglePinned, toggleResolved, type AttachmentKind, type Thought } from './src/storage';
+import { createAttachmentThoughts, createThought, deleteThought, getPreference, initializeDatabase, listRecentThoughts, listThoughts, setPreference, togglePinned, toggleResolved, updateThought, type AttachmentKind, type Thought } from './src/storage';
 
-const colors = { cream: '#F5F0E6', roast: '#242019', moss: '#74876A', persimmon: '#EF705A', line: '#DED6C7' };
+const colors = { cream: '#FFFDF8', roast: '#242019', moss: '#74876A', persimmon: '#EF705A', line: '#E4DFD6' };
 const capturePrompts = [
-  'Say it without organizing it…', 'Drop the thought here…', 'Before it slips away…', 'Start in the middle…',
-  'Write the messy version…', 'What are you circling?', 'Leave yourself a breadcrumb…', 'No need to make it neat…',
-  'Catch the thing you almost forgot…', 'Put the loose end here…', 'Write it how it arrived…', 'The unfinished thought is welcome…',
-  'Say the quiet part…', 'What is taking up space?', 'A question counts too…', 'Get it out of your head…',
-  'The first draft can be a fragment…', 'Keep the thread for later…', 'Name the thing, roughly…', 'There is no right way to start…'
+  'What are you daydreaming of?',
+  'What are thinking about?',
+  'Your next rabbit hole adventure awaits...',
+  'Your next great masterpiece??',
 ];
 
 function kindLabel(kind: ThoughtKind) {
@@ -98,8 +97,10 @@ function UnsortedApp() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [listening, setListening] = useState(false);
   const [screen, setScreen] = useState<'thoughts' | 'settings'>('thoughts');
+  const [sheetExpanded, setSheetExpanded] = useState(true);
   const [preferredAI, setPreferredAI] = useState('ChatGPT');
   const [preferredBrowser, setPreferredBrowser] = useState('System default');
+  const [editingThoughtId, setEditingThoughtId] = useState<number | null>(null);
   const [capturePromptIndex] = useState(() => Math.floor(Math.random() * capturePrompts.length));
   const sheetRef = useRef<CaptureSheetHandle>(null);
   const voiceBase = useRef('');
@@ -126,6 +127,7 @@ function UnsortedApp() {
     RecentsWidget.updateSnapshot({ items: listRecentThoughts(5).map(({ id, text, kind }) => ({ id, text, kind })) });
   }, [thoughts]);
   function openSheet(mode: 'write' | 'voice' = 'write') {
+    setEditingThoughtId(null);
     sheetRef.current?.open(mode);
   }
 
@@ -164,6 +166,17 @@ function UnsortedApp() {
   }
 
   function saveDraft() {
+    const text = draft.trim();
+    if (!text) return;
+    if (editingThoughtId !== null) {
+      updateThought(editingThoughtId, text, classifyThought(text));
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setDraft('');
+      setEditingThoughtId(null);
+      closeSheet();
+      refresh();
+      return;
+    }
     preview.forEach((text) => createThought(text, classifyThought(text)));
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setDraft('');
@@ -199,6 +212,7 @@ function UnsortedApp() {
 
   function showActions(thought: Thought) {
     Alert.alert('Thought', 'It can stay here.', [
+      { text: 'Edit', onPress: () => { setDraft(thought.text); setEditingThoughtId(thought.id); sheetRef.current?.open('write'); } },
       { text: thought.resolvedAt ? 'Bring it back' : 'Settle this thought', onPress: () => { toggleResolved(thought.id, thought.resolvedAt ? null : Date.now()); refresh(); } },
       { text: 'Delete', style: 'destructive', onPress: () => { deleteThought(thought.id); refresh(); } },
       { text: 'Cancel', style: 'cancel' }
@@ -222,15 +236,15 @@ function UnsortedApp() {
     ]);
   }
 
-  if (screen === 'settings') return <View className="flex-1 bg-unsorted-canvas"><StatusBar style="dark" /><View className="flex-row items-center px-5" style={{ height: insets.top + 72, paddingTop: insets.top + 10 }}><Pressable onPress={() => setScreen('thoughts')} hitSlop={12}><X size={23} color={colors.roast} /></Pressable><Text className="ml-4 text-[25px] text-unsorted-ink" style={{ fontFamily: 'Fraunces_600SemiBold' }}>Settings</Text></View><View className="mx-5 h-px bg-unsorted-line" /><ScrollView contentContainerClassName="px-5 pb-12 pt-6"><Text className="text-[11px] uppercase tracking-[1px] text-unsorted-moss" style={{ fontFamily: 'DMSans_700Bold' }}>Open with</Text><View className="mt-2 rounded-3xl bg-unsorted-cream px-4"><SettingsRow title="Preferred AI" detail={preferredAI} onPress={chooseAI} /><SettingsRow title="Preferred browser" detail={preferredBrowser} onPress={chooseBrowser} /></View><Text className="mt-8 text-[11px] uppercase tracking-[1px] text-unsorted-moss" style={{ fontFamily: 'DMSans_700Bold' }}>Capture</Text><View className="mt-2 rounded-3xl bg-unsorted-cream px-4"><SettingsRow title="Voice input" detail="On-device Dictation" /><SettingsRow title="Photos, video & audio" detail="Coming soon" /></View><Text className="mt-8 text-[11px] uppercase tracking-[1px] text-unsorted-moss" style={{ fontFamily: 'DMSans_700Bold' }}>Your space</Text><View className="mt-2 rounded-3xl bg-unsorted-cream px-4"><SettingsRow title="Pinned thoughts" detail="Ready for widgets" /><SettingsRow title="Storage & privacy" detail="Thoughts stay on this iPhone" /></View><Text className="mt-8 text-[11px] uppercase tracking-[1px] text-unsorted-moss" style={{ fontFamily: 'DMSans_700Bold' }}>About</Text><View className="mt-2 rounded-3xl bg-unsorted-cream px-4"><SettingsRow title="Unsorted" detail="Private thought inbox · version 1.0" /></View></ScrollView></View>;
+  if (screen === 'settings') return <View className="flex-1 bg-unsorted-canvas"><StatusBar style="dark" /><View className="flex-row items-center px-5" style={{ height: insets.top + 72, paddingTop: insets.top + 10 }}><Pressable onPress={() => setScreen('thoughts')} hitSlop={12}><X size={23} color={colors.roast} /></Pressable><Text className="ml-4 text-[25px] text-unsorted-ink" style={{ fontFamily: 'Fraunces_600SemiBold' }}>Settings</Text></View><View className="mx-5 h-px bg-unsorted-line" /><ScrollView contentContainerClassName="px-5 pb-12 pt-6"><Text className="text-[11px] uppercase tracking-[1px] text-unsorted-moss" style={{ fontFamily: 'DMSans_700Bold' }}>Open with</Text><View className="mt-2 rounded-3xl bg-unsorted-cream px-4"><SettingsRow title="Preferred AI" detail={preferredAI} onPress={chooseAI} /><SettingsRow title="Preferred browser" detail={preferredBrowser} onPress={chooseBrowser} /></View><Text className="mt-8 text-[11px] uppercase tracking-[1px] text-unsorted-moss" style={{ fontFamily: 'DMSans_700Bold' }}>Capture</Text><View className="mt-2 rounded-3xl bg-unsorted-cream px-4"><SettingsRow title="Voice input" detail="On-device Dictation" /><SettingsRow title="Photos, video & audio" detail="Coming soon" /></View><Text className="mt-8 text-[11px] uppercase tracking-[1px] text-unsorted-moss" style={{ fontFamily: 'DMSans_700Bold' }}>Your space</Text><View className="mt-2 rounded-3xl bg-unsorted-cream px-4"><SettingsRow title="Pinned thoughts" detail="Ready for widgets" /><SettingsRow title="Storage & privacy" detail="Thoughts stay on this iPhone" /></View><Text className="mt-8 text-[11px] uppercase tracking-[1px] text-unsorted-moss" style={{ fontFamily: 'DMSans_700Bold' }}>About</Text><View className="mt-2 rounded-3xl bg-unsorted-cream px-4"><SettingsRow title="Jotful" detail="Private thought inbox · version 1.0" /></View></ScrollView></View>;
 
   return <View className="flex-1 bg-unsorted-canvas"><StatusBar style="dark" />
     <View className="z-10 flex-row items-center gap-2 px-5" style={{ height: insets.top + 72, paddingTop: insets.top + 10 }}>
-      {searchOpen ? <><TextInput autoFocus value={search} onChangeText={setSearch} placeholder="Search thoughts" placeholderTextColor={colors.moss} className="h-10 flex-1 py-0 text-base text-unsorted-ink" style={{ fontFamily: 'DMSans_400Regular' }} /><Pressable onPress={() => { setSearch(''); setSearchOpen(false); }} hitSlop={12}><X size={23} color={colors.roast} /></Pressable></> : <><View className="mr-auto"><Svg width={122} height={31} viewBox="0 0 122 31" accessibilityLabel="Unsorted"><Defs><LinearGradient id="wordmark-gradient" x1="0" y1="0" x2="122" y2="0" gradientUnits="userSpaceOnUse"><Stop offset="0" stopColor="#EF705A" /><Stop offset="0.48" stopColor="#74876A" /><Stop offset="1" stopColor="#242019" /></LinearGradient></Defs><SvgText x="0" y="25" fill="url(#wordmark-gradient)" fontFamily="Fraunces_600SemiBold" fontSize="27" letterSpacing="-1">unsorted</SvgText></Svg><Text className="-mt-0.5 text-[10px] uppercase tracking-[1.2px] text-unsorted-ink" style={{ fontFamily: 'DMSans_700Bold' }}>Hold that thought.</Text></View><Pressable onPress={() => { closeSheet(); setSearchOpen(true); }} className="h-10 w-10 items-center justify-center rounded-xl bg-unsorted-mist" hitSlop={10}><Search size={19} color={colors.roast} /></Pressable><Pressable onPress={() => { closeSheet(); setScreen('settings'); }} className="ml-2 h-10 w-10 items-center justify-center rounded-xl bg-unsorted-mist" hitSlop={10} accessibilityLabel="Open settings"><Settings size={19} color={colors.roast} /></Pressable></>}
+      {searchOpen ? <><TextInput autoFocus value={search} onChangeText={setSearch} placeholder="Search jots" placeholderTextColor={colors.moss} className="h-10 flex-1 py-0 text-base text-unsorted-ink" style={{ fontFamily: 'DMSans_400Regular' }} /><Pressable onPress={() => { setSearch(''); setSearchOpen(false); }} hitSlop={12}><X size={23} color={colors.roast} /></Pressable></> : <><View className="mr-auto"><Svg width={150} height={42} viewBox="0 0 150 42" accessibilityLabel="Jotful"><Defs><LinearGradient id="wordmark-gradient" x1="0" y1="0" x2="150" y2="0" gradientUnits="userSpaceOnUse"><Stop offset="0" stopColor="#EF705A" /><Stop offset="0.48" stopColor="#58795C" /><Stop offset="1" stopColor="#242019" /></LinearGradient></Defs><SvgText x="0" y="34" fill="url(#wordmark-gradient)" fontFamily="Fraunces_600SemiBold" fontSize="34" letterSpacing="-1">Jotful</SvgText></Svg></View><Pressable onPress={() => { closeSheet(); setSearchOpen(true); }} className="h-10 w-10 items-center justify-center rounded-xl bg-unsorted-mist" hitSlop={10}><Search size={19} color={colors.roast} /></Pressable><Pressable onPress={() => { closeSheet(); setScreen('settings'); }} className="ml-2 h-10 w-10 items-center justify-center rounded-xl bg-unsorted-mist" hitSlop={10} accessibilityLabel="Open settings"><Settings size={19} color={colors.roast} /></Pressable></>}
     </View>
     <View className="mx-5 h-px bg-unsorted-line" />
     <ScrollView className="flex-1" contentContainerClassName="px-5 pb-28 pt-2" keyboardShouldPersistTaps="handled">
-      {thoughts.length === 0 ? <View className="items-center px-7 py-20"><MothMark size={58} dark /><Text className="mt-5 text-[22px] text-unsorted-ink" style={{ fontFamily: 'Fraunces_600SemiBold' }}>Hold that thought.</Text><Text className="mt-2 text-center leading-5 text-unsorted-ink" style={{ fontFamily: 'DMSans_400Regular' }}>Speak or type it exactly as it arrives.</Text></View> : thoughts.map((thought) => <SwipeableThought key={thought.id} thought={thought} onResolve={() => { toggleResolved(thought.id, thought.resolvedAt ? null : Date.now()); refresh(); }} onPin={() => { togglePinned(thought.id, thought.pinnedAt ? null : Date.now()); refresh(); }} onLongRight={() => Alert.alert('Gesture idea saved', 'Long right swipe is reserved for a future action.')}><View className={'p-4 ' + (thought.resolvedAt !== null ? 'opacity-60' : '')}>
+      {thoughts.length === 0 ? <View className="items-center px-7 py-20"><MothMark size={58} /><Text className="mt-5 text-[22px] text-unsorted-ink" style={{ fontFamily: 'Fraunces_600SemiBold' }}>Hold that thought.</Text><Text className="mt-2 text-center leading-5 text-unsorted-ink" style={{ fontFamily: 'DMSans_400Regular' }}>Speak or type it exactly as it arrives.</Text></View> : thoughts.map((thought) => <SwipeableThought key={thought.id} thought={thought} onResolve={() => { toggleResolved(thought.id, thought.resolvedAt ? null : Date.now()); refresh(); }} onPin={() => { togglePinned(thought.id, thought.pinnedAt ? null : Date.now()); refresh(); }} onLongRight={() => Alert.alert('Gesture idea saved', 'Long right swipe is reserved for a future action.')}><View className={'p-4 ' + (thought.resolvedAt !== null ? 'opacity-60' : '')}>
         <View className="flex-row items-center justify-between"><View className="flex-row items-center rounded-full bg-unsorted-mist px-2.5 py-1">{thought.attachmentKind === 'image' ? <Image size={13} color={colors.roast} /> : thought.attachmentKind === 'video' ? <Video size={13} color={colors.roast} /> : thought.attachmentKind === 'audio' ? <AudioLines size={13} color={colors.roast} /> : null}<Text className={'text-[11px] uppercase tracking-[0.7px] text-unsorted-ink ' + (thought.attachmentKind ? 'ml-1.5' : '')} style={{ fontFamily: 'DMSans_700Bold' }}>{thought.attachmentKind === 'image' ? 'Photo' : thought.attachmentKind === 'video' ? 'Video' : thought.attachmentKind === 'audio' ? 'Audio' : thought.pinnedAt ? 'Pinned' : kindLabel(thought.kind)}</Text></View><Pressable onPress={() => showActions(thought)} hitSlop={12} accessibilityLabel={'Actions for ' + kindLabel(thought.kind)}><MoreHorizontal size={20} color={colors.roast} /></Pressable></View>
         <Text selectable className={'mt-3 text-lg leading-[26px] tracking-[-0.1px] text-unsorted-ink ' + (thought.resolvedAt !== null ? 'line-through' : '')} style={{ fontFamily: 'DMSans_400Regular' }}>{thought.text}</Text>
         {thought.attachmentKind === 'image' && thought.attachmentUri && <NativeImage source={{ uri: thought.attachmentUri }} className="mt-3 h-32 w-full rounded-2xl bg-unsorted-mist" resizeMode="cover" accessibilityLabel="Attached photo" />}
@@ -239,6 +253,7 @@ function UnsortedApp() {
         <View className="mt-3 flex-row flex-wrap gap-2"><Pressable onPress={() => void sendTo('search', thought.text)} className="rounded-full border border-unsorted-line bg-unsorted-canvas px-3 py-2"><Text className="text-xs text-unsorted-ink" style={{ fontFamily: 'DMSans_500Medium' }}>Search</Text></Pressable><Pressable onPress={() => Alert.alert('Open with AI?', 'Only this thought will be opened in your browser.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Continue', onPress: () => void sendTo('ai', thought.text) }])} className="rounded-full bg-unsorted-roast px-3 py-2"><Text className="text-xs text-unsorted-cream" style={{ fontFamily: 'DMSans_700Bold' }}>Ask AI</Text></Pressable><Pressable onPress={() => void copyThought(thought.text)} className="flex-row items-center rounded-full border border-unsorted-line bg-unsorted-canvas px-3 py-2" accessibilityLabel="Copy thought"><Copy size={13} color={colors.roast} /><Text className="ml-1.5 text-xs text-unsorted-ink" style={{ fontFamily: 'DMSans_500Medium' }}>Copy</Text></Pressable></View>
       </View></SwipeableThought>)}
     </ScrollView>
-    <CaptureSheet ref={sheetRef} prompt={capturePrompts[capturePromptIndex]} draft={draft} previewCount={preview.length} listening={listening} onDraftChange={setDraft} onToggleVoice={() => void toggleVoiceInput()} onStopVoice={() => ExpoSpeechRecognitionModule.stop()} onSave={saveDraft} onClear={confirmClearDraft} onCollapseHaptic={() => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)} onAttachments={saveAttachments} />
+    <Pressable pointerEvents={sheetExpanded ? 'auto' : 'none'} onPress={closeSheet} style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, zIndex: 19 }} accessibilityElementsHidden />
+    <CaptureSheet ref={sheetRef} prompt={capturePrompts[capturePromptIndex]} draft={draft} previewCount={preview.length} listening={listening} onDraftChange={setDraft} onToggleVoice={() => void toggleVoiceInput()} onStopVoice={() => ExpoSpeechRecognitionModule.stop()} onSave={saveDraft} onClear={confirmClearDraft} onCollapseHaptic={() => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)} onOpenHaptic={() => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)} onExpandedChange={setSheetExpanded} onAttachments={saveAttachments} />
   </View>;
 }

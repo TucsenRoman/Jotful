@@ -7,6 +7,10 @@ type RecentsWidgetProps = { items?: RecentItem[] };
 
 function RecentsWidget(props: RecentsWidgetProps, environment: WidgetEnvironment) {
   'widget';
+  const isAccented = environment.widgetRenderingMode === 'accented' || environment.widgetRenderingMode === 'vibrant';
+  const ink = isAccented ? '#FFFFFF' : '#242019';
+  const moss = isAccented ? '#FFFFFF' : '#58795C';
+  const persimmon = isAccented ? '#FFFFFF' : '#EF705A';
   const allItems = props.items ?? [];
   const maxItems = environment.widgetFamily === 'systemSmall' ? 1 : environment.widgetFamily === 'systemMedium' ? 2 : 5;
   const items = allItems.slice(0, maxItems);
@@ -15,16 +19,16 @@ function RecentsWidget(props: RecentsWidgetProps, environment: WidgetEnvironment
   return (
     <VStack alignment="leading" spacing={isSmall ? 10 : 8} modifiers={[padding({ all: 18 }), containerBackground('#F5F0E6', 'widget')]}> 
       <HStack spacing={6}>
-        <Text modifiers={[font({ size: 12, weight: 'bold', design: 'rounded' }), foregroundStyle('#242019')]}>RECENT</Text>
+        <Text modifiers={[font({ size: 12, weight: 'bold', design: 'rounded' }), foregroundStyle(ink)]}>JOTFUL</Text>
         <Spacer />
-        <Text modifiers={[font({ size: 11, weight: 'medium' }), foregroundStyle('#74876A')]}>{allItems.length ? `${allItems.length}` : ''}</Text>
+        <Text modifiers={[font({ size: 11, weight: 'bold', design: 'rounded' }), foregroundStyle(persimmon)]}>{allItems.length ? `${allItems.length}` : 'NEW'}</Text>
       </HStack>
       {items.length ? items.map((item, index) => (
         <VStack key={item.id} alignment="leading" spacing={6}>
-          <Text modifiers={[font({ size: isSmall ? 17 : 15, weight: isSmall ? 'medium' : 'regular' }), foregroundStyle('#242019'), lineLimit(isSmall ? 4 : 2)]}>{item.text}</Text>
+          <Text modifiers={[font({ size: isSmall ? 17 : 15, weight: isSmall ? 'medium' : 'regular' }), foregroundStyle(ink), lineLimit(isSmall ? 4 : 2)]}>{item.text}</Text>
           {index < items.length - 1 && <Divider modifiers={[padding({ vertical: 1 })]} />}
         </VStack>
-      )) : <Text modifiers={[font({ size: 15, weight: 'regular' }), foregroundStyle('#74876A'), lineLimit(3)]}>Your latest thought will land here.</Text>}
+      )) : <Text modifiers={[font({ size: 15, weight: 'medium' }), foregroundStyle(moss), lineLimit(3)]}>Your next jot lands here.</Text>}
       <Spacer />
     </VStack>
   );

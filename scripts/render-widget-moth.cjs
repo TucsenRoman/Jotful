@@ -3,7 +3,7 @@ const path = require('path');
 const { Resvg } = require('@resvg/resvg-js');
 
 const projectRoot = path.resolve(__dirname, '..');
-const source = path.join(projectRoot, 'assets', 'moth-mark.svg');
+const source = path.join(projectRoot, 'assets', 'brand', 'moth-dark-loop.svg');
 const output = path.join(projectRoot, 'assets', 'widget-moth.png');
 const svg = fs.readFileSync(source);
 const png = new Resvg(svg, { fitTo: { mode: 'width', value: 256 } }).render().asPng();

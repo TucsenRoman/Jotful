@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Unsorted",
+    "name": "Jotful",
     "slug": "unsorted",
-    "scheme": "unsorted",
+    "scheme": "jotful",
     "version": "1.0.0",
     "icon": "./assets/icon-1024.png",
     "orientation": "portrait",
@@ -10,7 +10,12 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.tucsenroman.unsorted",
-      "buildNumber": "4",
+      "buildNumber": "5",
+      "icon": {
+        "light": "./assets/ios-icons/jotful-light.png",
+        "dark": "./assets/ios-icons/jotful-dark.png",
+        "tinted": "./assets/ios-icons/jotful-tinted.png"
+      },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -28,34 +33,34 @@
       [
         "expo-speech-recognition",
         {
-          "microphonePermission": "Allow Unsorted to use the microphone for private on-device voice input.",
-          "speechRecognitionPermission": "Allow Unsorted to recognize your speech on-device."
+          "microphonePermission": "Allow Jotful to use the microphone for private on-device voice input.",
+          "speechRecognitionPermission": "Allow Jotful to recognize your speech on-device."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Unsorted to add photos and videos to your private thought inbox.",
-          "cameraPermission": "Allow Unsorted to capture photos and videos for your private thought inbox."
+          "photosPermission": "Allow Jotful to add photos and videos to your private thought inbox.",
+          "cameraPermission": "Allow Jotful to capture photos and videos for your private thought inbox."
         }
       ],
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Unsorted to capture photos and videos for your private thought inbox.",
-          "microphonePermission": "Allow Unsorted to record sound with your videos."
+          "cameraPermission": "Allow Jotful to capture photos and videos for your private thought inbox.",
+          "microphonePermission": "Allow Jotful to record sound with your videos."
         }
       ],
       [
         "expo-media-library",
         {
-          "photosPermission": "Allow Unsorted to show photos and videos from your library in its private media picker."
+          "photosPermission": "Allow Jotful to show photos and videos from your library in its private media picker."
         }
       ],
       [
         "expo-audio",
         {
-          "microphonePermission": "Allow Unsorted to record private audio notes."
+          "microphonePermission": "Allow Jotful to record private audio notes."
         }
       ],
       [
@@ -64,7 +69,7 @@
           "widgets": [
             {
               "name": "UnsortedCapture",
-              "displayName": "Unsorted",
+              "displayName": "Jotful",
               "description": "A private place to capture a thought.",
               "ios": {
                 "supportedFamilies": [
@@ -74,7 +79,7 @@
             },
             {
               "name": "UnsortedRecents",
-              "displayName": "Unsorted Recents",
+              "displayName": "Jotful Jots",
               "description": "Your latest captured thoughts.",
               "ios": {
                 "supportedFamilies": [

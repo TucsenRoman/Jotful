@@ -1,26 +1,27 @@
-import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 
 type MothMarkProps = {
   size?: number;
   dark?: boolean;
+  withBackdrop?: boolean;
 };
 
-export function MothMark({ size = 32 }: MothMarkProps) {
+export function MothMark({ size = 32, dark = false, withBackdrop = false }: MothMarkProps) {
+  const background = dark ? '#242019' : '#FFFDF8';
+  const body = dark ? '#FFFDF8' : '#242019';
+  const gradientId = dark ? 'moth-dark-left' : 'moth-light-left';
+
   return (
-    <Svg width={size} height={size} viewBox="0 0 40 40" fill="none" accessibilityLabel="Unsorted moth mark">
-      <Path d="M19.7 19.8C12 33.2 3.60001 30.5 5.70001 19.7C7.50001 10.3 15.9 11.2 19.7 18.4V19.8Z" fill="url(#wing-left)" />
-      <Path d="M20.3 20.2001C28 6.80012 36.4 9.50012 34.3 20.3001C32.5 29.7001 24.1 28.8001 20.3 21.6001V20.2001Z" fill="url(#wing-right)" />
-      <Path d="M22.5275 13.8402C23.6205 14.3041 23.2645 17.6063 21.7324 21.2158C20.2002 24.8254 18.0721 27.3753 16.9791 26.9114C15.8861 26.4474 16.242 23.1452 17.7742 19.5357C19.3063 15.9262 21.4344 13.3762 22.5275 13.8402Z" fill="#242019" />
+    <Svg width={size} height={size} viewBox="0 0 32 32" fill="none" accessibilityLabel="Unsorted moth mark">
+      {withBackdrop && <Rect width={32} height={32} fill={background} />}
+      <Path d="M15.8272 15.9448C8.12721 29.3448 -0.272795 26.6448 1.82721 15.8448C3.62721 6.44482 12.0272 7.34482 15.8272 14.5448V15.9448Z" fill={`url(#${gradientId})`} />
+      <Path d="M16.4272 16.3449C24.1272 2.9449 32.5272 5.6449 30.4272 16.4449C28.6272 25.8449 20.2272 24.9449 16.4272 17.7449V16.3449Z" fill="#58795C" />
+      <Path d="M18.6547 9.98497C19.7477 10.4489 19.3917 13.7511 17.8596 17.3606C16.3274 20.9701 14.1993 23.5201 13.1063 23.0561C12.0133 22.5922 12.3692 19.29 13.9014 15.6805C15.4335 12.071 17.5616 9.52101 18.6547 9.98497Z" fill={body} />
       <Defs>
-        <LinearGradient id="wing-left" x1="5.00001" y1="32" x2="25" y2="11" gradientUnits="userSpaceOnUse">
+        <LinearGradient id={gradientId} x1="1.1272" y1="28.1448" x2="21.1272" y2="7.14482" gradientUnits="userSpaceOnUse">
           <Stop offset="0" stopColor="#EF705A" />
-          <Stop offset="0.72" stopColor="#EF705A" />
-          <Stop offset="1" stopColor="#F5F0E6" />
-        </LinearGradient>
-        <LinearGradient id="wing-right" x1="35" y1="9.00012" x2="15.0001" y2="30.0001" gradientUnits="userSpaceOnUse">
-          <Stop offset="0" stopColor="#F5F0E6" />
-          <Stop offset="0.72" stopColor="#F5F0E6" />
-          <Stop offset="1" stopColor="#EF705A" />
+          <Stop offset={0.72} stopColor="#EF705A" />
+          <Stop offset="1" stopColor="#FFFDF8" />
         </LinearGradient>
       </Defs>
     </Svg>
