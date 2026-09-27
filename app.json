@@ -10,6 +10,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.tucsenroman.unsorted",
+      "buildNumber": "4",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -29,6 +30,32 @@
         {
           "microphonePermission": "Allow Unsorted to use the microphone for private on-device voice input.",
           "speechRecognitionPermission": "Allow Unsorted to recognize your speech on-device."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Unsorted to add photos and videos to your private thought inbox.",
+          "cameraPermission": "Allow Unsorted to capture photos and videos for your private thought inbox."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Unsorted to capture photos and videos for your private thought inbox.",
+          "microphonePermission": "Allow Unsorted to record sound with your videos."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow Unsorted to show photos and videos from your library in its private media picker."
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow Unsorted to record private audio notes."
         }
       ],
       [
@@ -60,7 +87,8 @@
           ]
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-video"
     ],
     "extra": {
       "eas": {

@@ -64,3 +64,24 @@ These may be valuable later, but each introduces privacy, support, and App Revie
 ## First post-launch upgrade
 
 Improve splitting with a compact on-device model or user-corrected feedback only after the rule-based version has enough real evidence about where it fails. Sync should arrive after the app has proved the core capture loop.
+
+## Post-launch backlog: audio thoughts
+
+**Concept:** Let a person capture an **audio thought** alongside text and voice-to-text. This is not dictation: it preserves the original sound for musical ideas, spoken reflections, conversation notes, or any moment where the recording matters more than a transcript.
+
+### Initial scope (v1.1 candidate)
+
+- Record, stop, and play an audio thought locally on-device.
+- Save the audio file plus duration, timestamp, and local file path in the existing local persistence layer.
+- Show a compact audio-thought card with playback, duration, resolve, delete, and export/share actions.
+- Request microphone permission only after a person explicitly chooses Audio.
+- Provide a storage view or setting that makes local recording usage understandable.
+
+### Explicitly defer
+
+- Cloud sync or account-backed audio
+- Background recording
+- Automatic transcription, audio search, or AI processing
+- Automatic uploading or sharing
+
+**Product rule:** Audio must remain useful even if it is never transcribed. A future “transcribe” action may be optional, but the original local recording remains the source of truth.
