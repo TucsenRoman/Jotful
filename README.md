@@ -13,13 +13,5 @@ photos, and videos. Capture first; decide what to do with it later.
 - `targets/TARGETS_ROADMAP.md` — Apple-target roadmap.
 - `FUTURE_TRUSTED_DEVICE_SYNC.md` — post-MVP trusted-device sync proposal.
 
-## Development
-
-Run `npm install`, then start an installed development client with:
-
-```powershell
-npx expo start --dev-client --tunnel --clear
-```
-
 Jotful uses native modules, so it does not run in Expo Go. See
 [RELEASE_TEST_PLAN.md](./RELEASE_TEST_PLAN.md) before a release build.
