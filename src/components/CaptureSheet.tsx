@@ -1,4 +1,10 @@
 import { BlurView } from "expo-blur";
+import {
+  createNativeEditorDocumentHandle,
+  RichTextEditor,
+  type RichTextEditorRef,
+} from "@apollohg/react-native-rich-text-editor";
+import { Directory, File, Paths } from "expo-file-system";
 import * as MediaLibrary from "expo-media-library/legacy";
 import {
   RecordingPresets,
@@ -8,17 +14,16 @@ import {
   useAudioRecorderState,
 } from "expo-audio";
 import { Camera as ExpoCamera, CameraView } from "expo-camera";
-import { useVideoPlayer, VideoView } from "expo-video";
 import {
   AudioLines,
   Camera,
   Check,
   ChevronDown,
   ChevronLeft,
-  FileText,
   Image,
   Mic,
   ImagePlus,
+  Pencil,
   RotateCw,
   Square,
   Video,
@@ -28,6 +33,7 @@ import {
   forwardRef,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -57,32 +63,41 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import type { AttachmentKind } from "../storage";
+import {
+  clearCaptureDraft,
+  saveCaptureDraft,
+  type AttachmentKind,
+} from "../storage";
 import AudioTimeline from "./AudioTimeline";
 
-const collapsedHeight = 84;
+const collapsedHeight = 100;
+const collapsedActionSize = Math.min(64, Math.max(36, collapsedHeight - 30));
 const transitionDuration = 300;
 // The capture controls need about 200px; the remaining height is supplied only by
 // the keyboard and the device safe area. This keeps the sheet compact by default.
 const expandedBaseHeight = 224;
-const colors = { cream: "#F5F0E6", roast: "#242019", moss: "#74876A" };
+const colors = { cream: "#FFFDF8", roast: "#242019", moss: "#74876A", quiet: "#9B9187" };
 
 export type CaptureSheetHandle = {
-  open: (mode?: "write" | "voice" | "media" | "audio" | "media-choice") => void;
+  open: (mode?: "write" | "voice" | "media" | "media-choice") => void;
   close: () => void;
 };
 
 type Props = {
   prompt: string;
   draft: string;
+  richText: string;
   previewCount: number;
   listening: boolean;
   onDraftChange: (text: string) => void;
+  onRichTextChange: (html: string) => void;
   onToggleVoice: () => void;
   onStopVoice: () => void;
   onSave: () => void;
   onClear: () => void;
   onCollapseHaptic: () => void;
+  onOpenHaptic: () => void;
+  onExpandedChange: (expanded: boolean) => void;
   onAttachments: (
     attachments: Array<{
       kind: AttachmentKind;
@@ -99,34 +114,23 @@ type PendingAttachment = {
   durationMillis?: number;
 };
 
-function VideoAttachmentPreview({ uri }: { uri: string }) {
-  const player = useVideoPlayer(uri, (instance) => {
-    instance.loop = false;
-  });
-
-  return (
-    <VideoView
-      player={player}
-      nativeControls
-      contentFit="contain"
-      style={StyleSheet.absoluteFill}
-    />
-  );
-}
-
 const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
   function CaptureSheet(
     {
       prompt,
       draft,
+      richText,
       previewCount,
       listening,
       onDraftChange,
+      onRichTextChange,
       onToggleVoice,
       onStopVoice,
       onSave,
       onClear,
       onCollapseHaptic,
+      onOpenHaptic,
+      onExpandedChange,
       onAttachments,
     },
     ref,
@@ -135,6 +139,12 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
     const { height: viewportHeight, width: viewportWidth } =
       useWindowDimensions();
     const inputRef = useRef<TextInput>(null);
+    const richEditorRef = useRef<RichTextEditorRef>(null);
+    const richDocument = useMemo(
+      () => createNativeEditorDocumentHandle({ initialization: { type: "localEmpty" } }),
+      [],
+    );
+    useEffect(() => () => richDocument.destroy(), [richDocument]);
     const pendingCollapse = useRef(false);
     const [keyboardVisible, setKeyboardVisible] = useState(false);
     const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -142,6 +152,8 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
       | "write"
       | "voice"
       | "media"
+      // Retained only to safely render an in-flight sheet from pre-cleanup
+      // state; no route or control can enter this legacy mode anymore.
       | "audio"
       | "media-choice"
       | "camera"
@@ -162,7 +174,6 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
     const [cameraFacing, setCameraFacing] = useState<"back" | "front">("back");
     const [cameraReady, setCameraReady] = useState(false);
     const [recordingVideo, setRecordingVideo] = useState(false);
-    const [inlineAudio, setInlineAudio] = useState(false);
     const [libraryAssets, setLibraryAssets] = useState<MediaLibrary.Asset[]>(
       [],
     );
@@ -173,7 +184,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
     const cameraRef = useRef<CameraView>(null);
     const recordingShape = useSharedValue(0);
     // 0 is open and 1 is collapsed. The sheet never unmounts or changes its view tree.
-    const progress = useSharedValue(0);
+    const progress = useSharedValue(1);
     const keyboard = useAnimatedKeyboard();
     const recorder = useAudioRecorder({
       ...RecordingPresets.HIGH_QUALITY,
@@ -187,6 +198,15 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
     const selectedPreviewAttachment =
       pendingImages.find((attachment) => attachment.uri === selectedImageUri) ??
       pendingImages[0];
+
+    useEffect(() => {
+      const attachments = pendingImages.length
+        ? pendingImages
+        : pendingAttachment
+          ? [pendingAttachment]
+          : [];
+      saveCaptureDraft(draft, attachments);
+    }, [draft, pendingAttachment, pendingImages]);
     const composerStageHeight = keyboardHeight
       ? Math.min(
           viewportWidth - 40,
@@ -196,37 +216,29 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
           ),
         )
       : viewportWidth - 40;
+    // Keep the resting composer as compact as the camera sheet. The extra room
+    // is reserved for active input, rather than left as an empty panel.
+    const expandedHeight = Math.max(expandedBaseHeight, viewportHeight * 0.62);
+    const restingSheetHeight = Math.min(
+      viewportHeight - insets.top - 12,
+      expandedHeight + insets.bottom,
+    );
 
     const sheetStyle = useAnimatedStyle(() => {
       // The thought composer is the primary surface, not a temporary popover.
       // Give it enough quiet space for a thought while keeping the capture tools
       // anchored together in the familiar message-composer position.
-      const expandedHeight =
-        activeMode === "camera" || activeMode === "library"
-          ? viewportHeight * 0.62
-          : Math.max(expandedBaseHeight, viewportHeight * 0.68);
-      const restingSheetHeight = Math.min(
-        viewportHeight - insets.top - 12,
-        expandedHeight + insets.bottom,
-      );
+      // The sheet stays docked to the bottom. When the translucent keyboard is
+      // present, extend its surface upward and inset its content above the keys
+      // instead of translating the entire sheet toward the keyboard.
       const sheetHeight = Math.min(
-        restingSheetHeight,
-        Math.max(
-          collapsedHeight + insets.bottom,
-          viewportHeight - keyboard.height.value - insets.top - 12,
-        ),
+        viewportHeight - insets.top - 12,
+        restingSheetHeight + keyboard.height.value,
       );
       const collapsedOffset = sheetHeight - (collapsedHeight + insets.bottom);
-      // In keyboard mode the sheet's height contracts to the available viewport,
-      // so this translation anchors its bottom to the keyboard without pushing the
-      // full, resting layout offscreen.
-      const keyboardOffset =
-        (1 - progress.value) * (keyboard.height.value + insets.bottom);
       return {
         height: sheetHeight,
-        transform: [
-          { translateY: progress.value * collapsedOffset - keyboardOffset },
-        ],
+        transform: [{ translateY: progress.value * collapsedOffset }],
       };
     }, [viewportHeight, insets.top, insets.bottom, activeMode]);
     const collapsedStyle = useAnimatedStyle(
@@ -235,6 +247,16 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
     );
     const expandedStyle = useAnimatedStyle(
       () => ({ opacity: 1 - progress.value }),
+      [],
+    );
+    const sheetShadowStyle = useAnimatedStyle(
+      () => ({
+        // Keep a quiet edge on the compact composer so it remains distinct from
+        // the feed behind it, even after the expanded shadow has eased away.
+        shadowOpacity: 0.1 + (1 - progress.value) * 0.08,
+        shadowRadius: 10 + (1 - progress.value) * 10,
+        elevation: 8 + (1 - progress.value) * 6,
+      }),
       [],
     );
     const recordingShapeStyle = useAnimatedStyle(
@@ -247,17 +269,23 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
     );
 
     const animate = (to: 0 | 1, onDone?: () => void) => {
+      if (to === 0) onExpandedChange(true);
+      // Release the inbox controls immediately. Waiting until the animation
+      // finishes leaves an invisible backdrop that eats the first tap.
+      if (to === 1) onExpandedChange(false);
       progress.value = withTiming(
         to,
         { duration: transitionDuration, easing: Easing.out(Easing.cubic) },
         (finished) => {
-          if (finished && onDone) runOnJS(onDone)();
+          if (!finished) return;
+          if (onDone) runOnJS(onDone)();
         },
       );
     };
 
-    const focusInput = () => inputRef.current?.focus();
     const beginVoice = () => onToggleVoice();
+
+    const updateDraft = (text: string) => onDraftChange(text);
 
     const collapseAfterKeyboard = () => {
       pendingCollapse.current = false;
@@ -265,7 +293,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
     };
 
     const open = (
-      mode: "write" | "voice" | "media" | "audio" | "media-choice" = "write",
+      mode: "write" | "voice" | "media" | "media-choice" = "write",
     ) => {
       // Focus at the same moment the sheet rises so the iOS keyboard and sheet
       // animate as one movement instead of two consecutive animations.
@@ -273,7 +301,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
       if (mode === "voice") beginVoice();
       else if (mode === "write") {
         setComposerMode(pendingAttachment ? "attachment" : "text");
-        focusInput();
+        requestAnimationFrame(() => richEditorRef.current?.focus());
       }
       animate(0);
     };
@@ -308,6 +336,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
             : [];
       if (attachments.length === 0) return;
       onAttachments(attachments, draft.trim() || undefined);
+      clearCaptureDraft();
       setPendingAttachment(null);
       setPendingImages([]);
       setSelectedImageUri(null);
@@ -358,13 +387,6 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
       else onSave();
     };
 
-    const openAudioComposer = () => {
-      inputRef.current?.blur();
-      Keyboard.dismiss();
-      setKeyboardVisible(false);
-      setComposerMode("audio");
-    };
-
     const toggleAudioDock = async () => {
       if (!audioDockOpen) {
         setAudioDockOpen(true);
@@ -389,6 +411,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
       // collapses the composer, so the two iOS transitions never compete.
       if (keyboardVisible) {
         inputRef.current?.blur();
+        richEditorRef.current?.blur();
         Keyboard.dismiss();
         setKeyboardVisible(false);
         return;
@@ -397,11 +420,13 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
       onCollapseHaptic();
       pendingCollapse.current = false;
       inputRef.current?.blur();
+      richEditorRef.current?.blur();
       animate(1);
     };
 
     const pickMedia = async (source: "library" | "camera" | "video") => {
       inputRef.current?.blur();
+      richEditorRef.current?.blur();
       Keyboard.dismiss();
       setKeyboardVisible(false);
       setShowMediaOptions(false);
@@ -532,22 +557,35 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
       const durationMillis = recorderState.durationMillis;
       await recorder.stop();
       await setAudioModeAsync({ allowsRecording: false });
-      if (recorder.uri)
-        reviewAttachment({ kind: "audio", uri: recorder.uri, durationMillis });
+      if (!recorder.uri) return;
+      try {
+        // Recorder URIs live in iOS's cache and can disappear after a reload.
+        // Copy the completed recording into durable app storage first.
+        const source = new File(recorder.uri);
+        const recordings = new Directory(Paths.document, "recordings");
+        recordings.create({ idempotent: true, intermediates: true });
+        const extension = source.extension || ".m4a";
+        const destination = new File(
+          recordings,
+          `recording-${Date.now()}${extension}`,
+        );
+        await source.copy(destination);
+        reviewAttachment({
+          kind: "audio",
+          uri: destination.uri,
+          durationMillis,
+        });
+      } catch {
+        Alert.alert(
+          "Recording could not be saved",
+          "Try recording again. Jotful did not save a broken audio note.",
+        );
+      }
     };
 
     const toggleAudioRecording = async () => {
       if (recorderState.isRecording) await finishAudioRecording();
       else await startAudioRecording();
-    };
-
-    const startInlineAudio = async () => {
-      if (await startAudioRecording()) setInlineAudio(true);
-    };
-
-    const stopInlineAudio = async () => {
-      setInlineAudio(false);
-      if (recorderState.isRecording) await finishAudioRecording();
     };
 
     useEffect(() => {
@@ -579,9 +617,18 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
       [keyboardVisible, listening, onCollapseHaptic, onStopVoice],
     );
 
+    const needsDismissControl =
+      keyboardVisible ||
+      activeMode === "media" ||
+      activeMode === "media-choice" ||
+      activeMode === "camera" ||
+      activeMode === "library";
+    const isMediaCapture =
+      activeMode === "camera" || activeMode === "library";
+
     return (
       <Animated.View
-        className="bg-unsorted-cream shadow-xl"
+        className="bg-unsorted-cream"
         style={[
           {
             position: "absolute",
@@ -592,82 +639,76 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
             right: 0,
             borderTopLeftRadius: 26,
             borderTopRightRadius: 26,
+            shadowColor: colors.roast,
+            shadowOffset: { width: 0, height: -8 },
             paddingHorizontal: activeMode === "camera" ? 12 : 20,
             paddingTop: activeMode === "camera" ? 12 : 20,
-            paddingBottom: keyboardVisible ? 8 : insets.bottom + 20,
+            paddingBottom: keyboardVisible
+              ? keyboardHeight + 8
+              : insets.bottom + 20,
           },
           sheetStyle,
+          sheetShadowStyle,
         ]}
-      >
+        >
         <Animated.View
+          pointerEvents="none"
+          className="absolute left-5 right-5 top-0 h-px bg-unsorted-line"
+          style={expandedStyle}
+        />
+        <Animated.View
+          className="items-center justify-center"
           style={[
-            { position: "absolute", top: 12, left: 20, right: 20 },
+            {
+              position: "absolute",
+              top: 0,
+              left: 20,
+              right: 20,
+              height: collapsedHeight,
+            },
             collapsedStyle,
           ]}
         >
-          {inlineAudio ? (
-            <Animated.View
-              entering={FadeIn.duration(transitionDuration)}
-              className="flex-row items-center gap-3 rounded-2xl bg-unsorted-canvas px-3 py-2"
-            >
-              <AudioLines size={19} color={colors.roast} />
-              <View className="flex-1 flex-row items-center justify-between px-1">
-                {[10, 18, 25, 15, 30, 20, 27, 13, 22, 17, 29, 11].map(
-                  (height, index) => (
-                    <View
-                      key={index}
-                      className="w-1 rounded-full bg-unsorted-persimmon"
-                      style={{ height }}
-                    />
-                  ),
-                )}
-              </View>
-              <Pressable
-                onPress={() => void stopInlineAudio()}
-                className="h-9 w-9 items-center justify-center rounded-full bg-unsorted-roast"
-                hitSlop={10}
-                accessibilityLabel="Stop and review audio recording"
+          <Pressable
+            onPress={() => {
+              onOpenHaptic();
+              open("write");
+            }}
+            className="flex-1 flex-row items-center gap-16 px-1"
+            hitSlop={12}
+            accessibilityLabel="Open thought capture"
+          >
+            <View className="flex-1 items-center gap-4">
+              <Text
+                numberOfLines={collapsedHeight >= 86 ? 2 : 1}
+                className="text-[19px] leading-[22px] text-unsorted-ink text-center"
+                style={{ fontFamily: "Fraunces_600SemiBold" }}
               >
-                <Square size={13} fill={colors.cream} color={colors.cream} />
-              </Pressable>
-            </Animated.View>
-          ) : (
-            <View className="flex-row gap-2">
-              <Pressable
-                onPress={() => open("write")}
-                className="h-10 flex-1 items-center justify-center rounded-xl border border-unsorted-line bg-unsorted-canvas"
-                hitSlop={10}
-                accessibilityLabel="Open text capture"
+                {prompt}
+              </Text>
+              <Text
+                className="mt-0.5 text-sm text-unsorted-quiet uppercase"
+                style={{ fontFamily: "DMSans_500Medium" }}
               >
-                <FileText size={18} color={colors.roast} />
-              </Pressable>
-              <Pressable
-                onPress={() => void pickMedia("camera")}
-                className="h-10 flex-1 flex-row items-center justify-center rounded-xl border border-unsorted-line bg-unsorted-canvas"
-                hitSlop={10}
-                accessibilityLabel="Open camera and video capture"
-              >
-                <Camera size={17} color={colors.roast} />
-                <Video size={12} color={colors.roast} />
-              </Pressable>
-              <Pressable
-                onPress={() => void pickMedia("library")}
-                className="h-10 flex-1 items-center justify-center rounded-xl border border-unsorted-line bg-unsorted-canvas"
-                hitSlop={10}
-                accessibilityLabel="Open media library"
-              >
-                <Image size={18} color={colors.roast} />
-              </Pressable>
-              <Pressable
-                onPress={() => void startInlineAudio()}
-                className="h-10 flex-1 items-center justify-center rounded-xl border border-unsorted-line bg-unsorted-canvas"
-                hitSlop={10}
-                accessibilityLabel="Start audio recording"
-              >
-                <AudioLines size={18} color={colors.roast} />
-              </Pressable>
+                Tap to capture
+              </Text>
             </View>
-          )}
+
+            {/* <View className="items-center">
+              <View
+                className="flex flex-row gap-2 items-center justify-center rounded-full bg-unsorted-moss"
+                style={{ width: collapsedActionSize, height: collapsedActionSize }}
+              >
+                <Pencil
+                  size={Math.round(collapsedActionSize * 0.38)}
+                  color={colors.cream}
+                  strokeWidth={2.5}
+                />
+              </View>
+
+
+            </View> */}
+          </Pressable>
         </Animated.View>
         <Animated.View
           style={[expandedStyle, { flex: 1 }]}
@@ -904,23 +945,37 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
             <View className="flex-1">
               <View className="flex-row items-start">
                 <View
-                  className="flex-1 rounded-3xl border border-unsorted-line bg-unsorted-canvas px-3 pt-2 pb-2"
+                  className="flex-1 rounded-3xl border border-unsorted-line bg-unsorted-canvas px-3 py-2"
                   style={{ height: composerStageHeight }}
                 >
                   {composerMode === "text" && (
                     <>
-                      <TextInput
-                        ref={inputRef}
-                        value={draft}
-                        onChangeText={onDraftChange}
-                        placeholder={prompt}
-                        placeholderTextColor={colors.moss}
-                        multiline
-                        scrollEnabled
-                        className="h-full w-full px-2 pb-28 pt-3 pr-12 text-[16px] leading-6 text-unsorted-ink"
-                        style={{
-                          fontFamily: "DMSans_400Regular",
-                          textAlignVertical: "top",
+                      <RichTextEditor
+                        ref={richEditorRef}
+                        documentHandle={richDocument}
+                        value={richText || `<p>${draft.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>`}
+                        onContentChange={(html) => {
+                          onRichTextChange(html);
+                          onDraftChange(richEditorRef.current?.getTextContent() ?? "");
+                        }}
+                        placeholder="Write your thought…"
+                        autoCapitalize="sentences"
+                        heightBehavior="fixed"
+                        toolbarPlacement="keyboard"
+                        toolbarItems={[
+                          { type: "heading", level: 1, label: "Title", icon: { type: "default", id: "h1" } },
+                          { type: "mark", mark: "bold", label: "Bold", icon: { type: "default", id: "bold" } },
+                          { type: "list", listType: "bullet_list", label: "Bullet list", icon: { type: "default", id: "bulletList" } },
+                          { type: "list", listType: "ordered_list", label: "Numbered list", icon: { type: "default", id: "orderedList" } },
+                          { type: "action", key: "todo", label: "To-do", icon: { type: "glyph", text: "☐" } },
+                        ]}
+                        onToolbarAction={(key) => {
+                          if (key === "todo") richEditorRef.current?.insertText("☐ ");
+                        }}
+                        style={{ flex: 1, marginBottom: 108 }}
+                        theme={{
+                          text: { fontSize: 16, lineHeight: 24, color: colors.roast },
+                          h1: { fontSize: 28, lineHeight: 34, fontWeight: "600" },
                         }}
                       />
                       <View className="absolute bottom-3 left-3 right-3 gap-2">
@@ -951,7 +1006,10 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                         </View>
                         <View className="mx-1 h-px bg-[#EAE4DA]" />
                         <View className="flex-row items-center justify-between gap-2">
-                          <View className="relative">
+                          <View
+                            className="relative"
+                            style={{ zIndex: showMediaOptions ? 2 : undefined }}
+                          >
                             {pendingImages.length > 0 ? (
                               <View className="h-9 w-[72px] flex-row items-center">
                                 <Pressable
@@ -966,7 +1024,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                                       image.kind === "video" ? (
                                         <View
                                           key={image.uri}
-                                          className="absolute h-8 w-8 items-center justify-center rounded-full border-2 border-unsorted-cream bg-unsorted-moss"
+                                          className="absolute h-8 w-8 items-center justify-center rounded-full border-2 border-unsorted-canvas bg-unsorted-moss"
                                           style={{
                                             left: index * 11,
                                             top: 0,
@@ -990,7 +1048,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                                             height: 32,
                                             borderRadius: 16,
                                             borderWidth: 2,
-                                            borderColor: colors.cream,
+                                            borderColor: "#FAF8F3",
                                             zIndex: index,
                                           }}
                                           resizeMode="cover"
@@ -1003,7 +1061,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                                     setShowMediaOptions((visible) => !visible)
                                   }
                                   className={
-                                    "absolute right-1 top-0 h-9 w-9 items-center justify-center rounded-full border-2 border-unsorted-cream " +
+                                    "absolute right-1 top-0 h-9 w-9 items-center justify-center rounded-full border-2 border-unsorted-canvas " +
                                     (showMediaOptions
                                       ? "bg-[#F8E1D7]"
                                       : "bg-unsorted-mist")
@@ -1020,7 +1078,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                                   setShowMediaOptions((visible) => !visible)
                                 }
                                 className={
-                                  "h-9 w-9 items-center justify-center rounded-full border-2 border-unsorted-cream " +
+                                  "h-9 w-9 items-center justify-center rounded-full border-2 border-unsorted-canvas " +
                                   (showMediaOptions
                                     ? "bg-[#F8E1D7]"
                                     : "bg-unsorted-mist")
@@ -1086,12 +1144,12 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                                   />
                                 </View>
                               ) : (
-                                <View className="flex-1 flex-row items-center justify-between px-1">
-                                  {[0.42, 0.78, 0.55, 1, 0.64, 0.86, 0.48].map(
+                    <View className="flex-1 flex-row items-center justify-center gap-1">
+                                  {[0.42, 0.78, 0.55, 1, 0.64, 0.86, 0.48, 0.7, 0.92, 0.58, 0.38].map(
                                     (multiplier, index) => (
                                       <View
                                         key={index}
-                                        className="w-1 rounded-full bg-unsorted-persimmon"
+                          className="w-1 rounded-full bg-unsorted-persimmon"
                                         style={{
                                           height:
                                             4 +
@@ -1141,6 +1199,13 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                           )}
                         </View>
                       </View>
+                      {showMediaOptions && (
+                        <Pressable
+                          onPress={() => setShowMediaOptions(false)}
+                          style={[StyleSheet.absoluteFill, { zIndex: 1 }]}
+                          accessibilityLabel="Close media options"
+                        />
+                      )}
                     </>
                   )}
                   {composerMode === "audio" && (
@@ -1213,18 +1278,32 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                         {pendingImages.length > 0 ? (
                           <View className="h-full overflow-hidden">
                             {selectedPreviewAttachment?.kind === "video" ? (
-                              <VideoAttachmentPreview
-                                uri={selectedPreviewAttachment.uri}
-                              />
-                            ) : (
+                              <View className="h-full w-full items-center justify-center bg-unsorted-moss px-8">
+                                <View className="h-14 w-14 items-center justify-center rounded-full bg-black/20">
+                                  <Video size={26} color={colors.cream} />
+                                </View>
+                                <Text
+                                  className="mt-4 text-center text-[16px] text-unsorted-cream"
+                                  style={{ fontFamily: "DMSans_700Bold" }}
+                                >
+                                  Video ready to save
+                                </Text>
+                                <Text
+                                  className="mt-1 text-center text-[13px] text-unsorted-cream"
+                                  style={{ fontFamily: "DMSans_400Regular", opacity: 0.78 }}
+                                >
+                                  It will be attached to this thought.
+                                </Text>
+                              </View>
+                            ) : selectedPreviewAttachment ? (
                               <NativeImage
                                 source={{
-                                  uri: selectedPreviewAttachment?.uri,
+                                  uri: selectedPreviewAttachment.uri,
                                 }}
                                 style={{ width: "100%", height: "100%" }}
                                 resizeMode="contain"
                               />
-                            )}
+                            ) : null}
                             <View className="absolute left-3 right-3 top-3 flex-row items-center justify-between gap-3">
                               <Pressable
                                 onPress={() => setComposerMode("text")}
@@ -1255,7 +1334,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                                   className={
                                     "h-12 w-12 overflow-hidden rounded-xl border-2 " +
                                     ((selectedImageUri ??
-                                      pendingImages[0].uri) === image.uri
+                                      pendingImages[0]?.uri) === image.uri
                                       ? "border-unsorted-persimmon"
                                       : "border-transparent")
                                   }
@@ -1352,7 +1431,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                             ? "bg-[#F8D8D1]"
                             : pendingAttachment || previewCount
                               ? "bg-unsorted-persimmon"
-                              : "bg-[#E4DCCE]")
+                              : "bg-[#EFEBE4]")
                         }
                         style={{
                           opacity:
@@ -1362,7 +1441,8 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                         }}
                         accessibilityLabel="Save thought"
                       >
-                        {!listening && (pendingAttachment || previewCount) && (
+                        {!listening &&
+                          (pendingAttachment || previewCount > 0) && (
                           <Svg
                             style={StyleSheet.absoluteFill}
                             pointerEvents="none"
@@ -1381,8 +1461,8 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                                 <Stop offset="0" stopColor="#E89A89" />
                                 <Stop offset="0.3" stopColor="#C5A096" />
                                 <Stop offset="0.58" stopColor="#9CAA94" />
-                                <Stop offset="0.8" stopColor="#7F7971" />
-                                <Stop offset="1" stopColor="#665F57" />
+                                <Stop offset="0.82" stopColor="#899985" />
+                                <Stop offset="1" stopColor="#74876A" />
                               </LinearGradient>
                             </Defs>
                             <Rect
@@ -1491,10 +1571,24 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
               </Pressable>
             </View>
           ) : null}
-          <View className="mt-4 items-center">
+          {needsDismissControl ? (
+            <View
+              className="mt-4 items-center"
+              style={
+                keyboardVisible
+                  ? {
+                      position: "absolute",
+                      bottom: 44,
+                      left: 0,
+                      right: 0,
+                      zIndex: 3,
+                    }
+                  : undefined
+              }
+            >
             <Pressable
               onPress={
-                activeMode === "camera" || activeMode === "library"
+                isMediaCapture
                   ? () => {
                       setActiveMode("write");
                       setComposerMode("text");
@@ -1505,7 +1599,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
               style={{ backgroundColor: "rgba(36, 32, 25, 0.6)" }}
               hitSlop={12}
               accessibilityLabel={
-                activeMode === "camera" || activeMode === "library"
+                isMediaCapture
                   ? "Exit media capture"
                   : "Collapse thought capture"
               }
@@ -1515,13 +1609,14 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                 tint="dark"
                 className="absolute inset-0"
               />
-              {activeMode === "camera" || activeMode === "library" ? (
+              {isMediaCapture ? (
                 <X size={19} color={colors.cream} />
               ) : (
                 <ChevronDown size={20} color={colors.cream} />
               )}
             </Pressable>
-          </View>
+            </View>
+          ) : null}
         </Animated.View>
       </Animated.View>
     );

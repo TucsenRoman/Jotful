@@ -14,17 +14,18 @@ import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTi
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import Svg, { Defs, LinearGradient, Stop, Text as SvgText } from 'react-native-svg';
 import { MothMark } from './src/brand/MothMark';
+import { RichTextViewer } from '@apollohg/react-native-rich-text-editor';
 import CaptureSheet, { type CaptureSheetHandle } from './src/components/CaptureSheet';
 import AudioTimeline from './src/components/AudioTimeline';
 import CaptureWidget from './src/widgets/CaptureWidget';
 import RecentsWidget from './src/widgets/RecentsWidget';
 import { classifyThought, splitThoughts, type ThoughtKind } from './src/segmentation';
-import { createAttachmentThoughts, createThought, deleteThought, getPreference, initializeDatabase, listRecentThoughts, listThoughts, setPreference, togglePinned, toggleResolved, updateThought, type AttachmentKind, type Thought } from './src/storage';
+import { clearCaptureDraft, createAttachmentThoughts, createThought, deleteThought, getPreference, initializeDatabase, listRecentThoughts, listThoughts, recoverCaptureDraft, setPreference, togglePinned, toggleResolved, updateThought, type AttachmentKind, type Thought } from './src/storage';
 
 const colors = { cream: '#FFFDF8', roast: '#242019', moss: '#74876A', persimmon: '#EF705A', line: '#E4DFD6' };
 const capturePrompts = [
   'What are you daydreaming of?',
-  'What are thinking about?',
+  'What are you thinking about?',
   'Your next rabbit hole adventure awaits...',
   'Your next great masterpiece??',
 ];
@@ -33,6 +34,19 @@ function kindLabel(kind: ThoughtKind) {
   if (kind === 'question') return 'Question';
   if (kind === 'idea') return 'Idea';
   return 'Thought';
+}
+
+function ThoughtText({ text, richText, resolved }: { text: string; richText?: string | null; resolved: boolean }) {
+  if (richText) return <View className="mt-3"><RichTextViewer contentHTML={richText} theme={{ text: { fontSize: 18, lineHeight: 26, color: colors.roast } }} /></View>;
+  return <View className="mt-3 gap-1.5">{text.split('\n').map((line, index) => {
+    const style = { fontFamily: 'DMSans_400Regular' };
+    const muted = resolved ? ' line-through opacity-60' : '';
+    if (line.startsWith('# ')) return <Text key={index} selectable className={'text-[22px] leading-7 tracking-[-0.2px] text-unsorted-ink' + muted} style={{ fontFamily: 'Fraunces_600SemiBold' }}>{line.slice(2)}</Text>;
+    if (/^(?:•|\*)\s+/.test(line)) return <View key={index} className="flex-row"><Text className="mr-2 text-lg leading-[26px] text-unsorted-moss">•</Text><Text selectable className={'flex-1 text-lg leading-[26px] tracking-[-0.1px] text-unsorted-ink' + muted} style={style}>{line.replace(/^(?:•|\*)\s+/, '')}</Text></View>;
+    if (/^\d+\.\s+/.test(line)) { const [, number, body] = line.match(/^(\d+)\.\s+(.*)$/) ?? []; return <View key={index} className="flex-row"><Text className="mr-2 text-base leading-[26px] text-unsorted-moss">{number}.</Text><Text selectable className={'flex-1 text-lg leading-[26px] tracking-[-0.1px] text-unsorted-ink' + muted} style={style}>{body}</Text></View>; }
+    if (/^☐\s+/.test(line)) return <View key={index} className="flex-row"><Text className="mr-2 text-base leading-[26px] text-unsorted-moss">☐</Text><Text selectable className={'flex-1 text-lg leading-[26px] tracking-[-0.1px] text-unsorted-ink' + muted} style={style}>{line.replace(/^☐\s+/, '')}</Text></View>;
+    return <Text key={index} selectable className={'text-lg leading-[26px] tracking-[-0.1px] text-unsorted-ink' + muted} style={style}>{line || ' '}</Text>;
+  })}</View>;
 }
 
 function SwipeableThought({ thought, children, onResolve, onPin, onLongRight }: { thought: Thought; children: React.ReactNode; onResolve: () => void; onPin: () => void; onLongRight: () => void }) {
@@ -92,19 +106,29 @@ export default function App() {
 
 function UnsortedApp() {
   const [draft, setDraft] = useState('');
+  const [richDraft, setRichDraft] = useState('');
   const [search, setSearch] = useState('');
   const [thoughts, setThoughts] = useState<Thought[]>([]);
   const [searchOpen, setSearchOpen] = useState(false);
   const [listening, setListening] = useState(false);
   const [screen, setScreen] = useState<'thoughts' | 'settings'>('thoughts');
-  const [sheetExpanded, setSheetExpanded] = useState(true);
+  const [sheetExpanded, setSheetExpanded] = useState(false);
   const [preferredAI, setPreferredAI] = useState('ChatGPT');
   const [preferredBrowser, setPreferredBrowser] = useState('System default');
   const [editingThoughtId, setEditingThoughtId] = useState<number | null>(null);
   const [capturePromptIndex] = useState(() => Math.floor(Math.random() * capturePrompts.length));
   const sheetRef = useRef<CaptureSheetHandle>(null);
+  const recoveredDraft = useRef(false);
   const voiceBase = useRef('');
   const insets = useSafeAreaInsets();
+  // This must run during the parent render, before CaptureSheet mounts. Its
+  // empty initial state otherwise clears the journal before an effect can
+  // restore the interrupted capture.
+  if (!recoveredDraft.current) {
+    initializeDatabase();
+    recoverCaptureDraft();
+    recoveredDraft.current = true;
+  }
   const preview = useMemo(() => splitThoughts(draft), [draft]);
   const refresh = () => setThoughts(listThoughts(search));
 
@@ -112,14 +136,14 @@ function UnsortedApp() {
   useSpeechRecognitionEvent('end', () => setListening(false));
   useSpeechRecognitionEvent('result', (event) => {
     const transcript = event.results[0]?.transcript?.trim();
-    if (transcript) setDraft(voiceBase.current + (voiceBase.current ? ' ' : '') + transcript);
+    if (transcript) { setRichDraft(''); setDraft(voiceBase.current + (voiceBase.current ? ' ' : '') + transcript); }
   });
   useSpeechRecognitionEvent('error', (event) => {
     setListening(false);
     if (event.error !== 'aborted' && event.error !== 'no-speech') Alert.alert('Voice input stopped', event.message || 'Try again or type your thought.');
   });
 
-  useEffect(() => { initializeDatabase(); setPreferredAI(getPreference('preferredAI', 'ChatGPT')); setPreferredBrowser(getPreference('preferredBrowser', 'System default')); refresh(); }, []);
+  useEffect(() => { setPreferredAI(getPreference('preferredAI', 'ChatGPT')); setPreferredBrowser(getPreference('preferredBrowser', 'System default')); refresh(); }, []);
   useEffect(() => { refresh(); }, [search]);
   useEffect(() => {
     if (Platform.OS !== 'ios') return;
@@ -169,17 +193,22 @@ function UnsortedApp() {
     const text = draft.trim();
     if (!text) return;
     if (editingThoughtId !== null) {
-      updateThought(editingThoughtId, text, classifyThought(text));
+      updateThought(editingThoughtId, text, classifyThought(text), richDraft || undefined);
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setDraft('');
+      setRichDraft('');
+      clearCaptureDraft();
       setEditingThoughtId(null);
       closeSheet();
       refresh();
       return;
     }
-    preview.forEach((text) => createThought(text, classifyThought(text)));
+    if (richDraft) createThought(text, classifyThought(text), richDraft);
+    else preview.forEach((item) => createThought(item, classifyThought(item)));
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setDraft('');
+    setRichDraft('');
+    clearCaptureDraft();
     closeSheet();
     refresh();
   }
@@ -187,6 +216,11 @@ function UnsortedApp() {
   function saveAttachments(attachments: Array<{ kind: AttachmentKind; uri: string; durationMillis?: number }>, caption?: string) {
     createAttachmentThoughts(attachments, caption);
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    // Attachment saves bypass saveDraft(), so clear their optional caption here
+    // before closing the shared capture sheet.
+    setDraft('');
+    setRichDraft('');
+    clearCaptureDraft();
     sheetRef.current?.close();
     refresh();
   }
@@ -195,7 +229,7 @@ function UnsortedApp() {
     if (!draft.trim()) return;
     Alert.alert('Clear this thought?', 'This removes the text you have not saved.', [
       { text: 'Keep writing', style: 'cancel' },
-      { text: 'Clear thought', style: 'destructive', onPress: () => { setDraft(''); void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); } }
+      { text: 'Clear thought', style: 'destructive', onPress: () => { setDraft(''); setRichDraft(''); void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); } }
     ]);
   }
 
@@ -212,7 +246,7 @@ function UnsortedApp() {
 
   function showActions(thought: Thought) {
     Alert.alert('Thought', 'It can stay here.', [
-      { text: 'Edit', onPress: () => { setDraft(thought.text); setEditingThoughtId(thought.id); sheetRef.current?.open('write'); } },
+      { text: 'Edit', onPress: () => { setDraft(thought.text); setRichDraft(thought.richText ?? ''); setEditingThoughtId(thought.id); sheetRef.current?.open('write'); } },
       { text: thought.resolvedAt ? 'Bring it back' : 'Settle this thought', onPress: () => { toggleResolved(thought.id, thought.resolvedAt ? null : Date.now()); refresh(); } },
       { text: 'Delete', style: 'destructive', onPress: () => { deleteThought(thought.id); refresh(); } },
       { text: 'Cancel', style: 'cancel' }
@@ -240,20 +274,20 @@ function UnsortedApp() {
 
   return <View className="flex-1 bg-unsorted-canvas"><StatusBar style="dark" />
     <View className="z-10 flex-row items-center gap-2 px-5" style={{ height: insets.top + 72, paddingTop: insets.top + 10 }}>
-      {searchOpen ? <><TextInput autoFocus value={search} onChangeText={setSearch} placeholder="Search jots" placeholderTextColor={colors.moss} className="h-10 flex-1 py-0 text-base text-unsorted-ink" style={{ fontFamily: 'DMSans_400Regular' }} /><Pressable onPress={() => { setSearch(''); setSearchOpen(false); }} hitSlop={12}><X size={23} color={colors.roast} /></Pressable></> : <><View className="mr-auto"><Svg width={150} height={42} viewBox="0 0 150 42" accessibilityLabel="Jotful"><Defs><LinearGradient id="wordmark-gradient" x1="0" y1="0" x2="150" y2="0" gradientUnits="userSpaceOnUse"><Stop offset="0" stopColor="#EF705A" /><Stop offset="0.48" stopColor="#58795C" /><Stop offset="1" stopColor="#242019" /></LinearGradient></Defs><SvgText x="0" y="34" fill="url(#wordmark-gradient)" fontFamily="Fraunces_600SemiBold" fontSize="34" letterSpacing="-1">Jotful</SvgText></Svg></View><Pressable onPress={() => { closeSheet(); setSearchOpen(true); }} className="h-10 w-10 items-center justify-center rounded-xl bg-unsorted-mist" hitSlop={10}><Search size={19} color={colors.roast} /></Pressable><Pressable onPress={() => { closeSheet(); setScreen('settings'); }} className="ml-2 h-10 w-10 items-center justify-center rounded-xl bg-unsorted-mist" hitSlop={10} accessibilityLabel="Open settings"><Settings size={19} color={colors.roast} /></Pressable></>}
+      {searchOpen ? <><TextInput autoFocus value={search} onChangeText={setSearch} placeholder="Search jots" placeholderTextColor={colors.moss} className="h-10 flex-1 py-0 text-base text-unsorted-ink" style={{ fontFamily: 'DMSans_400Regular' }} /><Pressable onPress={() => { setSearch(''); setSearchOpen(false); }} hitSlop={12}><X size={23} color={colors.roast} /></Pressable></> : <><View className="mr-auto"><Svg width={150} height={42} viewBox="0 0 150 42" accessibilityLabel="Jotful"><Defs><LinearGradient id="wordmark-gradient" x1="0" y1="0" x2="150" y2="0" gradientUnits="userSpaceOnUse"><Stop offset="0" stopColor="#EF705A" /><Stop offset="0.48" stopColor="#58795C" /><Stop offset="1" stopColor="#242019" /></LinearGradient></Defs><SvgText x="0" y="34" fill="url(#wordmark-gradient)" fontFamily="Fraunces_600SemiBold" fontSize="34" letterSpacing="-1">Jotful</SvgText></Svg></View><Pressable onPress={() => { closeSheet(); setSearchOpen(true); }} className="h-10 w-10 items-center justify-center rounded-xl bg-unsorted-mist" hitSlop={10}><Search size={19} color={colors.roast} /></Pressable><Pressable onPress={() => { setSheetExpanded(false); setScreen('settings'); }} className="ml-2 h-10 w-10 items-center justify-center rounded-xl bg-unsorted-mist" hitSlop={10} accessibilityLabel="Open settings"><Settings size={19} color={colors.roast} /></Pressable></>}
     </View>
     <View className="mx-5 h-px bg-unsorted-line" />
     <ScrollView className="flex-1" contentContainerClassName="px-5 pb-28 pt-2" keyboardShouldPersistTaps="handled">
       {thoughts.length === 0 ? <View className="items-center px-7 py-20"><MothMark size={58} /><Text className="mt-5 text-[22px] text-unsorted-ink" style={{ fontFamily: 'Fraunces_600SemiBold' }}>Hold that thought.</Text><Text className="mt-2 text-center leading-5 text-unsorted-ink" style={{ fontFamily: 'DMSans_400Regular' }}>Speak or type it exactly as it arrives.</Text></View> : thoughts.map((thought) => <SwipeableThought key={thought.id} thought={thought} onResolve={() => { toggleResolved(thought.id, thought.resolvedAt ? null : Date.now()); refresh(); }} onPin={() => { togglePinned(thought.id, thought.pinnedAt ? null : Date.now()); refresh(); }} onLongRight={() => Alert.alert('Gesture idea saved', 'Long right swipe is reserved for a future action.')}><View className={'p-4 ' + (thought.resolvedAt !== null ? 'opacity-60' : '')}>
-        <View className="flex-row items-center justify-between"><View className="flex-row items-center rounded-full bg-unsorted-mist px-2.5 py-1">{thought.attachmentKind === 'image' ? <Image size={13} color={colors.roast} /> : thought.attachmentKind === 'video' ? <Video size={13} color={colors.roast} /> : thought.attachmentKind === 'audio' ? <AudioLines size={13} color={colors.roast} /> : null}<Text className={'text-[11px] uppercase tracking-[0.7px] text-unsorted-ink ' + (thought.attachmentKind ? 'ml-1.5' : '')} style={{ fontFamily: 'DMSans_700Bold' }}>{thought.attachmentKind === 'image' ? 'Photo' : thought.attachmentKind === 'video' ? 'Video' : thought.attachmentKind === 'audio' ? 'Audio' : thought.pinnedAt ? 'Pinned' : kindLabel(thought.kind)}</Text></View><Pressable onPress={() => showActions(thought)} hitSlop={12} accessibilityLabel={'Actions for ' + kindLabel(thought.kind)}><MoreHorizontal size={20} color={colors.roast} /></Pressable></View>
-        <Text selectable className={'mt-3 text-lg leading-[26px] tracking-[-0.1px] text-unsorted-ink ' + (thought.resolvedAt !== null ? 'line-through' : '')} style={{ fontFamily: 'DMSans_400Regular' }}>{thought.text}</Text>
+        <View className="flex-row items-center justify-between"><View className="flex-row items-center rounded-full bg-unsorted-mist px-2.5 py-1">{!thought.draftedAt && (thought.attachmentKind === 'image' ? <Image size={13} color={colors.roast} /> : thought.attachmentKind === 'video' ? <Video size={13} color={colors.roast} /> : thought.attachmentKind === 'audio' ? <AudioLines size={13} color={colors.roast} /> : null)}<Text className={'text-[11px] uppercase tracking-[0.7px] text-unsorted-ink ' + (!thought.draftedAt && thought.attachmentKind ? 'ml-1.5' : '')} style={{ fontFamily: 'DMSans_700Bold' }}>{thought.draftedAt ? 'Draft' : thought.attachmentKind === 'image' ? 'Photo' : thought.attachmentKind === 'video' ? 'Video' : thought.attachmentKind === 'audio' ? 'Audio' : thought.pinnedAt ? 'Pinned' : kindLabel(thought.kind)}</Text></View><Pressable onPress={() => showActions(thought)} hitSlop={12} accessibilityLabel={'Actions for ' + kindLabel(thought.kind)}><MoreHorizontal size={20} color={colors.roast} /></Pressable></View>
+        <ThoughtText text={thought.text} richText={thought.richText} resolved={thought.resolvedAt !== null} />
         {thought.attachmentKind === 'image' && thought.attachmentUri && <NativeImage source={{ uri: thought.attachmentUri }} className="mt-3 h-32 w-full rounded-2xl bg-unsorted-mist" resizeMode="cover" accessibilityLabel="Attached photo" />}
         {thought.attachmentKind === 'video' && <View className="mt-3 h-24 items-center justify-center rounded-2xl bg-unsorted-mist"><Text className="text-sm text-unsorted-ink" style={{ fontFamily: 'DMSans_700Bold' }}>Video attached</Text><Text className="mt-1 text-xs text-unsorted-moss" style={{ fontFamily: 'DMSans_400Regular' }}>Playback is coming next.</Text></View>}
-        {thought.attachmentKind === 'audio' && thought.attachmentUri && <View className="mt-3"><AudioTimeline uri={thought.attachmentUri} fallbackDurationMillis={thought.attachmentDurationMillis ?? undefined} /></View>}
+        {thought.attachmentKind === 'audio' && thought.attachmentUri && <View className="mt-3 h-9 w-[154px] rounded-full bg-unsorted-mist px-2"><AudioTimeline compact uri={thought.attachmentUri} fallbackDurationMillis={thought.attachmentDurationMillis ?? undefined} /></View>}
         <View className="mt-3 flex-row flex-wrap gap-2"><Pressable onPress={() => void sendTo('search', thought.text)} className="rounded-full border border-unsorted-line bg-unsorted-canvas px-3 py-2"><Text className="text-xs text-unsorted-ink" style={{ fontFamily: 'DMSans_500Medium' }}>Search</Text></Pressable><Pressable onPress={() => Alert.alert('Open with AI?', 'Only this thought will be opened in your browser.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Continue', onPress: () => void sendTo('ai', thought.text) }])} className="rounded-full bg-unsorted-roast px-3 py-2"><Text className="text-xs text-unsorted-cream" style={{ fontFamily: 'DMSans_700Bold' }}>Ask AI</Text></Pressable><Pressable onPress={() => void copyThought(thought.text)} className="flex-row items-center rounded-full border border-unsorted-line bg-unsorted-canvas px-3 py-2" accessibilityLabel="Copy thought"><Copy size={13} color={colors.roast} /><Text className="ml-1.5 text-xs text-unsorted-ink" style={{ fontFamily: 'DMSans_500Medium' }}>Copy</Text></Pressable></View>
       </View></SwipeableThought>)}
     </ScrollView>
-    <Pressable pointerEvents={sheetExpanded ? 'auto' : 'none'} onPress={closeSheet} style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, zIndex: 19 }} accessibilityElementsHidden />
-    <CaptureSheet ref={sheetRef} prompt={capturePrompts[capturePromptIndex]} draft={draft} previewCount={preview.length} listening={listening} onDraftChange={setDraft} onToggleVoice={() => void toggleVoiceInput()} onStopVoice={() => ExpoSpeechRecognitionModule.stop()} onSave={saveDraft} onClear={confirmClearDraft} onCollapseHaptic={() => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)} onOpenHaptic={() => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)} onExpandedChange={setSheetExpanded} onAttachments={saveAttachments} />
+    <Pressable pointerEvents={sheetExpanded ? 'auto' : 'none'} onPress={closeSheet} style={{ position: 'absolute', top: insets.top + 72, right: 0, bottom: 0, left: 0, zIndex: 19 }} accessibilityElementsHidden />
+    <CaptureSheet ref={sheetRef} prompt={capturePrompts[capturePromptIndex]} draft={draft} richText={richDraft} previewCount={preview.length} listening={listening} onDraftChange={setDraft} onRichTextChange={setRichDraft} onToggleVoice={() => void toggleVoiceInput()} onStopVoice={() => ExpoSpeechRecognitionModule.stop()} onSave={saveDraft} onClear={confirmClearDraft} onCollapseHaptic={() => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)} onOpenHaptic={() => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)} onExpandedChange={setSheetExpanded} onAttachments={saveAttachments} />
   </View>;
 }

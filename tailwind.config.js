@@ -6,16 +6,17 @@ module.exports = {
     extend: {
       colors: {
         unsorted: {
-          canvas: '#F5F0E6',
+          canvas: '#FAF8F3',
           ink: '#242019',
           muted: '#74876A',
           pine: '#242019',
-          mist: '#ECE8DB',
-          line: '#DED6C7',
-          soft: '#EEE8DC',
+          mist: '#F1EEE7',
+          line: '#E4DFD6',
+          soft: '#F4F1EB',
+          quiet: '#9B9187',
           persimmon: '#EF705A',
           moss: '#74876A',
-          cream: '#F5F0E6',
+          cream: '#FFFDF8',
           roast: '#242019'
         }
       }

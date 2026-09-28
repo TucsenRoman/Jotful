@@ -1,31 +1,23 @@
 export type ThoughtKind = 'question' | 'idea' | 'thought';
 
-const thoughtStarter = /^(how|what|why|where|when|who|can|could|should|would|is|are|do|does|did|maybe|perhaps|i wonder|idea\b|what if|remember|todo\b|to do\b|need to\b|i need to\b|i should\b|call\b|buy\b|send\b|schedule\b|we should\b|let's\b)/i;
-
 export function splitThoughts(input: string): string[] {
-  const paragraphs = input
+  // A line break is often just a visual pause in one thought. Only an explicit
+  // blank line marks a new thought, so saving can never peel a final line or a
+  // sentence beginning with "Maybe" into a separate item.
+  return input
     .replace(/\r\n/g, '\n')
-    .split(/\n+/)
-    .map((value) => value.trim().replace(/^(?:[-*•]|\d+[.)])\s+/, ''))
+    .split(/\n\s*\n+/)
+    .flatMap((paragraph) => {
+      const lines = paragraph
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
+      const isList = lines.length > 0 && lines.every((line) => /^(?:[-*•]|\d+[.)])\s+/.test(line));
+      return isList
+        ? lines.map((line) => line.replace(/^(?:[-*•]|\d+[.)])\s+/, ''))
+        : [lines.join(' ')];
+    })
     .filter(Boolean);
-
-  return paragraphs.flatMap((paragraph) => {
-    const sentences = paragraph.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [paragraph];
-    const thoughts: string[] = [];
-    let current = '';
-
-    for (const sentence of sentences.map((value) => value.trim()).filter((value) => value.length > 2)) {
-      if (current && thoughtStarter.test(sentence)) {
-        thoughts.push(current);
-        current = sentence;
-      } else {
-        current = current ? `${current} ${sentence}` : sentence;
-      }
-    }
-
-    if (current) thoughts.push(current);
-    return thoughts;
-  });
 }
 
 export function classifyThought(text: string): ThoughtKind {

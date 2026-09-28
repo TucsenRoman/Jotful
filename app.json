@@ -10,6 +10,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.tucsenroman.unsorted",
+      "appleTeamId": "AVVSMR4ABB",
       "buildNumber": "6",
       "icon": {
         "light": "./assets/ios-icons/jotful-light.png",
@@ -63,6 +64,7 @@
           "microphonePermission": "Allow Jotful to record private audio notes."
         }
       ],
+      "@apollohg/react-native-rich-text-editor",
       [
         "expo-widgets",
         {
@@ -93,7 +95,15 @@
         }
       ],
       "expo-font",
-      "expo-video"
+      "expo-video",
+      "@react-native-vector-icons/material-design-icons",
+      "@bacons/apple-targets",
+      [
+        "@appsent-co/react-native-watchos",
+        {
+          "targetName": "watch"
+        }
+      ]
     ],
     "extra": {
       "eas": {

@@ -1,10 +1,10 @@
 import { Pause, Play } from "lucide-react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
-import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
+import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 
 const colors = {
-  cream: "#F5F0E6",
+  cream: "#FFFDF8",
   roast: "#242019",
   moss: "#74876A",
   persimmon: "#EF705A",
@@ -30,6 +30,9 @@ export default function AudioTimeline({
   const duration = status.duration || (fallbackDurationMillis ?? 0) / 1000;
   const progress =
     duration > 0 ? Math.min(1, status.currentTime / duration) : 0;
+  useEffect(() => {
+    void setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
+  }, []);
   const togglePlayback = async () => {
     if (status.playing) {
       player.pause();

@@ -14,9 +14,10 @@ const { splitThoughts, classifyThought } = moduleExports;
 
 assert.deepEqual(
   splitThoughts('What should the first Unsorted launch include? Maybe a daily review could help people return to ideas. I should ask three friends to try the beta.'),
-  ['What should the first Unsorted launch include?', 'Maybe a daily review could help people return to ideas.', 'I should ask three friends to try the beta.']
+  ['What should the first Unsorted launch include? Maybe a daily review could help people return to ideas. I should ask three friends to try the beta.']
 );
 assert.deepEqual(splitThoughts('- One loose idea\r\n* What should happen next?'), ['One loose idea', 'What should happen next?']);
+assert.deepEqual(splitThoughts('First thought.\n\nSecond thought.'), ['First thought.', 'Second thought.']);
 assert.equal(classifyThought('What should happen next?'), 'question');
 assert.equal(classifyThought('Maybe a daily review could help.'), 'idea');
 assert.equal(classifyThought('I should ask three friends.'), 'thought');
