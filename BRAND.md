@@ -21,8 +21,8 @@ The approved logo family has four hand-authored vectors, imported from `Untitled
 | `Light.svg` | Light UI and light marketing surfaces | Cream square field; Persimmon-to-Cream left wing, Moth Green right wing, Roast body. |
 | `Dark.svg` | Dark UI and dark marketing surfaces | Roast square field; the same wings, Cream body. |
 | `Light_Loop.svg` | Light-theme loop/app-avatar use | Light mark plus a Roast loop line. |
-| `Dark_Loop.svg` | Dark-theme loop/app-avatar use | Dark mark plus a Cream loop line. For the iOS Dark icon export, its square field is removed so the system can supply the appearance background. |
-| `Tinted_Loop.svg` | iOS tinted Home Screen appearance | Grayscale loop mark, preserving tonal hierarchy for the system tint. |
+| `Dark_Loop.svg` | Dark-theme loop/app-avatar use | Clear-background mark plus a Cream loop line. iOS supplies the Dark appearance background. |
+| `Tinted_Loop.svg` | iOS tinted Home Screen appearance | Clear-background grayscale loop mark, preserving tonal hierarchy for the system tint. |
 
 ### Transparent UI marks
 
@@ -114,7 +114,7 @@ If a new asset competes with the moth or makes Persimmon feel like an alarm colo
 
 1. Start from the vector mark for product and web work; do not export raster copies as new masters.
 2. Import the four approved source vectors without changing their paths, gradients, or view boxes. Keep Light/Dark and standard/Loop as distinct files.
-3. Generate 1024 px iOS exports with `node scripts/render-ios-icons.cjs`: Light Loop for the default appearance, transparent-background Dark Loop for the system Dark appearance, and grayscale Tinted Loop for tinted appearances.
+3. Generate 1024 px iOS exports with `node scripts/render-ios-icons.cjs`: Light Loop for the default appearance, plus clear-background Dark Loop and grayscale Tinted Loop marks so iOS can supply their appearance backgrounds.
 4. Use `assets/icon-1024.png` as the default/Android fallback, generated from Light Loop with `node scripts/render-app-icon.cjs`.
 5. When updating the moth, update the source SVG and the React Native implementation together, regenerate every icon export, then review it at 20 px, 32 px, 40 px, and 1024 px on both Cream and Roast.
 6. Add approved exports in `assets/` with descriptive names. Keep exploratory concepts in a separate `assets/explorations/` folder until approved.
