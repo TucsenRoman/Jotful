@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.tucsenroman.unsorted",
-      "buildNumber": "5",
+      "buildNumber": "6",
       "icon": {
         "light": "./assets/ios-icons/jotful-light.png",
         "dark": "./assets/ios-icons/jotful-dark.png",
