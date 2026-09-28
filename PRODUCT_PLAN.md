@@ -1,8 +1,9 @@
-# Unsorted product plan
+# Jotful product plan
 
 ## Product promise
 
-Unsorted is a private thought inbox: speak or write without formatting, then act on each thought only when it becomes useful.
+Jotful is a private capture inbox: write, record, or attach media, then act on
+each thought only when it becomes useful.
 
 ## Core experience
 
@@ -18,11 +19,12 @@ The original goal is not automatic organization. It is reducing the friction bet
 
 | Capability | MVP behavior | Why it matters |
 | --- | --- | --- |
-| Capture | One multiline thought dump with no required title, tag, or folder | Makes capture genuinely faster than a conventional notes app |
+| Capture | Text with optional title, bold, and lists; no required folder | Makes capture genuinely faster than a conventional notes app |
 | Voice capture | On-device voice-to-text when supported by the iPhone | Lets someone capture a thought without typing or sending audio to Unsorted |
 | Thought splitting | Split at new lines and sentence endings; show the prospective count before saving | Delivers the central magic without a cloud model |
 | Classification | Local rules identify questions and ideas | Lets actions feel relevant while preserving privacy |
 | Inline actions | Search web, Ask AI with a consent step, and More | Turns a note into an immediately useful unit |
+| Media and recovery | Local audio, photo, and video capture with durable recovery drafts | Protects unfinished captures and preserves creative context |
 | Home widget | A compact count of loose thoughts on the iPhone Home Screen | Keeps the capture habit visible without adding organization work |
 | Resolution and search | Resolve an item when it is done; search text locally | Enough control after capture, not before it |
 | Privacy | Local SQLite, no account, no analytics, no automatic sends | Clear App Store disclosure and product differentiation |
@@ -65,19 +67,20 @@ These may be valuable later, but each introduces privacy, support, and App Revie
 
 Improve splitting with a compact on-device model or user-corrected feedback only after the rule-based version has enough real evidence about where it fails. Sync should arrive after the app has proved the core capture loop.
 
-## Post-launch backlog: audio thoughts
+## Completed capability: audio thoughts
 
 **Concept:** Let a person capture an **audio thought** alongside text and voice-to-text. This is not dictation: it preserves the original sound for musical ideas, spoken reflections, conversation notes, or any moment where the recording matters more than a transcript.
 
-### Initial scope (v1.1 candidate)
+### Current behavior
 
 - Record, stop, and play an audio thought locally on-device.
 - Save the audio file plus duration, timestamp, and local file path in the existing local persistence layer.
 - Show a compact audio-thought card with playback, duration, resolve, delete, and export/share actions.
 - Request microphone permission only after a person explicitly chooses Audio.
-- Provide a storage view or setting that makes local recording usage understandable.
+- Preserve the recording in app-managed local storage so playback works after
+  the app restarts.
 
-### Explicitly defer
+### Still deferred
 
 - Cloud sync or account-backed audio
 - Background recording

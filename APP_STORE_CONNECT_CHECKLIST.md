@@ -1,18 +1,17 @@
-# Unsorted v1 — App Store Connect checklist
+# Jotful — App Store Connect checklist
 
 This is the remaining owner-operated work before public submission. The app’s bundle identifier is already locked as `com.tucsenroman.unsorted`.
 
 ## Prepare outside the codebase
 
-- [x] Publish the privacy policy: https://tucsenroman.github.io/unsorted-support/privacy.html
-- [x] Publish the support page: https://tucsenroman.github.io/unsorted-support/
-- [ ] Run [MVP_TEST_AND_SCREENSHOT_SCRIPT.md](./MVP_TEST_AND_SCREENSHOT_SCRIPT.md) on the iPhone and retain the four anonymized screenshots.
-- [ ] Commit the current icon, visual polish, voice capture, widget, and action changes after the on-device check passes.
+- [ ] Publish the renamed Jotful privacy policy and support page, then update the final URLs below.
+- [ ] Run [RELEASE_TEST_PLAN.md](./RELEASE_TEST_PLAN.md) on the iPhone and retain anonymized screenshots.
+- [ ] Commit and push the validated release changes.
 
 ## Create the app record in App Store Connect
 
 1. Open **Apps** → **+** → **New App**.
-2. Use **Unsorted**, primary language **English (U.S.)**, platform **iOS**, bundle ID `com.tucsenroman.unsorted`, SKU `unsorted-ios-001`, and full access.
+2. Use **Jotful**, primary language **English (U.S.)**, platform **iOS**, bundle ID `com.tucsenroman.unsorted`, SKU `jotful-ios-001`, and full access.
 3. Add the prepared metadata from [APP_STORE_LISTING.md](./APP_STORE_LISTING.md): Productivity primary category, subtitle, description, keywords, support URL, and privacy-policy URL.
 4. Upload at least one (up to ten) device screenshots in the screenshot slots App Store Connect displays. Use the highest-size iPhone screenshots if the UI is identical across sizes.
 5. In **App Privacy**, choose **No, we do not collect data from this app** for this v1 only after confirming Voice remains on-device. This remains accurate only while Unsorted keeps notes in local SQLite, does not retain or transmit voice, and sends a thought only through the user-initiated browser handoff.

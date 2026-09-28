@@ -17,8 +17,8 @@ import { MothMark } from './src/brand/MothMark';
 import { RichTextViewer } from '@apollohg/react-native-rich-text-editor';
 import CaptureSheet, { type CaptureSheetHandle } from './src/components/CaptureSheet';
 import AudioTimeline from './src/components/AudioTimeline';
-import CaptureWidget from './src/widgets/CaptureWidget';
-import RecentsWidget from './src/widgets/RecentsWidget';
+import CaptureWidget from './targets/widgets/CaptureWidget';
+import RecentsWidget from './targets/widgets/RecentsWidget';
 import { classifyThought, splitThoughts, type ThoughtKind } from './src/segmentation';
 import { clearCaptureDraft, createAttachmentThoughts, createThought, deleteThought, getPreference, initializeDatabase, listRecentThoughts, listThoughts, recoverCaptureDraft, setPreference, togglePinned, toggleResolved, updateThought, type AttachmentKind, type Thought } from './src/storage';
 

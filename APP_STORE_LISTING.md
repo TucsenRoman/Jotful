@@ -1,39 +1,39 @@
-# Unsorted — App Store listing draft
+# Jotful — App Store listing draft
 
 ## Name
 
-Unsorted
+Jotful
 
 ## Subtitle
 
-Private inbox for thoughts
+Private capture for thoughts
 
 ## Promotional text
 
-Think first. Organize later. Unsorted finds the separate thoughts in your notes, then lets you take action only when you are ready.
+Capture first. Decide what to do with it later.
 
 ## Description
 
-Unsorted is a calm place to drop every question, idea, and half-formed thought.
+Jotful is a calm place to drop every question, idea, recording, and half-formed thought.
 
-Speak or write naturally in one note. Unsorted separates your thoughts for you, so you can search the web or ask AI when one becomes useful.
+Write, record, or attach media naturally. Jotful keeps it private on your device, with recovery drafts that protect unfinished captures.
 
 Your notes stay on your device. Nothing is sent anywhere until you tap an action.
 
 FEATURES
 
-- Write without formatting or folders
+- Write with titles, bold text, and lists without folders
 - Capture a thought with on-device voice input
-- Automatically separate thoughts from one long dump
+- Keep local audio recordings alongside text
 - Spot questions and ideas
 - Search the web from a selected thought
 - Open a selected thought with AI only when you choose to
 - Resolve thoughts when they are done
 - Search everything locally
-- Keep capture one tap away from your Home Screen
+- Keep capture one tap away from your Home Screen with widgets
 - No account. No ads. No analytics.
 
-Unsorted is for capturing first and deciding later.
+Jotful is for capturing first and deciding later.
 
 ## Keywords
 
@@ -54,6 +54,6 @@ Productivity (primary); Utilities (secondary)
 
 Support contact: romanforgedllc@gmail.com
 
-Support URL: https://tucsenroman.github.io/unsorted-support/
+Support URL: configure after the renamed Jotful support site is published.
 
-Privacy policy URL: https://tucsenroman.github.io/unsorted-support/privacy.html
+Privacy policy URL: configure after the renamed Jotful support site is published.
