@@ -7,6 +7,7 @@
     "ios": "expo start --ios",
     "android": "expo start --android",
     "web": "expo start --web",
+    "icons:ios": "node scripts/render-ios-icons.cjs",
     "verify:segmentation": "node scripts/check-segmentation.cjs"
   },
   "dependencies": {
