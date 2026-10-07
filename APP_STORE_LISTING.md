@@ -22,7 +22,7 @@ Your notes stay on your device. Nothing is sent anywhere until you tap an action
 
 FEATURES
 
-- Write with titles, bold text, and lists without folders
+- Write freely without folders or required organization
 - Capture a thought with on-device voice input
 - Keep local audio recordings alongside text
 - Spot questions and ideas

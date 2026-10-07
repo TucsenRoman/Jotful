@@ -3,7 +3,7 @@
     "name": "Jotful",
     "slug": "unsorted",
     "scheme": "jotful",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "icon": "./assets/icon-1024.png",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
@@ -11,11 +11,11 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.tucsenroman.unsorted",
       "appleTeamId": "AVVSMR4ABB",
-      "buildNumber": "6",
+      "buildNumber": "9",
       "icon": {
-        "light": "./assets/ios-icons/jotful-light.png",
-        "dark": "./assets/ios-icons/jotful-dark.png",
-        "tinted": "./assets/ios-icons/jotful-tinted.png"
+        "light": "./assets/ios-icons/jotful-light-clear.png",
+        "dark": "./assets/ios-icons/jotful-dark-clear.png",
+        "tinted": "./assets/ios-icons/jotful-tinted-clear.png"
       },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false

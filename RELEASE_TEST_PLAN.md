@@ -5,10 +5,12 @@ build. Keep screenshots free of personal notes.
 
 ## Test 1 — The core capture loop
 
-1. Start with an empty Jotful inbox.
-2. Open the capture footer. It should rise above the keyboard without blocking
+1. Cold-launch Jotful. Confirm the keyboard stays hidden until capture, search,
+   or another text field is deliberately opened.
+2. Start with an empty Jotful inbox.
+3. Open the capture footer. It should rise above the keyboard without blocking
    the Search or Settings buttons.
-3. Enter this exact brain dump:
+4. Enter this exact brain dump:
 
    ```text
    What should the first Unsorted launch include?
@@ -16,8 +18,8 @@ build. Keep screenshots free of personal notes.
    I should ask three friends to try the beta.
    ```
 
-4. Confirm the **Save thought** control becomes active, then tap it.
-5. Confirm that three cards appear, labelled Question, Idea, and Thought.
+5. Confirm the **Save thought** control becomes active, then tap it.
+6. Confirm that three cards appear, labelled Question, Idea, and Thought.
 
 Screenshot A: the three resulting thought cards and their inline actions.
 
@@ -37,8 +39,12 @@ Screenshot B: a thought with Search, Ask AI, and Resolve actions.
 2. Speak: `Could a daily review help people return to ideas?` Pause for at least five seconds, then continue speaking. Confirm recording continues until the stop control is tapped; save the resulting thought.
 3. Record an audio thought, save it, force-quit the app, and reopen it.
    Confirm playback still works from the list item.
-4. Tap the header search icon and search `beta`. Confirm the matching thought is found.
-4. Clear search and verify all thoughts return.
+4. Before installing the next build over this one, record and save a second
+   audio thought. Install the update without deleting Jotful, then confirm both
+   recordings still play. This verifies that recordings are stored in durable
+   app Documents storage rather than an update-cleared cache location.
+5. Tap the header search icon and search `beta`. Confirm the matching thought is found.
+6. Clear search and verify all thoughts return.
 
 Screenshot C: voice capture or the expanded header search with a filtered thought.
 
