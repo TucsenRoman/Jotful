@@ -4,3 +4,6 @@ node_modules/
 eas-build-*.log
 dist/
 npm-debug.*
+
+# Local Expo dev QR codes
+*-qr.png
