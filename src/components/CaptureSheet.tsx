@@ -1,9 +1,4 @@
 import { BlurView } from "expo-blur";
-import {
-  createNativeEditorDocumentHandle,
-  RichTextEditor,
-  type RichTextEditorRef,
-} from "@apollohg/react-native-rich-text-editor";
 import { Directory, File, Paths } from "expo-file-system";
 import * as MediaLibrary from "expo-media-library/legacy";
 import {
@@ -86,7 +81,6 @@ export type CaptureSheetHandle = {
 type Props = {
   prompt: string;
   draft: string;
-  richText: string;
   previewCount: number;
   listening: boolean;
   onDraftChange: (text: string) => void;
@@ -119,7 +113,6 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
     {
       prompt,
       draft,
-      richText,
       previewCount,
       listening,
       onDraftChange,
@@ -139,13 +132,14 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
     const { height: viewportHeight, width: viewportWidth } =
       useWindowDimensions();
     const inputRef = useRef<TextInput>(null);
-    const richEditorRef = useRef<RichTextEditorRef>(null);
-    const richDocument = useMemo(
-      () => createNativeEditorDocumentHandle({ initialization: { type: "localEmpty" } }),
-      [],
-    );
-    useEffect(() => () => richDocument.destroy(), [richDocument]);
+    const focusRichEditor = () => {
+      requestAnimationFrame(() => inputRef.current?.focus());
+    };
     const pendingCollapse = useRef(false);
+    // CaptureSheet stays mounted while collapsed, so the write input also stays
+    // in the native view hierarchy. Keep its focus lifecycle separate from the
+    // current mode so mounting the sheet cannot summon the keyboard.
+    const [isExpanded, setIsExpanded] = useState(false);
     const [keyboardVisible, setKeyboardVisible] = useState(false);
     const [keyboardHeight, setKeyboardHeight] = useState(0);
     const [activeMode, setActiveMode] = useState<
@@ -269,6 +263,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
     );
 
     const animate = (to: 0 | 1, onDone?: () => void) => {
+      setIsExpanded(to === 0);
       if (to === 0) onExpandedChange(true);
       // Release the inbox controls immediately. Waiting until the animation
       // finishes leaves an invisible backdrop that eats the first tap.
@@ -301,10 +296,18 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
       if (mode === "voice") beginVoice();
       else if (mode === "write") {
         setComposerMode(pendingAttachment ? "attachment" : "text");
-        requestAnimationFrame(() => richEditorRef.current?.focus());
+        focusRichEditor();
       }
       animate(0);
     };
+
+    // `open()` can run before the native editor mounts. Repeating the focus
+    // after the composer commits makes opening and tapping into it reliable.
+    useEffect(() => {
+      if (!isExpanded || activeMode !== "write" || composerMode !== "text")
+        return;
+      focusRichEditor();
+    }, [activeMode, composerMode, isExpanded]);
 
     const reviewAttachment = (attachment: PendingAttachment) => {
       if (attachment.kind === "image" || attachment.kind === "video") {
@@ -411,7 +414,6 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
       // collapses the composer, so the two iOS transitions never compete.
       if (keyboardVisible) {
         inputRef.current?.blur();
-        richEditorRef.current?.blur();
         Keyboard.dismiss();
         setKeyboardVisible(false);
         return;
@@ -420,13 +422,11 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
       onCollapseHaptic();
       pendingCollapse.current = false;
       inputRef.current?.blur();
-      richEditorRef.current?.blur();
       animate(1);
     };
 
     const pickMedia = async (source: "library" | "camera" | "video") => {
       inputRef.current?.blur();
-      richEditorRef.current?.blur();
       Keyboard.dismiss();
       setKeyboardVisible(false);
       setShowMediaOptions(false);
@@ -950,34 +950,34 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                 >
                   {composerMode === "text" && (
                     <>
-                      <RichTextEditor
-                        ref={richEditorRef}
-                        documentHandle={richDocument}
-                        value={richText || `<p>${draft.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>`}
-                        onContentChange={(html) => {
-                          onRichTextChange(html);
-                          onDraftChange(richEditorRef.current?.getTextContent() ?? "");
-                        }}
-                        placeholder="Write your thought…"
-                        autoCapitalize="sentences"
-                        heightBehavior="fixed"
-                        toolbarPlacement="keyboard"
-                        toolbarItems={[
-                          { type: "heading", level: 1, label: "Title", icon: { type: "default", id: "h1" } },
-                          { type: "mark", mark: "bold", label: "Bold", icon: { type: "default", id: "bold" } },
-                          { type: "list", listType: "bullet_list", label: "Bullet list", icon: { type: "default", id: "bulletList" } },
-                          { type: "list", listType: "ordered_list", label: "Numbered list", icon: { type: "default", id: "orderedList" } },
-                          { type: "action", key: "todo", label: "To-do", icon: { type: "glyph", text: "☐" } },
-                        ]}
-                        onToolbarAction={(key) => {
-                          if (key === "todo") richEditorRef.current?.insertText("☐ ");
-                        }}
-                        style={{ flex: 1, marginBottom: 108 }}
-                        theme={{
-                          text: { fontSize: 16, lineHeight: 24, color: colors.roast },
-                          h1: { fontSize: 28, lineHeight: 34, fontWeight: "600" },
-                        }}
-                      />
+                      <View className="flex-1" onTouchStart={focusRichEditor}>
+                        <TextInput
+                          ref={inputRef}
+                          value={draft}
+                          onChangeText={(text) => {
+                            onDraftChange(text);
+                            const escaped = text
+                              .replace(/&/g, "&amp;")
+                              .replace(/</g, "&lt;")
+                              .replace(/>/g, "&gt;")
+                              .replace(/\n/g, "<br>");
+                            onRichTextChange(escaped ? `<p>${escaped}</p>` : "");
+                          }}
+                          placeholder="Write your thought…"
+                          placeholderTextColor={colors.quiet}
+                          autoCapitalize="sentences"
+                          multiline
+                          textAlignVertical="top"
+                          style={{
+                            flex: 1,
+                            marginBottom: 108,
+                            color: colors.roast,
+                            fontFamily: "DMSans_400Regular",
+                            fontSize: 17,
+                            lineHeight: 26,
+                          }}
+                        />
+                      </View>
                       <View className="absolute bottom-3 left-3 right-3 gap-2">
                         <View className="items-end">
                           <Pressable

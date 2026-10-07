@@ -288,6 +288,6 @@ function UnsortedApp() {
       </View></SwipeableThought>)}
     </ScrollView>
     <Pressable pointerEvents={sheetExpanded ? 'auto' : 'none'} onPress={closeSheet} style={{ position: 'absolute', top: insets.top + 72, right: 0, bottom: 0, left: 0, zIndex: 19 }} accessibilityElementsHidden />
-    <CaptureSheet ref={sheetRef} prompt={capturePrompts[capturePromptIndex]} draft={draft} richText={richDraft} previewCount={preview.length} listening={listening} onDraftChange={setDraft} onRichTextChange={setRichDraft} onToggleVoice={() => void toggleVoiceInput()} onStopVoice={() => ExpoSpeechRecognitionModule.stop()} onSave={saveDraft} onClear={confirmClearDraft} onCollapseHaptic={() => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)} onOpenHaptic={() => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)} onExpandedChange={setSheetExpanded} onAttachments={saveAttachments} />
+    <CaptureSheet ref={sheetRef} prompt={capturePrompts[capturePromptIndex]} draft={draft} previewCount={preview.length} listening={listening} onDraftChange={setDraft} onRichTextChange={setRichDraft} onToggleVoice={() => void toggleVoiceInput()} onStopVoice={() => ExpoSpeechRecognitionModule.stop()} onSave={saveDraft} onClear={confirmClearDraft} onCollapseHaptic={() => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)} onOpenHaptic={() => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)} onExpandedChange={setSheetExpanded} onAttachments={saveAttachments} />
   </View>;
 }
