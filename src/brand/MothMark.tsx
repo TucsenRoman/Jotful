@@ -12,7 +12,7 @@ export function MothMark({ size = 32, dark = false, withBackdrop = false }: Moth
   const gradientId = dark ? 'moth-dark-left' : 'moth-light-left';
 
   return (
-    <Svg width={size} height={size} viewBox="0 0 32 32" fill="none" accessibilityLabel="Unsorted moth mark">
+    <Svg width={size} height={size} viewBox="0 0 32 32" fill="none" accessibilityLabel="Jotful moth mark">
       {withBackdrop && <Rect width={32} height={32} fill={background} />}
       <Path d="M15.8272 15.9448C8.12721 29.3448 -0.272795 26.6448 1.82721 15.8448C3.62721 6.44482 12.0272 7.34482 15.8272 14.5448V15.9448Z" fill={`url(#${gradientId})`} />
       <Path d="M16.4272 16.3449C24.1272 2.9449 32.5272 5.6449 30.4272 16.4449C28.6272 25.8449 20.2272 24.9449 16.4272 17.7449V16.3449Z" fill="#58795C" />
