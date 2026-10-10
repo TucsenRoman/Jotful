@@ -54,6 +54,6 @@ Productivity (primary); Utilities (secondary)
 
 Support contact: romanforgedllc@gmail.com
 
-Support URL: configure after the renamed Jotful support site is published.
+Support URL: https://tucsenroman.github.io/Jotful/
 
-Privacy policy URL: configure after the renamed Jotful support site is published.
+Privacy policy URL: https://tucsenroman.github.io/Jotful/privacy.html
