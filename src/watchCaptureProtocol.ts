@@ -19,3 +19,5 @@ export function isWatchCapture(value: unknown): value is WatchCapture {
     && typeof capture.createdAt === 'number'
     && capture.source === 'watch';
 }
+
+export const WATCH_ACK_TYPE = 'jotful.capture.ack';

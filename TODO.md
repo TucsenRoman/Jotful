@@ -12,4 +12,4 @@ Temporary list. Once tasks have a more stable home (a Notion database, for examp
 
 ## Next
 - [ ] Set up the Apple Watch provisioning profile, then drop `JOTFUL_PHONE_ONLY_BUILD` from the `production` profile so the Watch app ships.
-- [ ] Watch capture acknowledgement and deduplication (next Watch milestone in `targets/TARGETS_ROADMAP.md`).
+- [x] Watch capture acknowledgement and deduplication: the iPhone saves each Watch capture once by id and confirms it back (`src/watchSync.ts`). Needs a real-device test.

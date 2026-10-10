@@ -17,8 +17,8 @@ Purpose: rapid, private capture from the wrist.
 
 The Watch queues a uniquely identified text capture through WatchConnectivity.
 The paired iPhone must durably store that capture before it acknowledges it.
-That acknowledgement/deduplication work is intentionally the next Watch
-milestone; it prevents retries from creating duplicates or losing a thought.
+The iPhone saves each capture once by id (`watchCaptures` table) and then
+confirms it back, so retries never duplicate or lose a thought (`src/watchSync.ts`).
 
 ### iPhone/iPad widgets (`widgets/`)
 
