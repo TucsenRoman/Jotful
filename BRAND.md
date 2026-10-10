@@ -1,130 +1,59 @@
-# Jotful brand kit
+# Jotful brand: rules for code
 
-This is the working source of truth for Jotful's visual identity. It records the choices already represented in the app, so new screens, social posts, website work, and future logo explorations all start from the same foundation.
-
-## Brand in one sentence
-
-**Jotful is a bright, private landing place for the thoughts that arrive before they have a category.**
-
-The visual language should feel warm, encouraging, playful, and clear—not productivity-software cold, overly mystical, or precious.
-
-## Logo system
-
-### Primary mark: the moth
-
-The moth is Jotful's distinctive symbol: it suggests attraction to fragments of thought, private nocturnal capture, and transformation without implying that every thought must be polished.
-
-The approved logo family has four hand-authored vectors, imported from `Untitled.zip` into [`assets/brand/`](assets/brand/).
-
-| Variant | Intended use | Construction |
-| --- | --- | --- |
-| `Light.svg` | Light UI and light marketing surfaces | Cream square field; Persimmon-to-Cream left wing, Moth Green right wing, Roast body. |
-| `Dark.svg` | Dark UI and dark marketing surfaces | Roast square field; the same wings, Cream body. |
-| `Light_Loop.svg` | Light-theme loop/app-avatar use | Light mark plus a Roast loop line. |
-| `Dark_Loop.svg` | Dark-theme loop/app-avatar use | Clear-background mark plus a Cream loop line. iOS supplies the Dark appearance background. |
-| `Tinted_Loop.svg` | iOS tinted Home Screen appearance | Clear-background grayscale loop mark, preserving tonal hierarchy for the system tint. |
-
-### Transparent UI marks
-
-Use the transparent marks inside the product wherever the surrounding surface already establishes the theme. They deliberately have no square field or loop:
-
-| Variant | Use on | Source |
-| --- | --- | --- |
-| Light mark | Cream and other light surfaces | [`assets/brand/moth-mark-light.svg`](assets/brand/moth-mark-light.svg) |
-| Dark mark | Roast and other dark surfaces | [`assets/brand/moth-mark-dark.svg`](assets/brand/moth-mark-dark.svg) |
-
-The React Native `MothMark` component is transparent by default. Pass `dark` for a Cream body on a dark surface, and pass `withBackdrop` only when a compact square logo tile is explicitly needed.
-
-### Visual reference
-
-| Light | Dark |
-| --- | --- |
-| ![Light moth](assets/brand/moth-light.svg) | ![Dark moth](assets/brand/moth-dark.svg) |
-
-| Light Loop | Dark Loop |
-| --- | --- |
-| ![Light loop moth](assets/brand/moth-light-loop.svg) | ![Dark loop moth](assets/brand/moth-dark-loop.svg) |
-
-| Tinted Loop |
-| --- |
-| ![Tinted loop moth](assets/brand/moth-tinted-loop.svg) |
-
-Do not redraw, stretch, crop, add outlines, add a drop shadow, or recolor individual parts of the moth. Preserve the three-part construction: two asymmetrical wings and the narrow central body. The color treatment belongs to the selected theme variant rather than serving as an outline or structural divider.
-
-### Clear space and minimum size
-
-- Keep clear space around the mark equal to at least **one quarter of the mark's width** on every side.
-- In interface use, do not render the mark below **20 px** square. For favicons or very small system surfaces, use the exported app icon instead of simplifying the vector by hand.
-- Keep the mark upright. It should never be mirrored, rotated, or used as a repeating pattern behind copy.
-
-### Lockups
-
-Until a wordmark is formally drawn, use a simple text lockup rather than creating an unofficial logo.
-
-| Context | Treatment |
-| --- | --- |
-| App icon | Use the Dark Loop mark on a Roast square field; export from the approved `Dark_Loop.svg` source. The operating system applies any needed icon mask. |
-| Product header | Moth plus the name **Jotful** in DM Sans Bold. |
-| Marketing / editorial | Moth above or to the left of **Jotful** in DM Sans Bold; keep the name sentence case. |
-| Small UI | Moth alone, with an accessible label such as “Jotful”. |
-
-Use the mark by itself when the product name is already visible in the surrounding context. Do not pair it with a system font, all-caps wordmark, or an illustrated type treatment.
+**To see the brand, open the brand book:** https://claude.ai/artifact/88xS8w3fFuU4Key1M8FjHA (source: [BRAND_BOOK.html](BRAND_BOOK.html)). This file only holds what code and assets need.
 
 ## Color
 
-| Role | Name | Hex | Use |
-| --- | --- | --- | --- |
-| Core light | Cream | `#F5F0E6` | Main light surface; light-theme logo field and dark-theme moth body. |
-| Core dark | Roast | `#242019` | Primary text, dark-theme logo field, light-theme moth body. |
-| Core accent | Persimmon | `#EF705A` | Primary moth wing and capture/action emphasis. |
-| Logo supporting accent | Moth Green | `#58795C` | Secondary moth wing in every approved logo variant. |
-| Supporting UI accent | Moss | `#74876A` | Secondary information and calm UI state. |
-| Soft accent | Blush | `#F8D8D1` | Selected, active, or gentle feedback surfaces. |
-| Divider | Oat | `#EAE4DA` | Quiet separators on cream surfaces. |
+| Name | Hex | Use |
+| --- | --- | --- |
+| Canvas | `#FAF8F3` | Behind every screen |
+| Card | `#FFFDF8` | Thought cards, settings groups, the capture sheet, text on Roast |
+| Cream | `#F5F0E6` | Logo only (light logo field, dark moth body) |
+| Roast | `#242019` | Text, Ask AI pill, dark surfaces |
+| Persimmon | `#EF705A` | Capture and action. Keep it rare |
+| Moth Green | `#58795C` | Right wing of the moth, middle of the wordmark |
+| Moss | `#74876A` | Quiet details, secondary text |
+| Blush | `#F8D8D1` | Selected or gentle feedback |
+| Oat | `#E4DFD6` | Dividers, pill outlines, progress tracks |
+| Mist | `#F1EEE7` | Tag and icon-button fills, idle buttons |
+| Quiet | `#9B9187` | Faint text: "Tap to capture", "Clear thought", disabled labels |
 
-The mark is theme-specific, not background-neutral: use the complete Light or Dark variant as supplied. Its left wing may use the approved Persimmon-to-Cream gradient; its right wing remains Moth Green. Do not construct new logo fills or add strokes. In ordinary UI, prefer flat color fields and let Persimmon stay scarce enough to retain its meaning.
+**Save gradient:** the active "Save thought" button fades diagonally from `#E89A89` (soft persimmon) through `#C5A096` and `#9CAA94` to Moss `#74876A`. It's the only gradient in the UI besides the wordmark.
 
-## Typography
+In code these colors are `unsorted-*` in `tailwind.config.js` (`line` = Oat, `cream` = Card, `ink` = Roast). Use those names, not raw color values.
 
-| Job | Family | Default weight | Notes |
-| --- | --- | --- | --- |
-| Display / product name | Fraunces | SemiBold (600) | Warm, reflective, and used sparingly for headings. |
-| Body / controls | DM Sans | Regular (400), Medium (500), Bold (700) | Clear, practical, and legible at small sizes. |
+## Type
 
-Use sentence case for headings, labels, and product naming. Avoid all caps except compact system labels where scanability is more important than voice.
+- **Fraunces SemiBold (600):** headings, the wordmark, capture prompts.
+- **DM Sans 400 / 500 / 700:** everything else.
+- Sentence case everywhere. All caps only for small tags (Idea, Draft, Photo…).
 
-## Image and illustration direction
+## Wordmark
 
-When making future imagery, favor close, intimate, lightly textured subjects: paper, lamplight, hands, small found objects, and moments of reflection. Lighting should be soft and warm; colors should sit near cream, roast, persimmon, and moss.
+"Jotful" in Fraunces SemiBold, 34pt, -1 letter spacing. The gradient runs 150px from the text's left edge: Persimmon → Moth Green (48%) → Roast. The header shows it alone, without the moth. Don't invent other treatments for the name.
 
-Avoid literal moth photography as a decorative shortcut, neon gradients, high-gloss productivity imagery, busy collages, and stock-office aesthetics. The moth mark itself carries the symbolic role.
+## Moth files
 
-## Voice for visual decisions
+| File | Use |
+| --- | --- |
+| `assets/brand/moth-mark-light.svg` | In-app, on light surfaces |
+| `assets/brand/moth-mark-dark.svg` | In-app, on dark surfaces |
+| `assets/brand/moth-light.svg`, `moth-dark.svg` | Square tiles with a background field |
+| `assets/brand/moth-light-loop.svg`, `moth-dark-loop.svg`, `moth-tinted-loop.svg` | App icon appearances |
 
-Choose treatments that feel:
+- React Native: `MothMark` (`src/brand/MothMark.tsx`) is transparent by default; `dark` gives a Cream body; `withBackdrop` only for a square tile.
+- Never redraw, stretch, rotate, mirror, outline, shadow or recolor it. Minimum 20px; clear space is a quarter of its width.
 
-- private rather than performative
-- spacious rather than empty
-- gentle rather than passive
-- considered rather than over-designed
+## Updating the moth or icons
 
-If a new asset competes with the moth or makes Persimmon feel like an alarm color, simplify it.
-
-## Asset workflow
-
-1. Start from the vector mark for product and web work; do not export raster copies as new masters.
-2. Import the four approved source vectors without changing their paths, gradients, or view boxes. Keep Light/Dark and standard/Loop as distinct files.
-3. Generate 1024 px iOS exports with `node scripts/render-ios-icons.cjs`: Light Loop for the default appearance, plus clear-background Dark Loop and grayscale Tinted Loop marks so iOS can supply their appearance backgrounds.
-4. Use `assets/icon-1024.png` as the default/Android fallback, generated from Light Loop with `node scripts/render-app-icon.cjs`.
-5. When updating the moth, update the source SVG and the React Native implementation together, regenerate every icon export, then review it at 20 px, 32 px, 40 px, and 1024 px on both Cream and Roast.
-6. Add approved exports in `assets/` with descriptive names. Keep exploratory concepts in a separate `assets/explorations/` folder until approved.
+1. Edit the source SVG and `MothMark` together. Never use a raster copy as the master.
+2. `npm run icons:ios` (Light Loop default, plus Dark Loop and Tinted Loop), and `node scripts/render-app-icon.cjs` for `assets/icon-1024.png`.
+3. Check it at 20, 32, 40 and 1024px on Canvas and Roast.
+4. Unapproved concepts go in `assets/explorations/`.
+5. Update the brand book (`brand-book` skill) in the same pass.
 
 ## Open decisions
 
-These are intentionally not locked yet:
-
-- A custom drawn wordmark versus the Fraunces text lockup.
-- A defined social/avatar crop beyond the app icon.
-- A small set of photographic or illustration references for marketing.
-
-Any new work on those decisions should update this document with the approved outcome and the source asset location.
+- Hand-draw the wordmark as a vector instead of rendering it from Fraunces?
+- A social/avatar crop beyond the app icon.
+- Photo or illustration references for marketing.

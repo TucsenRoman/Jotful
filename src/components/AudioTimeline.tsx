@@ -83,7 +83,7 @@ export default function AudioTimeline({
           className="h-7 justify-center"
           accessibilityLabel="Seek audio recording"
         >
-          <View className="h-1.5 overflow-hidden rounded-full bg-[#D7D0C4]">
+          <View className="h-1.5 overflow-hidden rounded-full bg-unsorted-line">
             <View
               className="h-full rounded-full bg-unsorted-moss"
               style={{ width: `${progress * 100}%` }}

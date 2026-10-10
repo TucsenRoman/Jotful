@@ -2,7 +2,7 @@
 
 Private, offline-first iPhone capture app for thoughts, voice, recordings, photos and video. **Live on the App Store** (App Store Connect app ID `6815049329`). Formerly "Unsorted": the bundle ID (`com.tucsenroman.unsorted`), Expo slug and npm package name still use the old name and must not change.
 
-Open work lives in [TODO.md](TODO.md). Product scope: [PRODUCT_PLAN.md](PRODUCT_PLAN.md). Brand and voice: [BRAND.md](BRAND.md).
+Open work lives in [TODO.md](TODO.md). Product scope: [PRODUCT_PLAN.md](PRODUCT_PLAN.md). Brand: see `## UI foundations` below.
 
 ## Stack
 
@@ -40,3 +40,11 @@ npm run icons:ios                # re-render iOS icon variants from assets/brand
 1. Typecheck, and run `verify:segmentation` if capture or classification logic changed.
 2. Check it on the iPhone through the dev client (`npx expo start --dev-client`).
 3. Before any release build, run [RELEASE_TEST_PLAN.md](RELEASE_TEST_PLAN.md) and work through [APP_STORE_CONNECT_CHECKLIST.md](APP_STORE_CONNECT_CHECKLIST.md).
+
+## UI foundations
+- Brand book: https://claude.ai/artifact/88xS8w3fFuU4Key1M8FjHA (source: [BRAND_BOOK.html](BRAND_BOOK.html); refresh with the `brand-book` skill)
+- Docs: [BRAND.md](BRAND.md) holds the short rules for code: colors, type, wordmark, moth files, icon workflow.
+- Tokens: `tailwind.config.js` (`unsorted-*` colors, an old name) plus a `colors` object in `App.tsx`. No single tokens file yet.
+- Fonts: Fraunces 600 and DM Sans 400/500/700 via `@expo-google-fonts`, loaded in `App.tsx`.
+- Platforms: Expo (iPhone), light theme only for now.
+- Signature: moth mark, gradient Fraunces wordmark, swipe-to-resolve/pin thought cards, small all-caps kind tags, dark Ask AI pill, capture sheet with a random prompt, audio timeline, "Hold that thought." empty state.

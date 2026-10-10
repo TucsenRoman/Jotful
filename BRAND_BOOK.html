@@ -1,0 +1,364 @@
+<title>Jotful Brand Book</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Fraunces:opsz,wght@9..144,600&display=swap">
+<style>
+/* Layout: one long scroll from day (Canvas) into night (Roast), the moth drawn to the lamp at the end. Single committed look: the brand is light-first. */
+:root {
+  --canvas: #FAF8F3; --card: #FFFDF8; --cream: #F5F0E6; --roast: #242019;
+  --persimmon: #EF705A; --mothgreen: #58795C; --moss: #74876A; --blush: #F8D8D1;
+  --oat: #E4DFD6; --mist: #F1EEE7;
+  --display: "Fraunces", Georgia, "Times New Roman", serif;
+  --body: "DM Sans", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --wordmark: linear-gradient(90deg, #EF705A 0em, #58795C 2.12em, #242019 4.41em);
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { background: var(--canvas); color: var(--roast); font-family: var(--body); font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-inline: 24px; }
+section { padding-block: 96px; }
+h2 { font-family: var(--display); font-weight: 600; font-size: clamp(32px, 5vw, 48px); letter-spacing: -0.8px; line-height: 1.1; margin: 0 0 12px; text-wrap: balance; }
+.lede { font-size: 18px; max-width: 34ch; margin: 0 0 48px; color: var(--roast); opacity: .78; }
+.tag { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--mist); font: 700 11px/1.4 var(--body); letter-spacing: .7px; text-transform: uppercase; }
+.wm { display: inline-block; font-family: var(--display); font-weight: 600; background: var(--wordmark); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: -0.03em; }
+
+/* Hero */
+.hero { min-height: 0; padding-block: 72px 112px; display: grid; justify-items: center; text-align: center; gap: 8px; }
+.hero .moth { width: min(280px, 60vw); height: auto; animation: hover 6s ease-in-out infinite; }
+.hero .wm { font-size: clamp(88px, 18vw, 196px); line-height: 1.05; margin-top: 8px; padding-bottom: .05em; }
+.hero p { font-size: clamp(18px, 2.4vw, 22px); max-width: 30ch; margin: 18px 0 0; text-wrap: balance; }
+@keyframes hover { 0%,100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-10px) rotate(1deg); } }
+
+/* Moth */
+.marks { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.plate { border-radius: 28px; aspect-ratio: 1; display: grid; place-items: center; position: relative; }
+.plate svg { width: 46%; height: auto; }
+.plate .cap { position: absolute; left: 20px; bottom: 16px; font-size: 13px; font-weight: 500; opacity: .7; }
+.plate.light { background: var(--card); box-shadow: inset 0 0 0 1px var(--oat); }
+.plate.dark { background: var(--roast); color: var(--cream); }
+.plate.icon { background: var(--oat); }
+.appicon { width: 46%; aspect-ratio: 1; border-radius: 22.5%; background: var(--roast); display: grid; place-items: center; box-shadow: 0 18px 40px -18px rgba(36,32,25,.55); }
+.appicon svg { width: 78%; }
+.sizes { display: flex; align-items: end; gap: 28px; flex-wrap: wrap; margin-top: 40px; }
+.sizes figure { margin: 0; display: grid; justify-items: center; gap: 8px; font-size: 12px; opacity: .85; font-variant-numeric: tabular-nums; }
+.donts { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-top: 56px; }
+.dont { background: var(--card); border-radius: 20px; padding: 20px 12px 14px; display: grid; justify-items: center; gap: 10px; font-size: 13px; position: relative; }
+.dont svg { width: 56px; height: 56px; overflow: visible; }
+.dont::after { content: ""; position: absolute; top: 14px; right: 14px; width: 18px; height: 18px; border-radius: 50%; background: var(--persimmon) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M6 6l6 6M12 6l-6 6' stroke='%23FFFDF8' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center/18px no-repeat; }
+.sub { font-family: var(--display); font-weight: 600; font-size: 22px; margin: 64px 0 4px; }
+
+/* Color */
+.field { display: grid; grid-template-columns: 5fr 2.2fr 1fr; grid-template-rows: 300px 150px; gap: 10px; }
+.sw { border-radius: 24px; padding: 18px 20px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; border: 0; text-align: left; font: inherit; color: inherit; min-width: 0; transition: transform .2s ease; }
+.sw:hover { transform: translateY(-3px); }
+.sw:focus-visible { outline: 2px solid var(--persimmon); outline-offset: 3px; }
+.sw b { font-family: var(--display); font-weight: 600; font-size: 24px; letter-spacing: -.3px; display: block; }
+.sw span { font-size: 13px; opacity: .75; }
+.sw code { font: 500 13px var(--body); font-variant-numeric: tabular-nums; opacity: .8; }
+.sw.canvas { background: var(--canvas); box-shadow: inset 0 0 0 1px var(--oat); grid-row: span 2; }
+.sw.roast { background: var(--roast); color: var(--card); grid-row: span 2; }
+.sw.persimmon { background: var(--persimmon); color: var(--roast); }
+.sw.green { background: var(--mothgreen); color: var(--card); }
+.row2 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 10px; }
+.row2 .sw { height: 150px; }
+.sw.card { background: var(--card); box-shadow: inset 0 0 0 1px var(--oat); }
+.sw.cream { background: var(--cream); }
+.sw.moss { background: var(--moss); color: var(--card); }
+.sw.blush { background: var(--blush); }
+.sw.oat { background: var(--oat); }
+.ratio { display: flex; height: 18px; border-radius: 999px; overflow: hidden; margin-top: 28px; }
+.ratio i { display: block; }
+.ratio-cap { display: flex; justify-content: space-between; font-size: 13px; margin-top: 8px; opacity: .7; }
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px); opacity: 0; background: var(--roast); color: var(--card); padding: 10px 16px; border-radius: 999px; font-size: 14px; font-weight: 500; transition: all .25s ease; pointer-events: none; }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+/* Type */
+.type { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; }
+.spec { background: var(--card); border-radius: 28px; padding: 32px; min-width: 0; }
+.spec .big { font-family: var(--display); font-weight: 600; font-size: clamp(56px, 9vw, 104px); line-height: .95; letter-spacing: -2px; margin: 0; }
+.spec .aa { font-size: clamp(56px, 9vw, 104px); line-height: .95; margin: 0; font-weight: 500; letter-spacing: -2px; }
+.spec .who { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 28px; font-size: 14px; opacity: .75; }
+.weights { display: flex; gap: 18px; margin-top: 20px; font-size: 20px; flex-wrap: wrap; }
+.scale { margin-top: 16px; background: var(--card); border-radius: 28px; padding: 12px 32px; }
+.scale div { display: grid; grid-template-columns: 64px 1fr; align-items: baseline; gap: 16px; padding-block: 14px; border-bottom: 1px solid var(--oat); min-width: 0; }
+.scale div:last-child { border-bottom: 0; }
+.scale small { font-size: 12px; opacity: .6; font-variant-numeric: tabular-nums; }
+
+/* Product */
+.product { display: grid; grid-template-columns: 380px 1fr; gap: 56px; align-items: center; }
+.phone { background: var(--roast); border-radius: 54px; padding: 12px; box-shadow: 0 40px 80px -40px rgba(36,32,25,.6); }
+.screen { background: var(--canvas); border-radius: 44px; overflow: hidden; height: 720px; position: relative; }
+.bar { display: flex; align-items: center; gap: 8px; padding: 54px 20px 12px; }
+.bar .wm { font-size: 34px; margin-right: auto; letter-spacing: -1px; }
+.ib { width: 40px; height: 40px; border-radius: 12px; background: var(--mist); display: grid; place-items: center; }
+.hr { height: 1px; background: var(--oat); margin: 0 20px 8px; }
+.list { padding: 4px 20px; display: grid; gap: 12px; }
+.tc { background: var(--card); border-radius: 24px; padding: 16px; }
+.tc .top { display: flex; justify-content: space-between; align-items: center; }
+.tc p { font-size: 18px; line-height: 26px; letter-spacing: -.1px; margin: 12px 0 0; }
+.tc h4 { font-family: var(--display); font-weight: 600; font-size: 22px; line-height: 28px; margin: 12px 0 0; letter-spacing: -.2px; }
+.chips { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.chip { border-radius: 999px; padding: 8px 12px; font-size: 12px; font-weight: 500; border: 1px solid var(--oat); background: var(--canvas); display: inline-flex; gap: 6px; align-items: center; }
+.chip.ai { background: var(--roast); color: var(--card); border-color: var(--roast); font-weight: 700; }
+.tc.resolved { opacity: .6; } .tc.resolved p { text-decoration: line-through; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--card); border-radius: 26px 26px 0 0; padding: 12px 20px 34px; text-align: center; box-shadow: 0 -12px 30px -12px rgba(36,32,25,.18); }
+.grab { width: 40px; height: 5px; border-radius: 9px; background: var(--oat); margin: 0 auto 14px; }
+.prompt { font-family: var(--display); font-weight: 600; font-size: 19px; line-height: 22px; }
+.tapcap { margin-top: 10px; font-size: 14px; font-weight: 500; text-transform: uppercase; color: #9B9187; }
+.rec { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+.rec .input { flex: 1; border-radius: 24px; border: 1px solid var(--oat); background: var(--canvas); padding: 10px 14px; font-size: 15px; color: var(--moss); }
+.rec .dot { width: 46px; height: 46px; border-radius: 23px; background: var(--persimmon); display: grid; place-items: center; flex: none; }
+.callouts { display: grid; gap: 28px; }
+.callouts div { display: grid; grid-template-columns: 44px 1fr; gap: 16px; align-items: start; }
+.callouts .ico { width: 44px; height: 44px; border-radius: 14px; background: var(--card); display: grid; place-items: center; }
+.callouts b { font-family: var(--display); font-weight: 600; font-size: 21px; display: block; margin-bottom: 2px; }
+.callouts span { opacity: .78; }
+.empty { margin-top: 40px; background: var(--card); border-radius: 28px; padding: 40px 24px; text-align: center; display: grid; justify-items: center; }
+.empty svg { width: 58px; } .empty b { font-family: var(--display); font-weight: 600; font-size: 22px; margin-top: 16px; } .empty span { margin-top: 6px; }
+
+/* Voice */
+.pairs { display: grid; gap: 14px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.say, .nope { border-radius: 24px; padding: 24px 26px; min-width: 0; }
+.say { background: var(--card); font-family: var(--display); font-weight: 600; font-size: clamp(22px, 3vw, 30px); line-height: 1.15; letter-spacing: -.4px; }
+.nope { background: transparent; box-shadow: inset 0 0 0 1px var(--oat); font-size: 17px; color: rgba(36,32,25,.55); text-decoration: line-through; text-decoration-color: var(--persimmon); text-decoration-thickness: 2px; display: flex; align-items: center; }
+.pair-h { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-size: 13px; font-weight: 700; letter-spacing: .7px; text-transform: uppercase; opacity: .6; padding-inline: 4px; }
+.feels { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 40px; }
+.feels span { background: var(--blush); border-radius: 999px; padding: 10px 18px; font-size: 16px; font-weight: 500; }
+.feels span s { opacity: .5; text-decoration-color: var(--persimmon); margin-left: 6px; font-weight: 400; }
+
+/* Night */
+.night { background: var(--roast); color: var(--cream); position: relative; overflow: hidden; padding-block: 140px 160px; }
+.night::before { content: ""; position: absolute; left: 50%; top: 42%; width: 900px; height: 900px; transform: translate(-50%, -50%); background: radial-gradient(circle, rgba(239,112,90,.30) 0%, rgba(245,240,230,.08) 32%, transparent 62%); pointer-events: none; }
+.night .wrap { position: relative; display: grid; justify-items: center; text-align: center; }
+.night svg { width: 150px; animation: hover 5s ease-in-out infinite; }
+.night h2 { margin-top: 36px; color: var(--cream); }
+.night p { max-width: 36ch; opacity: .75; font-size: 18px; margin: 0; }
+.night .mood { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 40px; }
+.night .mood span { border: 1px solid rgba(245,240,230,.22); border-radius: 999px; padding: 8px 16px; font-size: 15px; }
+
+@media (max-width: 860px) {
+  .product { grid-template-columns: 1fr; justify-items: center; }
+  .phone { width: min(380px, 100%); }
+  .type { grid-template-columns: 1fr; }
+  .row2 { grid-template-columns: repeat(2, 1fr); }
+  .row2 .sw:last-child { grid-column: span 2; }
+}
+@media (max-width: 560px) {
+  section { padding-block: 64px; }
+  .wrap { padding-inline: 16px; }
+  .field { grid-template-columns: 1fr 1fr; grid-template-rows: 220px 130px 130px; }
+  .sw.canvas { grid-column: span 2; grid-row: auto; }
+  .sw.roast { grid-row: span 2; }
+  .pair, .pair-h { grid-template-columns: 1fr; } .pair-h span:last-child { display: none; }
+  .spec, .scale { padding-inline: 20px; }
+  .screen { height: 640px; }
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="lw" x1="1.1272" y1="28.1448" x2="21.1272" y2="7.14482" gradientUnits="userSpaceOnUse"><stop stop-color="#EF705A"/><stop offset="0.72" stop-color="#EF705A"/><stop offset="1" stop-color="#F5F0E6"/></linearGradient>
+    <symbol id="wings" viewBox="0 0 32 32">
+      <path d="M15.8272 15.9448C8.12721 29.3448 -0.272795 26.6448 1.82721 15.8448C3.62721 6.44482 12.0272 7.34482 15.8272 14.5448V15.9448Z" fill="url(#lw)"/>
+      <path d="M16.4272 16.3449C24.1272 2.9449 32.5272 5.6449 30.4272 16.4449C28.6272 25.8449 20.2272 24.9449 16.4272 17.7449V16.3449Z" fill="#58795C"/>
+    </symbol>
+    <symbol id="mothL" viewBox="0 0 32 32"><use href="#wings"/><path d="M18.6547 9.98497C19.7477 10.4489 19.3917 13.7511 17.8596 17.3606C16.3274 20.9701 14.1993 23.5201 13.1063 23.0561C12.0133 22.5922 12.3692 19.29 13.9014 15.6805C15.4335 12.071 17.5616 9.52101 18.6547 9.98497Z" fill="#242019"/></symbol>
+    <symbol id="mothD" viewBox="0 0 32 32"><use href="#wings"/><path d="M18.6547 9.98497C19.7477 10.4489 19.3917 13.7511 17.8596 17.3606C16.3274 20.9701 14.1993 23.5201 13.1063 23.0561C12.0133 22.5922 12.3692 19.29 13.9014 15.6805C15.4335 12.071 17.5616 9.52101 18.6547 9.98497Z" fill="#F5F0E6"/></symbol>
+    <symbol id="mothDLoop" viewBox="0 0 32 32"><path d="M7 30C6.99991 26 16.573 26.92 15 30C13.8828 32.1875 9 26.5 12.5 24" stroke="#F5F0E6" stroke-linecap="round" fill="none"/><use href="#mothD"/></symbol>
+  </defs>
+</svg>
+
+<header class="wrap hero">
+  <svg class="moth" viewBox="0 0 32 32" role="img" aria-label="The Jotful moth"><use href="#mothL"/></svg>
+  <div class="wm">Jotful</div>
+  <p>A bright, private landing place for the thoughts that arrive before they have a category.</p>
+</header>
+
+<section class="wrap" id="moth">
+  <h2>The moth</h2>
+  <p class="lede">Drawn to small sparks of thought. Two uneven wings and a narrow body, always in three parts.</p>
+  <div class="marks">
+    <div class="plate light"><svg viewBox="0 0 32 32"><use href="#mothL"/></svg><span class="cap">On light</span></div>
+    <div class="plate dark"><svg viewBox="0 0 32 32"><use href="#mothD"/></svg><span class="cap">On dark</span></div>
+    <div class="plate icon"><div class="appicon"><svg viewBox="0 0 32 32"><use href="#mothDLoop"/></svg></div><span class="cap">App icon</span></div>
+  </div>
+  <div class="sizes">
+    <figure><svg width="20" height="20" viewBox="0 0 32 32"><use href="#mothL"/></svg>20 px, the smallest</figure>
+    <figure><svg width="32" height="32" viewBox="0 0 32 32"><use href="#mothL"/></svg>32</figure>
+    <figure><svg width="40" height="40" viewBox="0 0 32 32"><use href="#mothL"/></svg>40</figure>
+    <figure><svg width="58" height="58" viewBox="0 0 32 32"><use href="#mothL"/></svg>58, the empty state</figure>
+    <figure><svg width="96" height="96" viewBox="0 0 32 32"><use href="#mothL"/></svg>96</figure>
+  </div>
+
+  <div class="sub">Leave it as drawn</div>
+  <div class="donts">
+    <div class="dont"><svg viewBox="0 0 32 32" preserveAspectRatio="none" style="width:84px"><use href="#mothL"/></svg>Stretched</div>
+    <div class="dont"><svg viewBox="0 0 32 32" style="transform:rotate(-35deg)"><use href="#mothL"/></svg>Rotated</div>
+    <div class="dont"><svg viewBox="0 0 32 32" style="transform:scaleX(-1)"><use href="#mothL"/></svg>Mirrored</div>
+    <div class="dont"><svg viewBox="0 0 32 32" style="filter:drop-shadow(0 4px 4px rgba(0,0,0,.45))"><use href="#mothL"/></svg>Shadowed</div>
+    <div class="dont"><svg viewBox="0 0 32 32" style="filter:hue-rotate(160deg) saturate(1.8)"><use href="#mothL"/></svg>Recolored</div>
+    <div class="dont"><svg viewBox="0 0 32 32" style="opacity:.25"><use href="#mothL"/></svg>Faded behind text</div>
+  </div>
+
+  <div class="sub">The wordmark</div>
+  <div style="background:var(--card);border-radius:28px;padding:40px 28px;display:grid;gap:18px;justify-items:start">
+    <div class="wm" style="font-size:clamp(64px,12vw,128px);line-height:1">Jotful</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:14px">
+      <span style="width:16px;height:16px;border-radius:50%;background:#EF705A"></span>Persimmon
+      <span style="opacity:.4">→</span>
+      <span style="width:16px;height:16px;border-radius:50%;background:#58795C"></span>Moth Green
+      <span style="opacity:.4">→</span>
+      <span style="width:16px;height:16px;border-radius:50%;background:#242019"></span>Roast
+      <span style="opacity:.6">· Fraunces SemiBold, sentence case</span>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" id="color">
+  <h2>Color</h2>
+  <p class="lede">Mostly warm paper and dark roast. Persimmon is the spark, so keep it rare. Tap a color to copy it.</p>
+  <div class="field">
+    <button class="sw canvas" data-hex="#FAF8F3"><span>Behind every screen</span><div><b>Canvas</b><code>#FAF8F3</code></div></button>
+    <button class="sw roast" data-hex="#242019"><span>Text, the night, Ask AI</span><div><b>Roast</b><code>#242019</code></div></button>
+    <button class="sw persimmon" data-hex="#EF705A"><span>Capture</span><div><b>Persimmon</b><code>#EF705A</code></div></button>
+    <button class="sw green" data-hex="#58795C"><span>The right wing</span><div><b>Moth Green</b><code>#58795C</code></div></button>
+  </div>
+  <div class="row2">
+    <button class="sw card" data-hex="#FFFDF8"><span>Cards</span><div><b>Card</b><code>#FFFDF8</code></div></button>
+    <button class="sw cream" data-hex="#F5F0E6"><span>Logo only</span><div><b>Cream</b><code>#F5F0E6</code></div></button>
+    <button class="sw moss" data-hex="#74876A"><span>Quiet details</span><div><b>Moss</b><code>#74876A</code></div></button>
+    <button class="sw blush" data-hex="#F8D8D1"><span>Selected, gentle</span><div><b>Blush</b><code>#F8D8D1</code></div></button>
+    <button class="sw oat" data-hex="#E4DFD6"><span>Dividers</span><div><b>Oat</b><code>#E4DFD6</code></div></button>
+  </div>
+  <div class="ratio" aria-hidden="true">
+    <i style="flex:58;background:var(--canvas);box-shadow:inset 0 0 0 1px var(--oat)"></i>
+    <i style="flex:20;background:var(--card)"></i>
+    <i style="flex:12;background:var(--roast)"></i>
+    <i style="flex:4;background:var(--oat)"></i>
+    <i style="flex:3;background:var(--moss)"></i>
+    <i style="flex:2;background:var(--blush)"></i>
+    <i style="flex:1;background:var(--persimmon)"></i>
+  </div>
+  <div class="ratio-cap"><span>How much of a screen each color gets</span><span>Persimmon: a sliver</span></div>
+</section>
+
+<section class="wrap" id="type">
+  <h2>Type</h2>
+  <p class="lede">A warm serif for the moments that matter, and a clear sans for everything you tap.</p>
+  <div class="type">
+    <div class="spec">
+      <p class="big">Hold that thought.</p>
+      <div class="who"><span>Fraunces SemiBold</span><span>Headings, the wordmark, prompts</span></div>
+    </div>
+    <div class="spec">
+      <p class="aa">Aa</p>
+      <div class="weights"><span style="font-weight:400">Regular</span><span style="font-weight:500">Medium</span><span style="font-weight:700">Bold</span></div>
+      <div class="who"><span>DM Sans</span><span>Thoughts, buttons, labels</span></div>
+    </div>
+  </div>
+  <div class="scale">
+    <div><small>34</small><span class="wm" style="font-size:34px;letter-spacing:-1px">Jotful</span></div>
+    <div><small>25</small><span style="font-family:var(--display);font-weight:600;font-size:25px">Settings</span></div>
+    <div><small>22</small><span style="font-family:var(--display);font-weight:600;font-size:22px">What are you daydreaming of?</span></div>
+    <div><small>18</small><span style="font-size:18px">Call the plumber before Friday, and ask about the noise.</span></div>
+    <div><small>16</small><span style="font-size:16px;font-weight:500">Preferred browser</span></div>
+    <div><small>11</small><span><span class="tag">Idea</span></span></div>
+  </div>
+</section>
+
+<section class="wrap" id="product">
+  <div class="product">
+    <div class="phone">
+      <div class="screen">
+        <div class="bar">
+          <span class="wm">Jotful</span>
+          <span class="ib"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#242019" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
+          <span class="ib"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#242019" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+        </div>
+        <div class="hr"></div>
+        <div class="list">
+          <div class="tc">
+            <div class="top"><span class="tag">Idea</span><svg width="20" height="20" viewBox="0 0 24 24" fill="#242019"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></div>
+            <p>A tiny museum of things people found in their coat pockets.</p>
+            <div class="chips"><span class="chip">Search</span><span class="chip ai">Ask AI</span><span class="chip">Copy</span></div>
+          </div>
+          <div class="tc">
+            <div class="top"><span class="tag">Question</span><svg width="20" height="20" viewBox="0 0 24 24" fill="#242019"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></div>
+            <p>Why do moths circle porch lights?</p>
+          </div>
+          <div class="tc resolved">
+            <div class="top"><span class="tag">Thought</span><svg width="20" height="20" viewBox="0 0 24 24" fill="#242019"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></div>
+            <p>Text Maya back about Saturday.</p>
+          </div>
+        </div>
+        <div class="sheet">
+          <div class="grab"></div>
+          <div class="prompt" id="prompt">What are you daydreaming of?</div>
+          <div class="tapcap">Tap to capture</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <h2>In your pocket</h2>
+      <p class="lede">These pieces are what make it Jotful. Keep them through every redesign.</p>
+      <div class="callouts">
+        <div><span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#242019" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span><p style="margin:0"><b>Swipe to settle</b><span>Swipe a card left to resolve it, right to pin it. Each step gives a small buzz.</span></p></div>
+        <div><span class="ico"><span class="tag" style="padding:2px 6px;font-size:9px">Idea</span></span><p style="margin:0"><b>Small tags</b><span>Short labels in capitals sort each jot without asking you to file it.</span></p></div>
+        <div><span class="ico"><span style="width:22px;height:14px;border-radius:9px;background:#242019"></span></span><p style="margin:0"><b>One dark pill</b><span>Ask AI is the only dark button on a card. Everything else stays light.</span></p></div>
+        <div><span class="ico"><span style="width:16px;height:16px;border-radius:8px;background:#EF705A"></span></span><p style="margin:0"><b>The capture sheet</b><span>It waits at the bottom with a different question each time you open the app. One tap and you are writing.</span></p></div>
+      </div>
+      <div class="empty">
+        <svg viewBox="0 0 32 32"><use href="#mothL"/></svg>
+        <b>Hold that thought.</b>
+        <span>Speak or type it exactly as it arrives.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" id="voice">
+  <h2>How it talks</h2>
+  <p class="lede">Like a friend holding your notebook. Short, warm and plain.</p>
+  <div class="pair-h"><span>Jotful says</span><span>Not this</span></div>
+  <div class="pairs" style="margin-top:10px">
+    <div class="pair"><div class="say">Hold that thought.</div><div class="nope">Capture and organize your ideas efficiently!</div></div>
+    <div class="pair"><div class="say">Thoughts stay on this iPhone.</div><div class="nope">Enterprise-grade local data persistence.</div></div>
+    <div class="pair"><div class="say">Your next rabbit hole adventure awaits…</div><div class="nope">Create new note</div></div>
+  </div>
+  <div class="feels">
+    <span>Private<s>performative</s></span>
+    <span>Spacious<s>empty</s></span>
+    <span>Gentle<s>passive</s></span>
+    <span>Considered<s>overdesigned</s></span>
+  </div>
+</section>
+
+<section class="night">
+  <div class="wrap">
+    <svg viewBox="0 0 32 32" role="img" aria-label="The moth on dark"><use href="#mothD"/></svg>
+    <h2>Drawn to the light</h2>
+    <p>Pictures for Jotful feel close and warm, like lamplight on paper late at night.</p>
+    <div class="mood"><span>Paper</span><span>Lamplight</span><span>Hands</span><span>Small found objects</span><span>Quiet moments</span></div>
+  </div>
+</section>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function () {
+  var prompts = ['What are you daydreaming of?', 'What are you thinking about?', 'Your next rabbit hole adventure awaits...', 'Your next great masterpiece??'];
+  var el = document.getElementById('prompt');
+  el.textContent = prompts[Math.floor(Math.random() * prompts.length)];
+  var toast = document.getElementById('toast'), t;
+  document.querySelectorAll('.sw').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var hex = b.dataset.hex, name = b.querySelector('b').textContent;
+      var show = function (msg) { toast.textContent = msg; toast.classList.add('on'); clearTimeout(t); t = setTimeout(function () { toast.classList.remove('on'); }, 1600); };
+      try { navigator.clipboard.writeText(hex).then(function () { show(name + ' ' + hex + ' copied'); }, function () { show(name + ' is ' + hex); }); }
+      catch (e) { show(name + ' is ' + hex); }
+    });
+  });
+})();
+</script>
