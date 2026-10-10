@@ -4,7 +4,7 @@ This is the remaining owner-operated work before public submission. The app’s 
 
 ## Prepare outside the codebase
 
-- [ ] Publish the renamed Jotful privacy policy and support page, then update the final URLs below.
+- [x] Publish the renamed Jotful privacy policy and support page: support https://tucsenroman.github.io/Jotful/, privacy https://tucsenroman.github.io/Jotful/privacy.html.
 - [ ] Run [RELEASE_TEST_PLAN.md](./RELEASE_TEST_PLAN.md) on the iPhone and retain anonymized screenshots.
 - [ ] Commit and push the validated release changes.
 
