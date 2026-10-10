@@ -71,7 +71,7 @@ const transitionDuration = 300;
 // The capture controls need about 200px; the remaining height is supplied only by
 // the keyboard and the device safe area. This keeps the sheet compact by default.
 const expandedBaseHeight = 224;
-const colors = { cream: "#FFFDF8", roast: "#242019", moss: "#74876A", quiet: "#9B9187" };
+const colors = { canvas: "#FAF8F3", cream: "#FFFDF8", roast: "#242019", moss: "#74876A", quiet: "#9B9187" };
 
 export type CaptureSheetHandle = {
   open: (mode?: "write" | "voice" | "media" | "media-choice") => void;
@@ -984,7 +984,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                             onPress={onToggleVoice}
                             className={
                               "h-9 w-9 items-center justify-center rounded-full " +
-                              (listening ? "bg-[#F8D8D1]" : "bg-[#F8E1D7]")
+                              (listening ? "bg-unsorted-blush" : "bg-unsorted-blush")
                             }
                             hitSlop={10}
                             accessibilityLabel={
@@ -1004,7 +1004,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                             )}
                           </Pressable>
                         </View>
-                        <View className="mx-1 h-px bg-[#EAE4DA]" />
+                        <View className="mx-1 h-px bg-unsorted-line" />
                         <View className="flex-row items-center justify-between gap-2">
                           <View
                             className="relative"
@@ -1048,7 +1048,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                                             height: 32,
                                             borderRadius: 16,
                                             borderWidth: 2,
-                                            borderColor: "#FAF8F3",
+                                            borderColor: colors.canvas,
                                             zIndex: index,
                                           }}
                                           resizeMode="cover"
@@ -1063,7 +1063,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                                   className={
                                     "absolute right-1 top-0 h-9 w-9 items-center justify-center rounded-full border-2 border-unsorted-canvas " +
                                     (showMediaOptions
-                                      ? "bg-[#F8E1D7]"
+                                      ? "bg-unsorted-blush"
                                       : "bg-unsorted-mist")
                                   }
                                   hitSlop={10}
@@ -1080,7 +1080,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                                 className={
                                   "h-9 w-9 items-center justify-center rounded-full border-2 border-unsorted-canvas " +
                                   (showMediaOptions
-                                    ? "bg-[#F8E1D7]"
+                                    ? "bg-unsorted-blush"
                                     : "bg-unsorted-mist")
                                 }
                                 hitSlop={10}
@@ -1110,7 +1110,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                                     Camera or video
                                   </Text>
                                 </Pressable>
-                                <View className="mx-3 h-px bg-[#EAE4DA]" />
+                                <View className="mx-3 h-px bg-unsorted-line" />
                                 <Pressable
                                   onPress={() => void pickMedia("library")}
                                   className="flex-row items-center gap-2 px-3 py-3"
@@ -1219,7 +1219,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                             className={
                               "h-10 w-10 items-center justify-center rounded-full " +
                               (recorderState.isRecording
-                                ? "bg-[#F8D8D1]"
+                                ? "bg-unsorted-blush"
                                 : "bg-unsorted-canvas")
                             }
                           >
@@ -1406,7 +1406,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                   {composerMode === "attachment" && pendingImages.length > 0 ? (
                     <Pressable
                       onPress={confirmRemoveSelectedImage}
-                      className="rounded-full bg-[#F8D8D1] px-6 py-3"
+                      className="rounded-full bg-unsorted-blush px-6 py-3"
                       hitSlop={10}
                       accessibilityLabel="Remove selected image"
                     >
@@ -1428,10 +1428,10 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                         className={
                           "items-center overflow-hidden rounded-full px-6 py-3 " +
                           (listening
-                            ? "bg-[#F8D8D1]"
+                            ? "bg-unsorted-blush"
                             : pendingAttachment || previewCount
                               ? "bg-unsorted-persimmon"
-                              : "bg-[#EFEBE4]")
+                              : "bg-unsorted-mist")
                         }
                         style={{
                           opacity:
@@ -1485,7 +1485,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                               "text-[14px] " +
                               (pendingAttachment || previewCount
                                 ? "text-unsorted-cream"
-                                : "text-[#8F8478]")
+                                : "text-unsorted-quiet")
                             }
                             style={{ fontFamily: "DMSans_700Bold" }}
                           >
@@ -1500,12 +1500,12 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                         >
                           <Pressable
                             onPress={onClear}
-                            className="mt-2 border-b border-[#BDB4A9] pb-0.5"
+                            className="mt-2 border-b border-unsorted-quiet pb-0.5"
                             hitSlop={10}
                             accessibilityLabel="Clear thought"
                           >
                             <Text
-                              className="text-[13px] text-[#9B9187]"
+                              className="text-[13px] text-unsorted-quiet"
                               style={{ fontFamily: "DMSans_500Medium" }}
                             >
                               Clear thought
@@ -1525,7 +1525,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                 className={
                   "h-16 w-16 items-center justify-center rounded-full " +
                   (recorderState.isRecording
-                    ? "bg-[#F8D8D1]"
+                    ? "bg-unsorted-blush"
                     : "bg-unsorted-mist")
                 }
               >
