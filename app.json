@@ -11,7 +11,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.tucsenroman.unsorted",
       "appleTeamId": "AVVSMR4ABB",
-      "buildNumber": "9",
+      "buildNumber": "10",
       "icon": {
         "light": "./assets/ios-icons/jotful-light-clear.png",
         "dark": "./assets/ios-icons/jotful-dark-clear.png",
