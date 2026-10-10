@@ -437,7 +437,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
           setLibraryLoading(false);
           Alert.alert(
             "Photo access is needed",
-            "Allow Unsorted to browse the photos and videos you choose from.",
+            "Allow Jotful to browse the photos and videos you choose from.",
           );
           return;
         }
@@ -465,7 +465,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
       if (!permission.granted) {
         Alert.alert(
           "Camera access is needed",
-          "Allow camera access to capture it in Unsorted.",
+          "Allow camera access to capture it in Jotful.",
         );
         return;
       }
