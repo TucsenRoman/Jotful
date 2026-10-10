@@ -3,7 +3,7 @@
     "name": "Jotful",
     "slug": "unsorted",
     "scheme": "jotful",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "icon": "./assets/icon-1024.png",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
