@@ -11,7 +11,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.tucsenroman.unsorted",
       "appleTeamId": "AVVSMR4ABB",
-      "buildNumber": "13",
+      "buildNumber": "14",
       "icon": {
         "light": "./assets/ios-icons/jotful-light-clear.png",
         "dark": "./assets/ios-icons/jotful-dark-clear.png",
@@ -98,14 +98,14 @@
       "expo-video",
       "@react-native-vector-icons/material-design-icons",
       "@bacons/apple-targets",
+      "./plugins/withWatchHermesc",
       [
         "@appsent-co/react-native-watchos",
         {
           "targetName": "watch",
           "entryFile": "targets/watch/index.watchos.tsx"
         }
-      ],
-      "./plugins/withWatchHermesc"
+      ]
     ],
     "extra": {
       "eas": {
