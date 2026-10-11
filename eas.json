@@ -1,21 +1,44 @@
 {
-  "cli": { "version": ">= 18.0.0", "appVersionSource": "local" },
+  "cli": {
+    "version": ">= 18.0.0",
+    "appVersionSource": "local"
+  },
   "build": {
-    "development": { "developmentClient": true, "distribution": "internal" },
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
     "development-phone": {
       "developmentClient": true,
       "distribution": "internal",
-      "env": { "JOTFUL_PHONE_ONLY_BUILD": "1" }
+      "env": {
+        "JOTFUL_PHONE_ONLY_BUILD": "1"
+      }
     },
-    "preview": { "distribution": "internal" },
+    "preview": {
+      "distribution": "internal"
+    },
     "production": {
       "autoIncrement": true,
-      "env": { "JOTFUL_PHONE_ONLY_BUILD": "1" }
+      "env": {
+        "JOTFUL_PHONE_ONLY_BUILD": "1"
+      }
+    },
+    "production-watch": {
+      "extends": "production",
+      "env": {
+        "JOTFUL_PHONE_ONLY_BUILD": "0"
+      }
     }
   },
   "submit": {
     "production": {
-      "ios": { "ascAppId": "6815049329" }
+      "ios": {
+        "ascAppId": "6815049329"
+      }
+    },
+    "production-watch": {
+      "extends": "production"
     }
   }
 }
