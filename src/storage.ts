@@ -1,4 +1,5 @@
 import * as SQLite from 'expo-sqlite';
+import { Paths } from 'expo-file-system';
 import type { ThoughtKind } from './segmentation';
 
 export type Thought = {
@@ -77,19 +78,32 @@ initializeDatabase();
 
 type StoredThought = Omit<Thought, 'kind'> & { kind: ThoughtKind | 'task'; collection?: string | null };
 
+// iOS moves the app's container on every update, so a saved absolute
+// Documents path goes stale. Re-anchor it to the current Documents folder.
+function resolveStoredUri(uri: string | null) {
+  const marker = '/Documents/';
+  const index = uri?.indexOf(marker) ?? -1;
+  if (!uri || index < 0) return uri;
+  return Paths.document.uri.replace(/\/?$/, '/') + uri.slice(index + marker.length);
+}
+
+function fromStored({ kind, attachmentUri, ...thought }: StoredThought): Thought {
+  return { ...thought, kind: kind === 'task' ? 'thought' : kind, attachmentUri: resolveStoredUri(attachmentUri) };
+}
+
 export function listThoughts(search = ''): Thought[] {
   const filter = `%${search}%`;
   return db.getAllSync<StoredThought>(
     'SELECT id, text, richText, kind, collection, createdAt, draftedAt, resolvedAt, pinnedAt, (SELECT COUNT(*) FROM attachments WHERE thoughtId = thoughts.id) AS attachmentCount, (SELECT kind FROM attachments WHERE thoughtId = thoughts.id ORDER BY id DESC LIMIT 1) AS attachmentKind, (SELECT uri FROM attachments WHERE thoughtId = thoughts.id ORDER BY id DESC LIMIT 1) AS attachmentUri, (SELECT durationMillis FROM attachments WHERE thoughtId = thoughts.id ORDER BY id DESC LIMIT 1) AS attachmentDurationMillis FROM thoughts WHERE text LIKE ? ORDER BY CASE WHEN resolvedAt IS NULL THEN 0 ELSE 1 END, pinnedAt DESC, createdAt DESC',
     filter
-  ).map(({ kind, ...thought }) => ({ ...thought, kind: kind === 'task' ? 'thought' : kind }));
+  ).map(fromStored);
 }
 
 export function listRecentThoughts(limit = 5): Thought[] {
   return db.getAllSync<StoredThought>(
     'SELECT id, text, richText, kind, collection, createdAt, draftedAt, resolvedAt, pinnedAt, (SELECT COUNT(*) FROM attachments WHERE thoughtId = thoughts.id) AS attachmentCount, (SELECT kind FROM attachments WHERE thoughtId = thoughts.id ORDER BY id DESC LIMIT 1) AS attachmentKind, (SELECT uri FROM attachments WHERE thoughtId = thoughts.id ORDER BY id DESC LIMIT 1) AS attachmentUri, (SELECT durationMillis FROM attachments WHERE thoughtId = thoughts.id ORDER BY id DESC LIMIT 1) AS attachmentDurationMillis FROM thoughts ORDER BY createdAt DESC LIMIT ?',
     limit
-  ).map(({ kind, ...thought }) => ({ ...thought, kind: kind === 'task' ? 'thought' : kind }));
+  ).map(fromStored);
 }
 
 export function createThought(text: string, kind: ThoughtKind, richText?: string) {
