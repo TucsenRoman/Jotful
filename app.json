@@ -98,7 +98,7 @@
       "expo-video",
       "@react-native-vector-icons/material-design-icons",
       "@bacons/apple-targets",
-      "./plugins/withWatchHermesc",
+      "./plugins/withWatchHermes",
       [
         "@appsent-co/react-native-watchos",
         {

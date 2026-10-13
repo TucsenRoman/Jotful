@@ -4,22 +4,36 @@ const { withDangerousMod, withFinalizedMod } = require('expo/config-plugins');
 
 // Fixes for the Hermes pieces that @appsent-co/react-native-watchos 0.1.7
 // brings into the Watch app. Must be listed before that plugin in app.json:
-// finalized mods run in reverse plugin order, and the hermesc rewrite needs
-// the library's bundle phase to exist already.
+// finalized mods run in reverse plugin order, and the bundle fix needs the
+// library's bundle phase to exist already.
 
-// React Native 0.86 ships hermesc in the `hermes-compiler` package, but the
-// Watch bundle phase still looks in react-native/sdks/hermesc.
-const OLD = "require.resolve('react-native/package.json')), 'sdks/hermesc/osx-bin/hermesc')";
-const NEW = "require.resolve('hermes-compiler/package.json')), 'hermesc/osx-bin/hermesc')";
+const PHASE_NAME = '[RNW] Bundle React Native (watchOS)';
 
-function withHermescPath(config) {
+// The library's bundle phase pre-compiles the Watch JS to Hermes bytecode
+// with React Native's hermesc. React Native 0.86 ships Hermes 1.0 (bytecode
+// 98), but the Watch runs the library's Hermes 0.12, which can't load it: a
+// black screen and "Error: check metro for logs". Ship plain JS instead;
+// Hermes reads source on any version, at a small cold-start cost.
+function withPlainJsBundle(config) {
   return withFinalizedMod(config, ['ios', (config) => {
     const iosDir = config.modRequest.platformProjectRoot;
     const xcodeproj = fs.readdirSync(iosDir).find((name) => name.endsWith('.xcodeproj'));
     if (!xcodeproj) return config;
-    const pbxproj = path.join(iosDir, xcodeproj, 'project.pbxproj');
-    const contents = fs.readFileSync(pbxproj, 'utf8');
-    if (contents.includes(OLD)) fs.writeFileSync(pbxproj, contents.split(OLD).join(NEW));
+    const pbxprojPath = path.join(iosDir, xcodeproj, 'project.pbxproj');
+    const rnwDir = path.dirname(require.resolve('@appsent-co/react-native-watchos/package.json', { paths: [config.modRequest.projectRoot] }));
+    const xcode = require(require.resolve('xcode', { paths: [rnwDir] }));
+    const project = xcode.project(pbxprojPath).parseSync();
+    const phases = project.hash.project.objects.PBXShellScriptBuildPhase || {};
+    let changed = false;
+    for (const [key, phase] of Object.entries(phases)) {
+      if (key.endsWith('_comment') || String(phase.name).replace(/"/g, '') !== PHASE_NAME) continue;
+      const script = JSON.parse(phase.shellScript);
+      const cut = script.indexOf('HERMESC_BIN=');
+      if (cut < 0) continue;
+      phase.shellScript = JSON.stringify(script.slice(0, cut).trimEnd() + '\n');
+      changed = true;
+    }
+    if (changed) fs.writeFileSync(pbxprojPath, project.writeSync());
     return config;
   }]);
 }
@@ -45,6 +59,6 @@ function withHermesMinimumOS(config) {
   }]);
 }
 
-module.exports = function withWatchHermesc(config) {
-  return withHermesMinimumOS(withHermescPath(config));
+module.exports = function withWatchHermes(config) {
+  return withHermesMinimumOS(withPlainJsBundle(config));
 };
