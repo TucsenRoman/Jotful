@@ -1,0 +1,25 @@
+:root{--page:#F2F1F6;--ink:#020204;--grey:#8E8E93;--sec:rgba(60,60,67,.6);--glass:#F9F8FE;--field:rgba(118,118,128,.12)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:393px;height:852px;background:var(--page)}
+body{font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased;overflow:hidden}
+.phone{width:393px;height:852px;position:relative;overflow:hidden;background:var(--page)}
+.status{position:absolute;top:0;left:0;right:0;height:54px;display:flex;align-items:center;justify-content:space-between;padding:6px 30px 0 44px;font-size:17px;font-weight:600;z-index:2000}
+.status .r{display:flex;gap:6px;align-items:center}
+.home{position:absolute;bottom:8px;left:50%;width:134px;height:5px;margin-left:-67px;border-radius:3px;background:var(--ink);z-index:4000}
+i[data-lucide],svg.lu{display:inline-block}
+.lu{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+/* search field: 44pt grey capsule */
+.field{flex:1;height:44px;border-radius:22px;background:var(--field);display:flex;align-items:center;gap:8px;padding:0 6px 0 14px;font-size:17px;min-width:0}
+.field .lu{color:var(--sec);width:19px;height:19px}
+.field .q{flex:1;color:var(--ink);white-space:nowrap}
+.field .ph{flex:1;color:rgba(60,60,67,.3)}
+.caret{display:inline-block;width:2px;height:22px;background:#0A84FF;vertical-align:-5px;margin-left:1px;border-radius:1px}
+.clr{width:32px;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center;color:rgba(60,60,67,.45)}
+.clr .lu{width:18px;height:18px;fill:rgba(60,60,67,.32);stroke:#fff;stroke-width:2.4}
+.clr svg.dot{width:22px;height:22px}
+/* tag pills */
+.tp{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;line-height:13px;padding:3px 8px;border-radius:999px}
+.fp{height:30px;padding:0 12px;border-radius:15px;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;white-space:nowrap;flex:none;
+  color:var(--c);background:color-mix(in srgb,var(--b) 15%,white)}
+.fp em{font-style:normal;font-weight:500;opacity:.7;letter-spacing:0}
+.sheet-fade{position:absolute}

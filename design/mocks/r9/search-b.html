@@ -1,0 +1,43 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=393"><title>Jotful Search B</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="search.css"><style>
+.top{position:absolute;top:58px;left:16px;right:16px;height:44px;display:flex;align-items:center;gap:12px;z-index:10}
+.cancel{font-size:17px;color:var(--ink);font-weight:400;white-space:nowrap}
+.page{background:#fff}.phone{background:#fff}html,body{background:#fff}
+.hd{font-size:13px;font-weight:600;color:var(--sec);padding:0 16px;height:34px;display:flex;align-items:flex-end;padding-bottom:6px;justify-content:space-between}
+.hd u{text-decoration:none;font-weight:400;color:var(--sec)}
+.pills{position:absolute;top:114px;left:0;right:0;height:30px;display:flex;gap:8px;padding:0 16px;overflow:hidden}
+.res{position:absolute;top:154px;left:0;right:0}
+.row{display:flex;align-items:center;gap:12px;padding:0 16px;min-height:64px;position:relative}
+.row .dot{width:10px;height:10px;border-radius:5px;flex:none}
+.row .tx{flex:1;min-width:0;padding:9px 0}
+.row .t{font-size:17px;line-height:22px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .t b{font-weight:700}
+.row .s{font-size:15px;line-height:20px;color:var(--sec);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .s b{font-weight:600;color:var(--ink)}
+.row .d{font-size:13px;color:var(--sec);flex:none;align-self:flex-start;margin-top:12px}
+.row .th{width:44px;height:44px;border-radius:9px;object-fit:cover;flex:none}
+.row::after{content:"";position:absolute;left:38px;right:0;bottom:0;height:.5px;background:rgba(60,60,67,.29)}
+.row.last::after{display:none}
+.foot{position:absolute;left:0;right:0;bottom:34px;text-align:center;font-size:13px;color:var(--sec)}
+</style></head><body><div class="phone">
+<div class="status"><span>9:41</span><span class="r"><svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg><svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 11.5l2.4-2.6a3.4 3.4 0 00-4.8 0zM3.3 6.6a6.6 6.6 0 019.4 0l1.6-1.7a9 9 0 00-12.6 0zM.2 3.4a11 11 0 0115.6 0" fill="none" stroke="#020204" stroke-width="1.7" stroke-linecap="round"/></svg><svg width="27" height="13" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.5" fill="none" stroke="#020204" opacity=".4"/><rect x="2" y="2" width="20" height="9" rx="2"/><rect x="25" y="4.5" width="1.6" height="4" rx=".8" opacity=".4"/></svg></span></div>
+<div class="top"><div class="field"><svg class="lu" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span class="q">bakery</span><span class="clr"><svg class="lu dotx" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="none"/><path d="m15 9-6 6M9 9l6 6"/></svg></span></div><span class="cancel">Cancel</span></div>
+<div class="pills">
+ <span class="fp" style="--c:#2DA44E;--b:#2DA44E">Place <em>3</em></span>
+ <span class="fp" style="--c:#0FA3A3;--b:#0FA3A3">To-do <em>1</em></span>
+ <span class="fp" style="--c:#B88A00;--b:#F2B705">Idea <em>1</em></span>
+ <span class="fp" style="--c:#0A6CFF;--b:#0A6CFF">Question <em>1</em></span>
+</div>
+<div class="res">
+<div class="hd">This week</div>
+<div class="row"><i class="dot" style="background:#0FA3A3"></i><div class="tx"><div class="t">Order the cake from the <b>bakery</b></div><div class="s">Needs two days notice, call before Friday</div></div><span class="d">Fri</span></div>
+<div class="row last"><i class="dot" style="background:#2DA44E"></i><div class="tx"><div class="t">Rye loaf at the corner <b>bakery</b></div><div class="s">Ask how they get the crust that dark</div></div><span class="d">Mon</span><img class="th" src="../photos/bakery-3.jpg"></div>
+<div class="hd" style="margin-top:6px">Earlier</div>
+<div class="row"><i class="dot" style="background:#2DA44E"></i><div class="tx"><div class="t">That <b>bakery</b> sign on 5th</div><div class="s">2 photos · steal the lettering</div></div><span class="d">Sep 8</span><img class="th" src="../photos/bakery-2.jpg"></div>
+<div class="row"><i class="dot" style="background:#F2B705"></i><div class="tx"><div class="t">Birthday ideas for Dev</div><div class="s">Pick up the cookies from that <b>bakery</b></div></div><span class="d">Aug 30</span></div>
+<div class="row last"><i class="dot" style="background:#0A6CFF"></i><div class="tx"><div class="t">Why does the croissant stay crisp?</div><div class="s">The <b>bakery</b> on Elm does it all morning</div></div><span class="d">Aug 12</span></div>
+</div>
+<div class="foot">5 thoughts</div>
+<div class="home"></div>
+</div></body></html>

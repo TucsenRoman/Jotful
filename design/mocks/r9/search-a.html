@@ -1,0 +1,53 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=393"><title>Jotful Search A</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="search.css">
+<style>
+.hdr{position:absolute;top:58px;left:16px;right:16px;height:44px;display:flex;align-items:center;gap:12px;z-index:2000}
+.g{width:44px;height:44px;border-radius:22px;background:var(--glass);box-shadow:0 2px 10px rgba(0,0,0,.07),0 0 1px rgba(0,0,0,.06) inset;display:flex;align-items:center;justify-content:center;flex:none}
+.g .lu{stroke-width:1.9}
+.frow{position:absolute;top:112px;left:16px;right:16px;height:30px;display:flex;align-items:center;gap:8px;z-index:2000}
+.frow .lu{width:22px;height:22px;stroke-width:1.9;margin-left:-4px}
+.fall{font-size:15px;color:var(--grey)}
+.ccap{position:absolute;top:290px;left:0;right:0;text-align:center;font-size:13px;line-height:16px;font-weight:500;color:rgba(60,60,67,.6);z-index:2700}
+.card{position:absolute;left:36px;width:334px;height:244px;border-radius:13px}
+.face{position:absolute;inset:0;border-radius:13px;overflow:hidden;padding:0 16px;box-shadow:0 -1px 3px rgba(0,0,0,.12);color:#1C1C1E}
+.card.front .face{box-shadow:0 10px 28px rgba(0,0,0,.16),0 -1px 3px rgba(0,0,0,.10)}
+.card.back{top:332px;transform-origin:50% 0;transform:scale(.94);z-index:1}
+.card.back .face{filter:brightness(.985)}
+.card.front{top:436px;z-index:2}
+.ttl{font-size:22px;font-weight:600;letter-spacing:-.45px;line-height:28px;padding-top:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;line-height:13px;margin-top:3px;color:#6C6C70}
+.meta .mt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meta .more{margin-left:auto;font-size:13px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--grey)}
+.body{font-size:17px;line-height:22px;margin-top:10px}
+.pic{margin-top:10px;height:100px;display:flex;gap:6px}
+.pic img{height:100%;border-radius:9px;object-fit:cover;min-width:0}
+.pic img:first-child{flex:2.2}.pic img+img{flex:1}
+mark{background:none;color:#020204;font-weight:700;text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--t) 70%,transparent);text-decoration-thickness:2px;text-underline-offset:3px}
+.ttl mark{font-weight:800}
+.sheet{position:absolute;left:0;right:0;bottom:0;height:136px;background:#fff;border-radius:26px 26px 0 0;box-shadow:0 -6px 28px rgba(0,0,0,.10);padding:8px 16px 0;z-index:3000}
+.grab{width:36px;height:5px;border-radius:3px;background:#D1D1D6;margin:0 auto 12px}
+.sheet .p{font-size:17px;font-weight:600;line-height:22px}
+.sheet .row{display:flex;align-items:center;gap:10px;margin-top:12px}
+.sheet .in{flex:1;height:44px;border-radius:22px;background:#EFEEF3;color:var(--grey);font-size:17px;line-height:44px;padding-left:16px}
+.sheet .ic{width:44px;height:44px;border-radius:22px;background:#EFEEF3;display:flex;align-items:center;justify-content:center}
+.sheet .ic.mic{background:var(--ink);color:#fff}
+</style></head><body><div class="phone">
+<div class="status"><span>9:41</span><span class="r"><svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg><svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 11.5l2.4-2.6a3.4 3.4 0 00-4.8 0zM3.3 6.6a6.6 6.6 0 019.4 0l1.6-1.7a9 9 0 00-12.6 0zM.2 3.4a11 11 0 0115.6 0" fill="none" stroke="#020204" stroke-width="1.7" stroke-linecap="round"/></svg><svg width="27" height="13" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.5" fill="none" stroke="#020204" opacity=".4"/><rect x="2" y="2" width="20" height="9" rx="2"/><rect x="25" y="4.5" width="1.6" height="4" rx=".8" opacity=".4"/></svg></span></div>
+<div class="hdr">
+ <div class="field"><svg class="lu" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span class="q">pottery</span><span class="clr"><svg class="lu dotx" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="none"/><path d="m15 9-6 6M9 9l6 6"/></svg></span></div>
+ <div class="g"><svg class="lu" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></div>
+</div>
+<div class="frow"><svg class="lu" viewBox="0 0 24 24"><path d="M4 7h16M7 12h10M10 17h4"/></svg><span class="fall">All thoughts</span></div>
+<div class="ccap">2 matches</div>
+
+<div class="card back"><div class="face" style="background:color-mix(in srgb, #F2B705 9%, white);--t:#F2B705"><div class="ttl">Birthday gift for Mom</div><div class="meta"><span class="tp" style="background:#F2B705;color:#000">Idea</span><span class="mt">Pinned · Today 9:12</span></div><div class="body">The <mark>pottery</mark> class she keeps mentioning.</div></div></div>
+
+<div class="card front"><div class="face" style="background:color-mix(in srgb, #2DA44E 9%, white);--t:#2DA44E"><div class="ttl"><mark>Pottery</mark> class on Elm St</div><div class="meta"><span class="tp" style="background:#2DA44E;color:#fff">Place</span><span class="mt">Oct 14 · 2 photos</span><span class="more">1 more</span></div><div class="body">Wheel night is Thursday. Ask if the beginner <mark>pottery</mark> set is included.</div><div class="pic"><img src="../photos/pottery-1.jpg"><img src="../photos/pottery-2.jpg"></div></div></div>
+
+<div class="sheet"><div class="grab"></div><div class="p">What are you daydreaming of?</div>
+ <div class="row"><div class="in">Write it down…</div>
+ <div class="ic"><svg class="lu" viewBox="0 0 24 24"><path d="M4 8.5h3l1.8-2.8h6.4L17 8.5h3V19H4z"/><circle cx="12" cy="13.3" r="3.3"/></svg></div>
+ <div class="ic mic"><svg class="lu" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21"/></svg></div></div>
+ <div class="home" style="z-index:4000"></div></div>
+</div></body></html>

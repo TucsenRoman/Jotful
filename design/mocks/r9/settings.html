@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=393">
+<title>Jotful Settings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<style>
+:root{--ink:#020204;--sec:rgba(60,60,67,.6);--faint:rgba(60,60,67,.3);--line:rgba(60,60,67,.29);--glass:rgba(255,255,255,.82)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:393px}
+body{min-height:852px;background:#F2F1F6;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Inter',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased;position:relative;padding:60px 0 40px}
+svg.lucide{stroke-width:1.9}
+.status{position:absolute;top:0;left:0;right:0;height:54px;display:flex;align-items:center;justify-content:space-between;padding:6px 30px 0 46px;font-size:17px;font-weight:600}
+.status .ic{display:flex;gap:6px}.status svg{width:18px;height:18px;stroke-width:2.4}
+.top{padding:0 16px}
+.close{width:44px;height:44px;border-radius:22px;background:var(--glass);-webkit-backdrop-filter:blur(22px) saturate(1.8);backdrop-filter:blur(22px) saturate(1.8);box-shadow:0 6px 20px rgba(0,0,0,.12),0 1px 3px rgba(0,0,0,.06),inset 0 0 0 .5px rgba(0,0,0,.05);display:flex;align-items:center;justify-content:center}
+.close svg{width:21px;height:21px;stroke-width:2.25}
+h1{margin-top:12px;font-size:34px;line-height:41px;font-weight:700;letter-spacing:.2px}
+.sec{margin-top:28px}
+.sec h2{margin:0 0 7px 32px;font-size:13px;font-weight:400;color:var(--sec)}
+.grp{margin:0 16px;border-radius:16px;background:#fff;overflow:hidden}
+.row{padding-left:16px}
+.in{min-height:44px;display:flex;align-items:center;padding:11px 16px 11px 0;font-size:17px;border-bottom:.5px solid var(--line)}
+.row:last-child .in{border-bottom:0}
+.t{flex:1 0 auto;white-space:nowrap}
+.d{margin-left:12px;color:var(--sec);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ch{margin-left:6px;width:17px;height:17px;flex:none;color:var(--faint);stroke-width:2.5}
+</style></head><body>
+<div class="status"><span>9:41</span><span class="ic"><i data-lucide="signal"></i><i data-lucide="wifi"></i><i data-lucide="battery-full"></i></span></div>
+<div class="top"><div class="close"><i data-lucide="x"></i></div><h1>Settings</h1></div>
+
+<div class="sec"><h2>Open with</h2><div class="grp">
+<div class="row"><div class="in"><span class="t">Preferred AI</span><span class="d">ChatGPT</span><i class="ch" data-lucide="chevron-right"></i></div></div>
+<div class="row"><div class="in"><span class="t">Preferred browser</span><span class="d">System default</span><i class="ch" data-lucide="chevron-right"></i></div></div>
+</div></div>
+<div class="sec"><h2>Tags</h2><div class="grp">
+<div class="row"><div class="in"><span class="t">Tags</span><span class="d">8 tags</span><i class="ch" data-lucide="chevron-right"></i></div></div>
+</div></div>
+<div class="sec"><h2>Capture</h2><div class="grp">
+<div class="row"><div class="in"><span class="t">Voice input</span><span class="d">On-device Dictation</span></div></div>
+<div class="row"><div class="in"><span class="t">Photos, video &amp; audio</span><span class="d">Coming soon</span></div></div>
+</div></div>
+<div class="sec"><h2>Your space</h2><div class="grp">
+<div class="row"><div class="in"><span class="t">Pinned thoughts</span><span class="d">Ready for widgets</span></div></div>
+<div class="row"><div class="in"><span class="t">Storage &amp; privacy</span><span class="d">Thoughts stay on this iPhone</span></div></div>
+</div></div>
+<div class="sec"><h2>About</h2><div class="grp">
+<div class="row"><div class="in"><span class="t">Jotful</span><span class="d">Private thought inbox · version 1.0</span></div></div>
+</div></div>
+<script>lucide.createIcons()</script>
+</body></html>
