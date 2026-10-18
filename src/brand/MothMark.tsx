@@ -7,8 +7,8 @@ type MothMarkProps = {
 };
 
 export function MothMark({ size = 32, dark = false, withBackdrop = false }: MothMarkProps) {
-  const background = dark ? '#242019' : '#FFFDF8';
-  const body = dark ? '#FFFDF8' : '#242019';
+  const background = dark ? '#1C1C1E' : '#FFFFFF';
+  const body = dark ? '#FFFFFF' : '#020204';
   const gradientId = dark ? 'moth-dark-left' : 'moth-light-left';
 
   return (
@@ -21,7 +21,7 @@ export function MothMark({ size = 32, dark = false, withBackdrop = false }: Moth
         <LinearGradient id={gradientId} x1="1.1272" y1="28.1448" x2="21.1272" y2="7.14482" gradientUnits="userSpaceOnUse">
           <Stop offset="0" stopColor="#EF705A" />
           <Stop offset={0.72} stopColor="#EF705A" />
-          <Stop offset="1" stopColor="#FFFDF8" />
+          <Stop offset="1" stopColor="#FFFFFF" />
         </LinearGradient>
       </Defs>
     </Svg>
