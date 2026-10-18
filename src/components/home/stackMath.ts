@@ -95,7 +95,8 @@ export function poseFor(i: number, p: number, fan = 1, max = Number.MAX_SAFE_INT
       scaleX: 1 + GROW * t,
       scaleY: 1 + GROW * t,
       dim: 0,
-      opacity: clamp((1 - t) / (1 - FADE_FROM), 0, 1),
+      // Fades the whole way out (it used to stay solid until 70%, which felt harsh).
+      opacity: 1 - t * t * (3 - 2 * t),
     };
   }
   const d = k - t;

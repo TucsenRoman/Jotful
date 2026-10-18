@@ -47,8 +47,8 @@ const COUNT_LINE = 15;
 const Z_GAP = 600;
 // Mounted card slots. Wide enough that a hard fling runs into cards that are already
 // mounted and drawn (with 10, cards ahead popped in late and the fling looked choppy).
-// Seconds a release coasts at its speed when projecting where it lands (iOS feel, a bit longer).
-const GLIDE = 0.8;
+// Cards travelled = GLIDE_K * (cards per second)^2: ~4 cards/s -> 1.6, ~12 cards/s -> 14.
+const GLIDE_K = 0.1;
 const POOL = 18;
 const AHEAD = 12; // slots from the front card back; the other 6 hold cards that already fell (a drag up brings them back)
 // iOS scroll-view deceleration (0.998 per ms): a hard flick coasts through several cards.
@@ -237,7 +237,9 @@ export function ThoughtStack(props: ThoughtStackProps) {
           if (p.value > max) tg = max;
           else if (p.value < 0) tg = 0;
           else {
-            const projected = p.value + v * GLIDE;
+            // Distance grows with the square of the speed: normal swipes land a card or two
+            // away, a full-force flick flies through many (linear felt backwards on device).
+            const projected = p.value + Math.sign(v) * (GLIDE_K * v * v);
             tg = Math.round(projected);
             // A small flick always moves one card in its direction.
             if (Math.abs(e.velocityY) / 1000 > FLICK) {
