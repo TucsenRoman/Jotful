@@ -55,14 +55,19 @@ function StackCardBase(props: Props) {
     const s = poseFor(index, p.value);
     const front = clamp(Math.round(p.value), 0, maxIdx.value) === index;
     const others = front ? 0 : solo.value;
+    const scale = s.scale * (1 - 0.03 * others);
+    // Only the falling card gets a 3D transform. With perspective on every card, iOS
+    // treated the whole stack as coplanar 3D layers and kept re-deciding which drew on
+    // top (z-fighting), which read as cards flickering through each other.
+    if (s.rot > 0.01) {
+      return {
+        opacity: s.opacity * (1 - others),
+        transform: [{ perspective: 900 }, { translateY: s.y }, { rotateX: `${s.rot}deg` }, { scale }],
+      };
+    }
     return {
       opacity: s.opacity * (1 - others),
-      transform: [
-        { perspective: 900 },
-        { translateY: s.y },
-        { rotateX: `${s.rot}deg` },
-        { scale: s.scale * (1 - 0.03 * others) },
-      ],
+      transform: [{ translateY: s.y }, { scale }],
     };
   });
 

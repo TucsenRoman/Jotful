@@ -327,7 +327,8 @@ export function ThoughtStack(props: ThoughtStackProps) {
   const cardW = Math.max(0, size.w - CARD_LEFT - CARD_RIGHT);
   const cardTop = Math.max(FAN_H + COUNT_LINE + 16, size.h - bottomInset - SHEET_GAP - CARD_H);
   const trackTop = cardTop - FAN_H;
-  const trackH = FAN_H + CARD_H;
+  // The scrubber stops 12pt above the capture sheet so the peek never covers it.
+  const trackH = Math.max(0, Math.min(cardTop + CARD_H, size.h - bottomInset - 12 - 22) - trackTop);
 
   const months = useMemo(() => thoughts.map((t) => monthKey(t.createdAt)), [thoughts]);
   const labels = useMemo(() => thoughts.map((t) => shortDate(t.createdAt)), [thoughts]);
