@@ -16,6 +16,7 @@ import { ThoughtDetail } from './src/components/detail/ThoughtDetail';
 import SettingsScreen from './src/components/settings/SettingsScreen';
 import { FilterMenu, FilterRow, HomeHeader, TagPill } from './src/components/header/HomeHeader';
 import { TagPicker } from './src/components/header/TagPicker';
+import { startWatchSync } from './src/watchSync';
 import CaptureWidget from './targets/widgets/CaptureWidget';
 import RecentsWidget from './targets/widgets/RecentsWidget';
 import { classifyThought, splitThoughts } from './src/segmentation';
@@ -105,6 +106,9 @@ function JotfulApp() {
 
   useEffect(() => { setPreferredAI(getPreference('preferredAI', 'ChatGPT')); setPreferredBrowser(getPreference('preferredBrowser', 'System default')); setTags(listTags()); refresh(); }, []);
   useEffect(() => { refresh(); }, [search, filterTagIds, showResolved]);
+  const refreshRef = useRef(refresh);
+  refreshRef.current = refresh;
+  useEffect(() => startWatchSync(() => refreshRef.current()), []);
   useEffect(() => {
     if (Platform.OS !== 'ios') return;
     CaptureWidget.updateSnapshot({ thoughtCount: thoughts.filter((thought) => thought.resolvedAt === null).length });

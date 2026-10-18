@@ -26,12 +26,12 @@ function WatchApp() {
   const [status, setStatus] = useState<DeliveryState>('ready');
 
   useEffect(() => {
-    void WatchConnectivity.activate();
-    const delivered = WatchConnectivity.on('message', ({ content }) => {
-      if (content.type === 'jotful.capture.ack') setStatus('sent');
-      return { type: 'jotful.watch.received' };
+    // The iPhone confirms each capture once it is saved in its own database.
+    const confirmed = WatchConnectivity.on('userInfo', (info) => {
+      if (info.type === 'jotful.capture.ack') setStatus('sent');
     });
-    return () => delivered.remove();
+    void WatchConnectivity.activate();
+    return () => confirmed.remove();
   }, []);
 
   async function saveToPhone() {

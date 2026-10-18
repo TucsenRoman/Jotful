@@ -29,6 +29,7 @@ npm run icons:ios                # re-render iOS icon variants from assets/brand
 | `development-phone` | Dev client without the Watch target |
 | `preview` | Internal test build |
 | `production` | App Store build. Phone-only for now (`JOTFUL_PHONE_ONLY_BUILD=1`) until the Watch provisioning profile exists |
+| `production-watch` | App Store/TestFlight build including the Watch app. Testing it before it replaces `production` |
 
 - `eas build -p ios --profile production`, then `eas submit -p ios --profile production`.
 - `appVersionSource` is `local` and `production` auto-increments, so every production build bumps `buildNumber` in `app.json`. Commit that bump.
