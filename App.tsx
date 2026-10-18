@@ -17,6 +17,7 @@ import { MothMark } from './src/brand/MothMark';
 import { RichTextViewer } from '@apollohg/react-native-rich-text-editor';
 import CaptureSheet, { type CaptureSheetHandle } from './src/components/CaptureSheet';
 import AudioTimeline from './src/components/AudioTimeline';
+import { startWatchSync } from './src/watchSync';
 import CaptureWidget from './targets/widgets/CaptureWidget';
 import RecentsWidget from './targets/widgets/RecentsWidget';
 import { classifyThought, splitThoughts, type ThoughtKind } from './src/segmentation';
@@ -145,6 +146,9 @@ function UnsortedApp() {
 
   useEffect(() => { setPreferredAI(getPreference('preferredAI', 'ChatGPT')); setPreferredBrowser(getPreference('preferredBrowser', 'System default')); refresh(); }, []);
   useEffect(() => { refresh(); }, [search]);
+  const refreshRef = useRef(refresh);
+  refreshRef.current = refresh;
+  useEffect(() => startWatchSync(() => refreshRef.current()), []);
   useEffect(() => {
     if (Platform.OS !== 'ios') return;
     CaptureWidget.updateSnapshot({ thoughtCount: thoughts.filter((thought) => thought.resolvedAt === null).length });

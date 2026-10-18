@@ -68,6 +68,11 @@ export function initializeDatabase() {
     attachments TEXT NOT NULL,
     createdAt INTEGER NOT NULL
   );`);
+  // One row per Watch capture id, so a retried transfer never saves twice.
+  db.execSync(`CREATE TABLE IF NOT EXISTS watchCaptures (
+    id TEXT PRIMARY KEY NOT NULL,
+    receivedAt INTEGER NOT NULL
+  );`);
   // Earlier builds left attachment rows behind when their thought was deleted.
   db.execSync('DELETE FROM attachments WHERE thoughtId NOT IN (SELECT id FROM thoughts);');
 }
@@ -108,6 +113,18 @@ export function listRecentThoughts(limit = 5): Thought[] {
 
 export function createThought(text: string, kind: ThoughtKind, richText?: string) {
   db.runSync('INSERT INTO thoughts (text, richText, kind, createdAt) VALUES (?, ?, ?, ?)', text, richText ?? null, kind, Date.now());
+}
+
+// Stores a Watch capture once per id. Returns false when it was already saved.
+export function saveWatchCapture(id: string, thoughts: Array<{ text: string; kind: ThoughtKind }>, createdAt: number) {
+  let saved = false;
+  db.withTransactionSync(() => {
+    if (db.getFirstSync('SELECT id FROM watchCaptures WHERE id = ?', id)) return;
+    thoughts.forEach(({ text, kind }) => db.runSync('INSERT INTO thoughts (text, kind, createdAt) VALUES (?, ?, ?)', text, kind, createdAt));
+    db.runSync('INSERT INTO watchCaptures (id, receivedAt) VALUES (?, ?)', id, Date.now());
+    saved = true;
+  });
+  return saved;
 }
 
 export function updateThought(id: number, text: string, kind: ThoughtKind, richText?: string) {
