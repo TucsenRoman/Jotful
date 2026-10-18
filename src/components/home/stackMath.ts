@@ -66,9 +66,6 @@ function stretch(over: number) {
 }
 
 // Pose of the card at time-order index i for a given p (max = last index).
-// The fall is a 2D fake of a forward tilt on a top hinge: the card foreshortens toward
-// its top edge (scaleY = cos of the tilt), widens a little and darkens. Real 3D
-// (perspective + rotateX) flickered on iOS, which depth-sorts 3D layers.
 export function poseFor(i: number, p: number, fan = 1, max = Number.MAX_SAFE_INTEGER): CardPose {
   'worklet';
   if (p < 0 || p > max) {
@@ -90,12 +87,13 @@ export function poseFor(i: number, p: number, fan = 1, max = Number.MAX_SAFE_INT
   const k = i - f;
   if (k < 0) return { y: D, scaleX: 1 + GROW, scaleY: 0.1, dim: 0, opacity: 0 };
   if (k === 0) {
-    const tilt = (ROT_MAX * t * Math.PI) / 180;
+    // Flat fall for now (user, 2026-10-18): slide down, grow a little, fade. The forward
+    // tilt comes back once it can render without flicker on iOS.
     return {
       y: D * t,
       scaleX: 1 + GROW * t,
-      scaleY: Math.max(0.1, Math.cos(tilt)),
-      dim: 0.25 * t,
+      scaleY: 1 + GROW * t,
+      dim: 0,
       opacity: clamp((1 - t) / (1 - FADE_FROM), 0, 1),
     };
   }

@@ -102,7 +102,6 @@ export default function SettingsScreen({ preferredAI, preferredBrowser, tagCount
           <Row title="Add sample thoughts" detail="17 thoughts, Aug–Oct" onPress={onAddSampleData} />
           <Row title="Remove sample thoughts" detail="Keeps your own" onPress={onClearSampleData} />
           {stackDebug && onToggleStackDebug ? <>
-            <Row title="Flat flip (no 3D)" detail={stackDebug.flat ? "On" : "Off"} onPress={() => onToggleStackDebug("flat")} />
             <Row title="No card shadows" detail={stackDebug.noShadow ? "On" : "Off"} onPress={() => onToggleStackDebug("noShadow")} />
             <Row title="Plain cards (no photos or text)" detail={stackDebug.plain ? "On" : "Off"} onPress={() => onToggleStackDebug("plain")} last />
           </> : null}
