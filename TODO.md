@@ -3,9 +3,9 @@
 Temporary list. Once tasks have a more stable home (a Notion database, for example), move the open items there, point `CLAUDE.md` at it, and delete this file.
 
 ## 1.0.3: Apple Watch
-- [x] Builds with the Watch app (`production-watch` profile): 15 and 16 reached TestFlight; 17 (`0f9ccfd`, ships the Watch JS as source) finished on EAS Oct 14, 2026.
-- [ ] Check build 17 is in TestFlight (submit it if not), then test a Watch capture landing on the iPhone on real devices.
-- [ ] Merge `feat/watch-sync` into main once the Watch test passes.
+- [x] Builds with the Watch app (`production-watch` profile): 15–18 reached TestFlight but the Watch app showed a black screen. Build 19 (`c54e386`, keeps NativeWind out of the Watch bundle) works.
+- [x] Watch capture landing on the iPhone, tested on real devices with build 19 (Oct 18, 2026).
+- [ ] Merge `feat/reskin` (which now carries the Watch sync) into main.
 
 ## 1.0.2 release
 - [x] Watch 1.0.2 (build 10, EAS `394acc07`) through App Store review. Approved Oct 11, 2026; auto-released. Carries the Jotful alert text, 5 new screenshots, and the new support and privacy links.
@@ -16,7 +16,7 @@ Temporary list. Once tasks have a more stable home (a Notion database, for examp
 - [ ] Run `RELEASE_TEST_PLAN.md` on the iPhone and keep anonymized screenshots. Skipped for 1.0.2; do it before the next release.
 
 ## Next
-- [ ] Set up the Apple Watch provisioning profile, then drop `JOTFUL_PHONE_ONLY_BUILD` from the `production` profile so the Watch app ships.
-- [x] Watch capture acknowledgement and deduplication: the iPhone saves each Watch capture once by id and confirms it back (`src/watchSync.ts`). Needs a real-device test.
+- [ ] The Watch provisioning profile exists (`HQ3YJ2KKK3`) and `production-watch` works: fold it into `production` by dropping `JOTFUL_PHONE_ONLY_BUILD`.
+- [x] Watch capture acknowledgement and deduplication: the iPhone saves each Watch capture once by id and confirms it back (`src/watchSync.ts`). Tested on real devices Oct 18, 2026.
 - [ ] **Security alerts (found 2026-10-18).** `npm audit`: 45 issues (1 critical `shell-quote`, 28 high), nearly all in Expo and Metro build tooling; most fixes come with the next Expo SDK. No Dependabot yet.
 - [ ] **Local Node.js is 20** (end of life Oct 2026). Upgrade on this PC.
