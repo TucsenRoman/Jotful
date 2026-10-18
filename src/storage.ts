@@ -15,9 +15,15 @@ export type Thought = {
   attachmentKind: AttachmentKind | null;
   attachmentUri: string | null;
   attachmentDurationMillis: number | null;
+  tags: Tag[];
 };
 
 export type AttachmentKind = 'image' | 'video' | 'audio';
+
+export type TagColor = 'idea' | 'question' | 'movie' | 'music' | 'book' | 'place' | 'person' | 'todo';
+export type Tag = { id: number; name: string; color: TagColor };
+export type Attachment = { id: number; kind: AttachmentKind; uri: string; durationMillis: number | null };
+export type ThoughtFilter = { tagIds?: number[]; showResolved?: boolean };
 
 const db = SQLite.openDatabaseSync('unsorted.db');
 
@@ -70,13 +76,48 @@ export function initializeDatabase() {
   );`);
   // Earlier builds left attachment rows behind when their thought was deleted.
   db.execSync('DELETE FROM attachments WHERE thoughtId NOT IN (SELECT id FROM thoughts);');
+  // Tags (reskin, Oct 2026): colour means tag, one colour per tag (BRAND.md).
+  db.execSync(`CREATE TABLE IF NOT EXISTS tags (
+    id INTEGER PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL UNIQUE,
+    color TEXT NOT NULL UNIQUE,
+    position INTEGER NOT NULL,
+    createdAt INTEGER NOT NULL
+  );`);
+  db.execSync(`CREATE TABLE IF NOT EXISTS thoughtTags (
+    thoughtId INTEGER NOT NULL,
+    tagId INTEGER NOT NULL,
+    position INTEGER NOT NULL,
+    PRIMARY KEY (thoughtId, tagId)
+  );`);
+  db.execSync('DELETE FROM thoughtTags WHERE thoughtId NOT IN (SELECT id FROM thoughts) OR tagId NOT IN (SELECT id FROM tags);');
+  seedTags();
+}
+
+// The starter tags. `color` is a key into src/theme/tokens.js `tag`.
+const DEFAULT_TAGS: Array<[string, TagColor]> = [
+  ['Idea', 'idea'], ['Question', 'question'], ['Movie', 'movie'], ['Music', 'music'],
+  ['Book', 'book'], ['Place', 'place'], ['Person', 'person'], ['To-do', 'todo'],
+];
+
+function seedTags() {
+  if (db.getFirstSync<{ n: number }>('SELECT COUNT(*) AS n FROM tags')?.n) return;
+  const now = Date.now();
+  db.withTransactionSync(() => {
+    DEFAULT_TAGS.forEach(([name, color], position) => db.runSync('INSERT INTO tags (name, color, position, createdAt) VALUES (?, ?, ?, ?)', name, color, position, now));
+    // Existing thoughts keep the meaning they already showed: the old Idea and
+    // Question kinds become those tags; plain thoughts stay untagged.
+    for (const [kind, name] of [['idea', 'Idea'], ['question', 'Question']] as const) {
+      db.runSync('INSERT OR IGNORE INTO thoughtTags (thoughtId, tagId, position) SELECT thoughts.id, tags.id, 0 FROM thoughts, tags WHERE thoughts.kind = ? AND tags.name = ?', kind, name);
+    }
+  });
 }
 
 // Capture components can mount before the app's startup effect fires. Create
 // migrations at module load so their synchronous draft checkpoints are safe.
 initializeDatabase();
 
-type StoredThought = Omit<Thought, 'kind'> & { kind: ThoughtKind | 'task'; collection?: string | null };
+type StoredThought = Omit<Thought, 'kind' | 'tags'> & { kind: ThoughtKind | 'task'; collection?: string | null };
 
 // iOS moves the app's container on every update, so a saved absolute
 // Documents path goes stale. Re-anchor it to the current Documents folder.
@@ -87,27 +128,82 @@ function resolveStoredUri(uri: string | null) {
   return Paths.document.uri.replace(/\/?$/, '/') + uri.slice(index + marker.length);
 }
 
-function fromStored({ kind, attachmentUri, ...thought }: StoredThought): Thought {
-  return { ...thought, kind: kind === 'task' ? 'thought' : kind, attachmentUri: resolveStoredUri(attachmentUri) };
+function fromStored({ kind, attachmentUri, ...thought }: StoredThought, tags: Tag[] = []): Thought {
+  return { ...thought, kind: kind === 'task' ? 'thought' : kind, attachmentUri: resolveStoredUri(attachmentUri), tags };
 }
 
-export function listThoughts(search = ''): Thought[] {
-  const filter = `%${search}%`;
-  return db.getAllSync<StoredThought>(
-    'SELECT id, text, richText, kind, collection, createdAt, draftedAt, resolvedAt, pinnedAt, (SELECT COUNT(*) FROM attachments WHERE thoughtId = thoughts.id) AS attachmentCount, (SELECT kind FROM attachments WHERE thoughtId = thoughts.id ORDER BY id DESC LIMIT 1) AS attachmentKind, (SELECT uri FROM attachments WHERE thoughtId = thoughts.id ORDER BY id DESC LIMIT 1) AS attachmentUri, (SELECT durationMillis FROM attachments WHERE thoughtId = thoughts.id ORDER BY id DESC LIMIT 1) AS attachmentDurationMillis FROM thoughts WHERE text LIKE ? ORDER BY CASE WHEN resolvedAt IS NULL THEN 0 ELSE 1 END, pinnedAt DESC, createdAt DESC',
-    filter
-  ).map(fromStored);
+const THOUGHT_COLUMNS = 'id, text, richText, kind, collection, createdAt, draftedAt, resolvedAt, pinnedAt, (SELECT COUNT(*) FROM attachments WHERE thoughtId = thoughts.id) AS attachmentCount, (SELECT kind FROM attachments WHERE thoughtId = thoughts.id ORDER BY id DESC LIMIT 1) AS attachmentKind, (SELECT uri FROM attachments WHERE thoughtId = thoughts.id ORDER BY id DESC LIMIT 1) AS attachmentUri, (SELECT durationMillis FROM attachments WHERE thoughtId = thoughts.id ORDER BY id DESC LIMIT 1) AS attachmentDurationMillis';
+
+// Attaches each thought's tags (in their order) with one query.
+function withTags(rows: StoredThought[]): Thought[] {
+  if (rows.length === 0) return [];
+  const links = db.getAllSync<Tag & { thoughtId: number }>(
+    `SELECT thoughtTags.thoughtId, tags.id, tags.name, tags.color FROM thoughtTags JOIN tags ON tags.id = thoughtTags.tagId WHERE thoughtTags.thoughtId IN (${rows.map(() => '?').join(',')}) ORDER BY thoughtTags.position`,
+    ...rows.map((row) => row.id),
+  );
+  const byThought = new Map<number, Tag[]>();
+  links.forEach(({ thoughtId, ...tag }) => byThought.set(thoughtId, [...(byThought.get(thoughtId) ?? []), tag]));
+  return rows.map((row) => fromStored(row, byThought.get(row.id)));
+}
+
+// Today's list keeps resolved thoughts (showResolved defaults to true). The
+// reskin's home passes `{ showResolved: false }` and a tag filter; a thought
+// matches when it has any of the chosen tags.
+export function listThoughts(search = '', filter: ThoughtFilter = {}): Thought[] {
+  const { tagIds = [], showResolved = true } = filter;
+  const where = ['text LIKE ?'];
+  const params: Array<string | number> = [`%${search}%`];
+  if (!showResolved) where.push('resolvedAt IS NULL');
+  if (tagIds.length) {
+    where.push(`id IN (SELECT thoughtId FROM thoughtTags WHERE tagId IN (${tagIds.map(() => '?').join(',')}))`);
+    params.push(...tagIds);
+  }
+  return withTags(db.getAllSync<StoredThought>(
+    `SELECT ${THOUGHT_COLUMNS} FROM thoughts WHERE ${where.join(' AND ')} ORDER BY CASE WHEN resolvedAt IS NULL THEN 0 ELSE 1 END, pinnedAt DESC, createdAt DESC`,
+    ...params,
+  ));
 }
 
 export function listRecentThoughts(limit = 5): Thought[] {
-  return db.getAllSync<StoredThought>(
-    'SELECT id, text, richText, kind, collection, createdAt, draftedAt, resolvedAt, pinnedAt, (SELECT COUNT(*) FROM attachments WHERE thoughtId = thoughts.id) AS attachmentCount, (SELECT kind FROM attachments WHERE thoughtId = thoughts.id ORDER BY id DESC LIMIT 1) AS attachmentKind, (SELECT uri FROM attachments WHERE thoughtId = thoughts.id ORDER BY id DESC LIMIT 1) AS attachmentUri, (SELECT durationMillis FROM attachments WHERE thoughtId = thoughts.id ORDER BY id DESC LIMIT 1) AS attachmentDurationMillis FROM thoughts ORDER BY createdAt DESC LIMIT ?',
-    limit
-  ).map(fromStored);
+  return withTags(db.getAllSync<StoredThought>(`SELECT ${THOUGHT_COLUMNS} FROM thoughts ORDER BY createdAt DESC LIMIT ?`, limit));
 }
 
-export function createThought(text: string, kind: ThoughtKind, richText?: string) {
-  db.runSync('INSERT INTO thoughts (text, richText, kind, createdAt) VALUES (?, ?, ?, ?)', text, richText ?? null, kind, Date.now());
+export function listAttachments(thoughtId: number): Attachment[] {
+  return db.getAllSync<Attachment>('SELECT id, kind, uri, durationMillis FROM attachments WHERE thoughtId = ? ORDER BY id', thoughtId)
+    .map((attachment) => ({ ...attachment, uri: resolveStoredUri(attachment.uri) ?? attachment.uri }));
+}
+
+export function listTags(): Tag[] {
+  return db.getAllSync<Tag>('SELECT id, name, color FROM tags ORDER BY position');
+}
+
+// One colour per tag: the colour column is unique, so a taken colour throws.
+export function createTag(name: string, color: TagColor): Tag {
+  const position = (db.getFirstSync<{ n: number }>('SELECT COALESCE(MAX(position), -1) + 1 AS n FROM tags')?.n) ?? 0;
+  const result = db.runSync('INSERT INTO tags (name, color, position, createdAt) VALUES (?, ?, ?, ?)', name.trim(), color, position, Date.now());
+  return { id: Number(result.lastInsertRowId), name: name.trim(), color };
+}
+
+export function setThoughtTags(thoughtId: number, tagIds: number[]) {
+  db.withTransactionSync(() => {
+    db.runSync('DELETE FROM thoughtTags WHERE thoughtId = ?', thoughtId);
+    tagIds.forEach((tagId, position) => db.runSync('INSERT OR IGNORE INTO thoughtTags (thoughtId, tagId, position) VALUES (?, ?, ?)', thoughtId, tagId, position));
+  });
+}
+
+// The suggested tag for a new thought, from the same rules that set its kind.
+function suggestedTagId(kind: ThoughtKind) {
+  const name = kind === 'idea' ? 'Idea' : kind === 'question' ? 'Question' : null;
+  return name ? db.getFirstSync<{ id: number }>('SELECT id FROM tags WHERE name = ?', name)?.id ?? null : null;
+}
+
+export function createThought(text: string, kind: ThoughtKind, richText?: string, tagIds?: number[]) {
+  const result = db.runSync('INSERT INTO thoughts (text, richText, kind, createdAt) VALUES (?, ?, ?, ?)', text, richText ?? null, kind, Date.now());
+  const id = Number(result.lastInsertRowId);
+  const suggested = suggestedTagId(kind);
+  const tags = tagIds ?? (suggested ? [suggested] : []);
+  if (tags.length) setThoughtTags(id, tags);
+  return id;
 }
 
 export function updateThought(id: number, text: string, kind: ThoughtKind, richText?: string) {
@@ -184,6 +280,7 @@ export function recoverCaptureDraft() {
 
 export function deleteThought(id: number) {
   db.runSync('DELETE FROM attachments WHERE thoughtId = ?', id);
+  db.runSync('DELETE FROM thoughtTags WHERE thoughtId = ?', id);
   db.runSync('DELETE FROM thoughts WHERE id = ?', id);
 }
 
