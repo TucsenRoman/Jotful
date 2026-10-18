@@ -74,7 +74,7 @@ function JotfulApp() {
   const [detail, setDetail] = useState<{ thought: Thought; attachments: Attachment[] } | null>(null);
   const [tagTarget, setTagTarget] = useState<'draft' | number | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
-  const readStackDebug = () => ({ flat: getPreference('debug.flat', '0') === '1', noShadow: getPreference('debug.noShadow', '0') === '1', plain: getPreference('debug.plain', '0') === '1' });
+  const readStackDebug = () => ({ flat: getPreference('debug.flat', '0') === '1', noShadow: getPreference('debug.noShadow', '0') === '1', plain: getPreference('debug.plain', '0') === '1', tilt: getPreference('debug.tilt', '0') === '1' });
   const [stackDebug, setStackDebug] = useState(readStackDebug);
   const [capturePromptIndex] = useState(() => Math.floor(Math.random() * capturePrompts.length));
   const sheetRef = useRef<CaptureSheetHandle>(null);

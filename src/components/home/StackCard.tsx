@@ -62,6 +62,13 @@ function StackCardBase(props: Props) {
     const others = front ? 0 : solo.value;
     const shrink = 1 - 0.03 * others;
     // 2D only (see poseFor): real 3D layers flickered through each other on iOS.
+    // Developer test: the real forward tilt (3D), with zIndex spaced Z_GAP apart.
+    if (debug.tilt && (s.rot ?? 0) > 0.01) {
+      return {
+        opacity: s.opacity * (1 - others),
+        transform: [{ perspective: 900 }, { translateY: s.y }, { rotateX: `${s.rot}deg` }, { scaleX: s.scaleX * shrink }, { scaleY: s.scaleY * shrink }],
+      };
+    }
     return {
       opacity: s.opacity * (1 - others),
       transform: [{ translateY: s.y }, { scaleX: s.scaleX * shrink }, { scaleY: s.scaleY * shrink }],

@@ -83,7 +83,7 @@ const rigid = () => {
 export function ThoughtStack(props: ThoughtStackProps) {
   const { thoughts, bottomInset, resetKey } = props;
   const N = thoughts.length;
-  const debug = useMemo(() => ({ flat: getPreference('debug.flat', '0') === '1', noShadow: getPreference('debug.noShadow', '0') === '1', plain: getPreference('debug.plain', '0') === '1' }), []);
+  const debug = useMemo(() => ({ flat: getPreference('debug.flat', '0') === '1', noShadow: getPreference('debug.noShadow', '0') === '1', plain: getPreference('debug.plain', '0') === '1', tilt: getPreference('debug.tilt', '0') === '1' }), []);
 
   const propsRef = useRef(props);
   propsRef.current = props;

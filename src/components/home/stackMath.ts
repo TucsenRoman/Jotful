@@ -58,7 +58,7 @@ export function unrubber(v: number, max: number) {
   return v > max ? max + (v - max) / RUBBER : v < 0 ? v / RUBBER : v;
 }
 
-export type CardPose = { y: number; scaleX: number; scaleY: number; dim: number; opacity: number };
+export type CardPose = { y: number; scaleX: number; scaleY: number; dim: number; opacity: number; rot?: number };
 
 // Ends of the stack: a short, firm stretch (never a falling card), at most END_PULL.
 const END_PULL = 28;
@@ -99,6 +99,7 @@ export function poseFor(i: number, p: number, fan = 1, max = Number.MAX_SAFE_INT
       dim: 0,
       // Fades the whole way out (it used to stay solid until 70%, which felt harsh).
       opacity: 1 - t * t * (3 - 2 * t),
+      rot: ROT_MAX * t, // used only by the 3D tilt test switch
     };
   }
   const d = k - t;
@@ -118,4 +119,4 @@ export function poseFor(i: number, p: number, fan = 1, max = Number.MAX_SAFE_INT
 }
 
 // Dev-only switches (Settings > Developer) to find what makes the stack flicker on device.
-export type StackDebug = { flat: boolean; noShadow: boolean; plain: boolean };
+export type StackDebug = { flat: boolean; noShadow: boolean; plain: boolean; tilt: boolean };

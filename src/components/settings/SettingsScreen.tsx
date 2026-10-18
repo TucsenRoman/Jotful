@@ -20,8 +20,8 @@ export type SettingsScreenProps = {
   onAddSampleData?(): void;
   onClearSampleData?(): void;
   // Dev app only: stack switches to find the flicker on device.
-  stackDebug?: { flat: boolean; noShadow: boolean; plain: boolean };
-  onToggleStackDebug?(key: 'flat' | 'noShadow' | 'plain'): void;
+  stackDebug?: { flat: boolean; noShadow: boolean; plain: boolean; tilt: boolean };
+  onToggleStackDebug?(key: 'flat' | 'noShadow' | 'plain' | 'tilt'): void;
   onClose(): void;
 };
 
@@ -102,6 +102,7 @@ export default function SettingsScreen({ preferredAI, preferredBrowser, tagCount
           <Row title="Add sample thoughts" detail="17 thoughts, Aug–Oct" onPress={onAddSampleData} />
           <Row title="Remove sample thoughts" detail="Keeps your own" onPress={onClearSampleData} />
           {stackDebug && onToggleStackDebug ? <>
+            <Row title="3D tilt (test)" detail={stackDebug.tilt ? "On" : "Off"} onPress={() => onToggleStackDebug("tilt")} />
             <Row title="No card shadows" detail={stackDebug.noShadow ? "On" : "Off"} onPress={() => onToggleStackDebug("noShadow")} />
             <Row title="Plain cards (no photos or text)" detail={stackDebug.plain ? "On" : "Off"} onPress={() => onToggleStackDebug("plain")} last />
           </> : null}
