@@ -4,10 +4,8 @@ import { memo, type ComponentProps } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { Copy, Globe, MessageSquare, Mic, Pin, Play } from 'lucide-react-native';
-import { RichTextViewer } from '@apollohg/react-native-rich-text-editor';
-import AudioTimeline from '../AudioTimeline';
 import type { Thought } from '../../storage';
-import { audioDuration, bodyOf, metaLabel, richBodyOf, titleOf } from './format';
+import { audioDuration, bodyOf, metaLabel, titleOf } from './format';
 import { CARD_H } from './stackMath';
 
 const tokens = require('../../theme/tokens');
@@ -41,10 +39,10 @@ function ThoughtCardBase({ thought: t, isFront, more, moreStyle, onPress, onAskA
   const tag = t.tags[0];
   const title = titleOf(t);
   const body = bodyOf(t);
-  const rich = richBodyOf(t);
+
   const hasImage = t.attachmentKind === 'image' && !!t.attachmentUri;
   const hasAudio = t.attachmentKind === 'audio' && !!t.attachmentUri;
-  const hasBody = !!(rich || body);
+  const hasBody = !!body;
   const textColor = resolved ? p.grey : p.graphite;
   const strike = resolved ? styles.strike : null;
 
@@ -77,15 +75,8 @@ function ThoughtCardBase({ thought: t, isFront, more, moreStyle, onPress, onAskA
           </View>
 
           <View style={styles.body}>
-            {rich ? (
-              <View pointerEvents="none" style={{ maxHeight: hasImage || hasAudio ? 22 : 88, overflow: 'hidden' }}>
-                <RichTextViewer
-                  contentHTML={rich}
-                  enableLinkTaps={false}
-                  theme={{ text: { fontSize: 17, lineHeight: 22, color: textColor } }}
-                />
-              </View>
-            ) : body ? (
+            {/* Plain text on the stack: a native rich-text view per card redrew (flickered) on every swap. */}
+            {body ? (
               <Text numberOfLines={hasImage ? 1 : hasAudio ? 2 : 4} style={[styles.bodyText, { color: textColor }, strike]}>
                 {body}
               </Text>
@@ -99,17 +90,16 @@ function ThoughtCardBase({ thought: t, isFront, more, moreStyle, onPress, onAskA
               />
             )}
 
-            {hasAudio &&
-              (isFront ? (
-                <AudioTimeline uri={t.attachmentUri!} fallbackDurationMillis={t.attachmentDurationMillis ?? undefined} compact />
-              ) : (
-                <View style={styles.voiceStub}>
-                  <View style={styles.voicePlay}>
-                    <Play size={14} color={c.ink} fill={c.ink} />
-                  </View>
-                  <Text style={styles.voiceTime}>{audioDuration(t)}</Text>
+            {/* Static on every card (playback lives in the detail view): swapping in a live
+                player when a card reached the front popped the layout mid-animation. */}
+            {hasAudio && (
+              <View style={styles.voiceStub}>
+                <View style={styles.voicePlay}>
+                  <Play size={14} color={c.ink} fill={c.ink} />
                 </View>
-              ))}
+                <Text style={styles.voiceTime}>{audioDuration(t)}</Text>
+              </View>
+            )}
           </View>
         </View>
       </Pressable>

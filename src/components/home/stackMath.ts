@@ -5,7 +5,7 @@ const tokens = require('../../theme/tokens');
 export const CARD_H = 244;
 export const CARD_LEFT = tokens.space.margin as number; // 16: cards centred, equal side margins
 export const CARD_RIGHT = tokens.space.margin as number; // 16
-export const SHEET_GAP = 12; // front card bottom sits this far above the capture sheet
+export const SHEET_GAP = 32; // front card bottom sits this far above the capture sheet (12 was cut off on device)
 
 export const D = 320; // drag per card, 1:1 finger tracking
 export const STEP = [60, 56, 52, 48]; // each card behind sits this much higher

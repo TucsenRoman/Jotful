@@ -19,6 +19,7 @@ import {
 } from 'lucide-react-native';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActionSheetIOS, Alert, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Tap } from '../ui/Tap';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Attachment, Thought } from '../../storage';
 import MediaPager from './MediaPager';
@@ -75,13 +76,13 @@ function Glass({ width, padH = 0, column, children }: { width?: number; padH?: n
 
 function IconButton({ label, onPress, children }: { label: string; onPress(): void; children: ReactNode }) {
   return (
-    <Pressable
+    <Tap
       onPress={onPress}
       accessibilityLabel={label}
       style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? alpha(T.primitive.ink, 0.07) : 'transparent' })}
     >
       {children}
-    </Pressable>
+    </Tap>
   );
 }
 
@@ -126,7 +127,7 @@ function ActionPill({ label, icon, onPress, variant }: { label: string; icon: Re
   const pressedBg = variant === 'black' ? T.primitive.graphite2 : variant === 'white' ? T.color.fill : alpha(white, 0.26);
   const fg = variant === 'white' ? ink : white;
   return (
-    <Pressable
+    <Tap
       onPress={onPress}
       accessibilityLabel={label}
       style={({ pressed }) => [
@@ -149,7 +150,7 @@ function ActionPill({ label, icon, onPress, variant }: { label: string; icon: Re
       <Text numberOfLines={1} style={{ fontSize: 15, fontWeight: '600', color: fg }}>
         {label}
       </Text>
-    </Pressable>
+    </Tap>
   );
 }
 
@@ -188,7 +189,7 @@ function Actions({ dark, onAskAI, onSearchWeb, onCopy }: { dark: boolean; onAskA
           onSearchWeb();
         }}
       />
-      <Pressable
+      <Tap
         onPress={copy}
         accessibilityLabel={copied ? 'Copied' : 'Copy'}
         style={({ pressed }) => [
@@ -207,7 +208,7 @@ function Actions({ dark, onAskAI, onSearchWeb, onCopy }: { dark: boolean; onAskA
         ]}
       >
         <CopyIcon size={18} color={sideFg} strokeWidth={1.9} />
-      </Pressable>
+      </Tap>
     </View>
   );
 }
@@ -337,7 +338,7 @@ function DetailScreen(props: ThoughtDetailProps) {
                 <Text style={{ fontSize: 13, fontWeight: '600', color: T.tagOn[tag.color] }}>{tag.name}</Text>
               </Pressable>
             ))}
-            <Pressable
+            <Tap
               onPress={props.onEditTags}
               accessibilityLabel="Add tag"
               className="flex-row items-center bg-card"
@@ -345,7 +346,7 @@ function DetailScreen(props: ThoughtDetailProps) {
             >
               <Plus size={14} color={T.color.secondary} strokeWidth={2.4} />
               <Text style={{ fontSize: 13, fontWeight: '600', color: T.color.secondary }}>Add</Text>
-            </Pressable>
+            </Tap>
           </View>
 
           {/* Grouped info card */}
@@ -391,7 +392,7 @@ function DetailScreen(props: ThoughtDetailProps) {
           </View>
 
           {/* Resolve */}
-          <Pressable
+          <Tap
             onPress={resolve}
             accessibilityLabel={resolved ? 'Bring Back' : 'Resolve'}
             className="flex-row items-center justify-center bg-card"
@@ -401,7 +402,7 @@ function DetailScreen(props: ThoughtDetailProps) {
             <Text className="text-ink" style={{ fontSize: 17, fontWeight: '600' }}>
               {resolved ? 'Bring Back' : 'Resolve'}
             </Text>
-          </Pressable>
+          </Tap>
         </View>
       </ScrollView>
 

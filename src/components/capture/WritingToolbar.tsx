@@ -1,6 +1,7 @@
 import { Camera, Heading, Image, List, ListTodo } from "lucide-react-native";
 import type { ReactNode } from "react";
 import { Pressable, Text, View } from "react-native";
+import { Tap } from "../ui/Tap";
 import type { LineKind } from "./richDraft";
 
 const tokens = require("../../theme/tokens");
@@ -21,7 +22,7 @@ export function CircleButton({
   disabled?: boolean;
 }) {
   return (
-    <Pressable
+    <Tap
       onPress={onPress}
       disabled={disabled}
       hitSlop={6}
@@ -38,7 +39,7 @@ export function CircleButton({
       })}
     >
       {children}
-    </Pressable>
+    </Tap>
   );
 }
 
@@ -115,7 +116,7 @@ export default function WritingToolbar({
         <Image size={22} color={iconColor} strokeWidth={1.9} />
       </CircleButton>
       <View className="flex-1" />
-      <Pressable
+      <Tap
         onPress={onSave}
         disabled={saveDisabled}
         accessibilityRole="button"
@@ -131,7 +132,7 @@ export default function WritingToolbar({
         })}
       >
         <Text className="text-body text-onInk font-semibold">{saveLabel}</Text>
-      </Pressable>
+      </Tap>
     </View>
   );
 }

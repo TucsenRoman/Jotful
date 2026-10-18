@@ -44,10 +44,10 @@ const COUNT_FADE_IN = 200;
 const COUNT_HOLD: number = tokens.motion.countFadeOut; // 600
 const COUNT_LINE = 15;
 const POOL = 10; // mounted card slots
-const FLING = 1200; // pt/s: below, a release moves at most one card
-// Reanimated's decay slows by exp(-(1 - d) * 0.1 * ms), so 0.97 here travels about v * 0.33s:
+const FLING = 900; // pt/s: below, a release moves at most one card
+// iOS scroll-view deceleration (0.998 per ms): a hard flick coasts through several cards.
 // the same feel as an iOS scroll view decelerating at 0.997/ms.
-const FLING_DECEL = 0.97;
+const FLING_DECEL = 0.998;
 
 const selection = () => {
   void Haptics.selectionAsync();
@@ -157,13 +157,31 @@ export function ThoughtStack(props: ThoughtStackProps) {
     }
   }, [dragging, grabbing, visible]);
 
-  // Front card index for React (buttons, count text, render window): only on change, never per frame.
+  // Front card index for React (buttons, count text, render window). Re-rendering every card
+  // mid-motion made them flicker on device, so React only hears about it once the stack has
+  // settled, or when motion runs far enough that the 10-slot window would run out.
+  const jsFront = useSharedValue(0);
+  useEffect(() => {
+    jsFront.value = frontIndex;
+  }, [frontIndex, jsFront]);
   useAnimatedReaction(
     () => clamp(Math.round(p.value), 0, maxIdx.value),
     (i, prev) => {
-      if (i === prev) return;
-      scheduleOnRN(setFrontIndex, i);
-      if (flying.value && prev !== null) scheduleOnRN(selection); // a light tick per card while flying
+      if (i === prev || prev === null) return;
+      if (flying.value) scheduleOnRN(selection); // a light tick per card while flying
+    },
+  );
+  useAnimatedReaction(
+    () => {
+      const i = clamp(Math.round(p.value), 0, maxIdx.value);
+      const settled = !dragging.value && !flying.value && Math.abs(p.value - target.value) < 0.01;
+      return settled || Math.abs(i - jsFront.value) >= 3 ? i : -1;
+    },
+    (i) => {
+      if (i >= 0 && i !== jsFront.value) {
+        jsFront.value = i;
+        scheduleOnRN(setFrontIndex, i);
+      }
     },
   );
 

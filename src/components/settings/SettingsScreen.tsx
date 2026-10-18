@@ -2,7 +2,7 @@
 import { BlurView } from 'expo-blur';
 import { StatusBar } from 'expo-status-bar';
 import { ChevronRight, X } from 'lucide-react-native';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -23,12 +23,17 @@ export type SettingsScreenProps = {
 };
 
 function Row({ title, detail, onPress, last }: { title: string; detail: string; onPress?: () => void; last?: boolean }) {
+  // NativeWind's Pressable drops a style *function* on device (the padding vanished),
+  // so pressed state lives in React state and the style is a plain object.
+  const [pressed, setPressed] = useState(false);
   return (
     <Pressable
       disabled={!onPress}
       onPress={onPress}
       accessibilityLabel={`${title}, ${detail}`}
-      style={({ pressed }) => ({ paddingLeft: 16, backgroundColor: pressed ? T.color.fill : 'transparent' })}
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
+      style={{ paddingLeft: 16, backgroundColor: pressed ? T.color.fill : 'transparent' }}
     >
       <View
         style={{
