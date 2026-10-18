@@ -1,0 +1,172 @@
+// One card in the Rolodex: its pose comes from p on the UI thread (stackMath.poseFor).
+// The front card also takes the horizontal swipe (right = resolve, left = pin).
+import { memo, useMemo } from 'react';
+import { StyleSheet } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSequence,
+  withSpring,
+  withTiming,
+  type SharedValue,
+} from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
+import type { Thought } from '../../storage';
+import { ThoughtCard, cardBackground } from './ThoughtCard';
+import { SwipeActions } from './SwipeActions';
+import { CARD_H, CARD_LEFT, SPRING, clamp, poseFor } from './stackMath';
+
+const tokens = require('../../theme/tokens');
+const M = tokens.motion;
+const FADE: number = M.fade; // 180
+
+export type SwipeAction = 'resolve' | 'pin' | 'later';
+
+type Props = {
+  index: number;
+  thought: Thought;
+  isFront: boolean;
+  interactive: boolean;
+  more: string;
+  cardW: number;
+  cardTop: number;
+  p: SharedValue<number>;
+  maxIdx: SharedValue<number>;
+  solo: SharedValue<number>;
+  swipeX: SharedValue<number>;
+  pop: SharedValue<number>;
+  onPressCard: (index: number) => void;
+  onAction: (action: 'askAI' | 'searchWeb' | 'copy', id: number) => void;
+  onSwipeDetent: (level: number) => void;
+  onSwipeCommit: (action: SwipeAction, id: number) => void;
+};
+
+function StackCardBase(props: Props) {
+  const { index, thought, isFront, interactive, more, cardW, cardTop, p, maxIdx, solo, swipeX, pop } = props;
+  const { onPressCard, onAction, onSwipeDetent, onSwipeCommit } = props;
+  const id = thought.id;
+
+  const outer = useAnimatedStyle(() => {
+    const s = poseFor(index, p.value);
+    const front = clamp(Math.round(p.value), 0, maxIdx.value) === index;
+    const others = front ? 0 : solo.value;
+    const opacity = s.opacity * (1 - others);
+    return {
+      opacity,
+      transform: [
+        { perspective: 900 },
+        { translateY: s.y },
+        { rotateX: `${s.rot}deg` },
+        { scale: s.scale * (1 - 0.03 * others) },
+      ],
+    };
+  });
+
+  const dim = useAnimatedStyle(() => ({ opacity: poseFor(index, p.value).dim }));
+
+  const face = useAnimatedStyle(() => ({
+    transform: [{ translateX: isFront ? swipeX.value : 0 }],
+  }));
+
+  const det = useSharedValue(0);
+  const swipe = useMemo(() => {
+    return Gesture.Pan()
+      .enabled(isFront)
+      .activeOffsetX([-12, 12])
+      .failOffsetY([-10, 10])
+      .onStart(() => {
+        det.value = 0;
+        solo.value = withTiming(1, { duration: FADE });
+      })
+      .onUpdate((e) => {
+        const x = clamp(e.translationX, -M.swipeClamp, M.swipeClamp);
+        swipeX.value = x;
+        const nd = x <= -M.swipeLong ? 2 : Math.abs(x) >= M.swipeDetent ? 1 : 0;
+        if (nd !== det.value) {
+          if (nd > det.value) scheduleOnRN(onSwipeDetent, nd);
+          det.value = nd;
+        }
+      })
+      .onEnd(() => {
+        const x = swipeX.value;
+        const action: SwipeAction | null =
+          x >= M.swipeDetent ? 'resolve' : x <= -M.swipeLong ? 'later' : x <= -M.swipeDetent ? 'pin' : null;
+        if (!action) {
+          swipeX.value = withSpring(0, SPRING);
+          solo.value = withTiming(0, { duration: FADE });
+          return;
+        }
+        const off = action === 'resolve' ? 110 : action === 'later' ? -130 : -110;
+        swipeX.value = withTiming(off, { duration: FADE }, (done) => {
+          if (!done) return;
+          pop.value = withSequence(withTiming(1.12, { duration: 90 }), withTiming(1, { duration: 150 }));
+          scheduleOnRN(onSwipeCommit, action, id);
+          swipeX.value = withDelay(120, withSpring(0, SPRING));
+          solo.value = withDelay(420, withTiming(0, { duration: FADE }));
+        });
+      });
+  }, [isFront, id, onSwipeDetent, onSwipeCommit, solo, swipeX, pop, det]);
+
+  return (
+    <Animated.View
+      pointerEvents={interactive ? 'box-none' : 'none'}
+      style={[styles.slot, { top: cardTop, width: cardW }, outer]}
+    >
+      {isFront && <SwipeActions x={swipeX} pop={pop} cardW={cardW} />}
+      <GestureDetector gesture={swipe}>
+        <Animated.View style={[
+            styles.card,
+            { backgroundColor: cardBackground(thought) },
+            isFront ? styles.frontShadow : styles.backShadow,
+            face,
+          ]}>
+          <ThoughtCard
+            thought={thought}
+            isFront={isFront}
+            more={more}
+            onPress={() => onPressCard(index)}
+            onAskAI={() => onAction('askAI', id)}
+            onSearchWeb={() => onAction('searchWeb', id)}
+            onCopy={() => onAction('copy', id)}
+          />
+          <Animated.View pointerEvents="none" style={[styles.dim, dim]} />
+        </Animated.View>
+      </GestureDetector>
+    </Animated.View>
+  );
+}
+
+export const StackCard = memo(StackCardBase);
+
+const styles = StyleSheet.create({
+  slot: {
+    position: 'absolute',
+    left: CARD_LEFT,
+    height: CARD_H,
+    transformOrigin: 'top',
+  },
+  card: { flex: 1, borderRadius: tokens.radius.homeCard },
+  frontShadow: {
+    shadowColor: tokens.primitive.ink,
+    shadowOpacity: 0.16,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 10 },
+  },
+  backShadow: {
+    shadowColor: tokens.primitive.ink,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: -2 },
+  },
+  dim: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: tokens.radius.homeCard,
+    backgroundColor: tokens.primitive.ink,
+  },
+});

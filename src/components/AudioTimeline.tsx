@@ -3,11 +3,12 @@ import { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 
+const tokens = require("../theme/tokens");
 const colors = {
-  cream: "#FFFDF8",
-  roast: "#242019",
-  moss: "#74876A",
-  persimmon: "#EF705A",
+  cream: tokens.color.onInk,
+  roast: tokens.color.ink,
+  moss: tokens.color.secondary,
+  persimmon: tokens.color.ink,
 };
 
 function formatTime(seconds: number) {
@@ -56,13 +57,13 @@ export default function AudioTimeline({
     <View
       className={
         "flex-row items-center gap-3 " +
-        (compact ? "" : "rounded-2xl bg-unsorted-mist px-3 py-3")
+        (compact ? "" : "rounded-2xl bg-fill px-3 py-3")
       }
     >
       <Pressable
         onPress={() => void togglePlayback()}
         className={
-          (compact ? "h-8 w-8" : "h-9 w-9 bg-unsorted-persimmon") +
+          (compact ? "h-8 w-8" : "h-9 w-9 bg-ink") +
           " items-center justify-center rounded-full"
         }
         hitSlop={8}
@@ -83,19 +84,19 @@ export default function AudioTimeline({
           className="h-7 justify-center"
           accessibilityLabel="Seek audio recording"
         >
-          <View className="h-1.5 overflow-hidden rounded-full bg-unsorted-line">
+          <View className="h-1.5 overflow-hidden rounded-full bg-fill">
             <View
-              className="h-full rounded-full bg-unsorted-moss"
+              className="h-full rounded-full bg-ink"
               style={{ width: `${progress * 100}%` }}
             />
           </View>
         </Pressable>
         {!compact && (
           <View className="mt-1 flex-row justify-between">
-            <Text className="text-[11px] text-unsorted-moss">
+            <Text className="text-[11px] text-secondary">
               {formatTime(status.currentTime)}
             </Text>
-            <Text className="text-[11px] text-unsorted-moss">
+            <Text className="text-[11px] text-secondary">
               {formatTime(duration)}
             </Text>
           </View>

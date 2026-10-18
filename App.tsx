@@ -1,28 +1,28 @@
 import './global.css';
 
 import { Fraunces_600SemiBold, useFonts as useFraunces } from '@expo-google-fonts/fraunces';
-import { DMSans_400Regular, DMSans_500Medium, DMSans_700Bold, useFonts as useDMSans } from '@expo-google-fonts/dm-sans';
+
 import { StatusBar } from 'expo-status-bar';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
-import { AudioLines, Check, Copy, Image, MoreHorizontal, Pin, PinOff, RotateCcw, Search, Settings, Sparkles, Video, X } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Image as NativeImage, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Linking, Modal, Platform, Pressable, Share, Text, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
-import Svg, { Defs, LinearGradient, Stop, Text as SvgText } from 'react-native-svg';
-import { MothMark } from './src/brand/MothMark';
-import { RichTextViewer } from '@apollohg/react-native-rich-text-editor';
-import CaptureSheet, { type CaptureSheetHandle } from './src/components/CaptureSheet';
-import AudioTimeline from './src/components/AudioTimeline';
+import CaptureSheet, { capturePeekHeight, type CaptureSheetHandle } from './src/components/CaptureSheet';
+import { ThoughtStack } from './src/components/home/ThoughtStack';
+import { ThoughtDetail } from './src/components/detail/ThoughtDetail';
+import SettingsScreen from './src/components/settings/SettingsScreen';
+import { FilterMenu, FilterRow, HomeHeader, TagPill } from './src/components/header/HomeHeader';
+import { TagPicker } from './src/components/header/TagPicker';
 import CaptureWidget from './targets/widgets/CaptureWidget';
 import RecentsWidget from './targets/widgets/RecentsWidget';
-import { classifyThought, splitThoughts, type ThoughtKind } from './src/segmentation';
-import { clearCaptureDraft, createAttachmentThoughts, createThought, deleteThought, getPreference, initializeDatabase, listRecentThoughts, listThoughts, recoverCaptureDraft, setPreference, togglePinned, toggleResolved, updateThought, type AttachmentKind, type Thought } from './src/storage';
+import { classifyThought, splitThoughts } from './src/segmentation';
+import { clearCaptureDraft, createAttachmentThoughts, createThought, deleteThought, getPreference, initializeDatabase, listAttachments, listRecentThoughts, listTags, listThoughts, recoverCaptureDraft, setPreference, setThoughtTags, togglePinned, toggleResolved, updateThought, type Attachment, type AttachmentKind, type Tag, type Thought } from './src/storage';
 
-const colors = { cream: '#FFFDF8', roast: '#242019', moss: '#74876A', persimmon: '#EF705A', line: '#E4DFD6' };
+const tokens = require('./src/theme/tokens');
+
 const capturePrompts = [
   'What are you daydreaming of?',
   'What are you thinking about?',
@@ -30,97 +30,48 @@ const capturePrompts = [
   'Your next great masterpiece??',
 ];
 
-function kindLabel(kind: ThoughtKind) {
-  if (kind === 'question') return 'Question';
-  if (kind === 'idea') return 'Idea';
-  return 'Thought';
-}
 
-function ThoughtText({ text, richText, resolved }: { text: string; richText?: string | null; resolved: boolean }) {
-  if (richText) return <View className="mt-3"><RichTextViewer contentHTML={richText} theme={{ text: { fontSize: 18, lineHeight: 26, color: colors.roast } }} /></View>;
-  return <View className="mt-3 gap-1.5">{text.split('\n').map((line, index) => {
-    const style = { fontFamily: 'DMSans_400Regular' };
-    const muted = resolved ? ' line-through opacity-60' : '';
-    if (line.startsWith('# ')) return <Text key={index} selectable className={'text-[22px] leading-7 tracking-[-0.2px] text-unsorted-ink' + muted} style={{ fontFamily: 'Fraunces_600SemiBold' }}>{line.slice(2)}</Text>;
-    if (/^(?:•|\*)\s+/.test(line)) return <View key={index} className="flex-row"><Text className="mr-2 text-lg leading-[26px] text-unsorted-moss">•</Text><Text selectable className={'flex-1 text-lg leading-[26px] tracking-[-0.1px] text-unsorted-ink' + muted} style={style}>{line.replace(/^(?:•|\*)\s+/, '')}</Text></View>;
-    if (/^\d+\.\s+/.test(line)) { const [, number, body] = line.match(/^(\d+)\.\s+(.*)$/) ?? []; return <View key={index} className="flex-row"><Text className="mr-2 text-base leading-[26px] text-unsorted-moss">{number}.</Text><Text selectable className={'flex-1 text-lg leading-[26px] tracking-[-0.1px] text-unsorted-ink' + muted} style={style}>{body}</Text></View>; }
-    if (/^☐\s+/.test(line)) return <View key={index} className="flex-row"><Text className="mr-2 text-base leading-[26px] text-unsorted-moss">☐</Text><Text selectable className={'flex-1 text-lg leading-[26px] tracking-[-0.1px] text-unsorted-ink' + muted} style={style}>{line.replace(/^☐\s+/, '')}</Text></View>;
-    return <Text key={index} selectable className={'text-lg leading-[26px] tracking-[-0.1px] text-unsorted-ink' + muted} style={style}>{line || ' '}</Text>;
-  })}</View>;
-}
 
-function SwipeableThought({ thought, children, onResolve, onPin, onLongRight }: { thought: Thought; children: React.ReactNode; onResolve: () => void; onPin: () => void; onLongRight: () => void }) {
-  const translateX = useSharedValue(0);
-  const detent = useSharedValue(0);
-  const triggerDetent = (level: 1 | 2) => void Haptics.impactAsync(level === 1 ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Heavy);
-  const commit = (direction: 'left' | 'right', long = false) => {
-    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    if (direction === 'left') onResolve();
-    else if (long) onLongRight();
-    else onPin();
-  };
-  const gesture = Gesture.Pan()
-    .activeOffsetX([-12, 12])
-    .failOffsetY([-12, 12])
-    .onUpdate((event) => {
-      const next = Math.max(-150, Math.min(150, event.translationX));
-      translateX.value = next;
-      const nextDetent = next >= 122 ? 2 : Math.abs(next) >= 64 ? 1 : 0;
-      if (nextDetent !== detent.value) {
-        detent.value = nextDetent;
-        if (nextDetent > 0) runOnJS(triggerDetent)(nextDetent as 1 | 2);
-      }
-    })
-    .onEnd((event) => {
-      const isLongRight = event.translationX >= 122;
-      const isShortRight = event.translationX >= 64;
-      const isLeft = event.translationX <= -64;
-      if (isLeft || isShortRight) {
-        translateX.value = withTiming(isLeft ? -110 : 110, { duration: 180 }, (finished) => {
-          if (finished) {
-            runOnJS(commit)(isLeft ? 'left' : 'right', isLongRight);
-            translateX.value = withSpring(0);
-          }
-        });
-      } else translateX.value = withSpring(0);
-      detent.value = 0;
-    })
-    .onFinalize(() => { detent.value = 0; });
-  const rowStyle = useAnimatedStyle(() => ({ transform: [{ translateX: translateX.value }] }));
-  const pinStyle = useAnimatedStyle(() => ({ transform: [{ scale: withTiming(detent.value === 1 ? 1.18 : 0.92, { duration: 110 }) }, { rotate: withTiming(detent.value === 1 ? '-45deg' : '0deg', { duration: 140 }) }], opacity: withTiming(detent.value === 2 ? 0.42 : 1, { duration: 110 }) }));
-  const ideaStyle = useAnimatedStyle(() => ({ transform: [{ scale: withTiming(detent.value === 2 ? 1.18 : 0.92, { duration: 110 }) }], opacity: withTiming(detent.value === 1 ? 0.42 : 1, { duration: 110 }) }));
-  const resolveStyle = useAnimatedStyle(() => ({ transform: [{ scale: withTiming(translateX.value <= -64 ? 1.18 : 0.92, { duration: 110 }) }], opacity: withTiming(translateX.value <= -64 ? 1 : 0.5, { duration: 110 }) }));
-  return <View className="mb-3 overflow-hidden rounded-3xl bg-unsorted-canvas"><View className="absolute inset-y-0 right-0 w-16 items-center justify-center"><Animated.View style={resolveStyle}><View className="h-11 w-11 items-center justify-center rounded-full" style={{ backgroundColor: '#74876A33' }}>{thought.resolvedAt ? <RotateCcw size={19} color={colors.moss} /> : <Check size={21} color={colors.moss} />}</View></Animated.View></View><View className="absolute inset-y-0 left-0 flex-row items-center gap-5 px-3"><Animated.View style={pinStyle}><View className="h-11 w-11 items-center justify-center rounded-full" style={{ backgroundColor: '#EF705A33' }}>{thought.pinnedAt ? <PinOff size={18} color={colors.persimmon} /> : <Pin size={19} color={colors.persimmon} />}</View></Animated.View><Animated.View style={ideaStyle}><View className="h-11 w-11 items-center justify-center rounded-full" style={{ backgroundColor: '#24201933' }}><Sparkles size={18} color={colors.roast} /></View></Animated.View></View><GestureDetector gesture={gesture}><Animated.View className="rounded-3xl bg-unsorted-cream" style={rowStyle}>{children}</Animated.View></GestureDetector></View>;
-}
 
-function SettingsRow({ title, detail, onPress }: { title: string; detail: string; onPress?: () => void }) {
-  return <Pressable disabled={!onPress} onPress={onPress} className="flex-row items-center justify-between border-b border-unsorted-line py-4" style={{ opacity: onPress ? 1 : 0.78 }}><View className="flex-1 pr-5"><Text className="text-base text-unsorted-ink" style={{ fontFamily: 'DMSans_500Medium' }}>{title}</Text><Text className="mt-1 text-sm text-unsorted-moss" style={{ fontFamily: 'DMSans_400Regular' }}>{detail}</Text></View>{onPress && <Text className="text-xl text-unsorted-moss">›</Text>}</Pressable>;
-}
 
 export default function App() {
   const [frauncesLoaded] = useFraunces({ Fraunces_600SemiBold });
-  const [dmSansLoaded] = useDMSans({ DMSans_400Regular, DMSans_500Medium, DMSans_700Bold });
-  if (!frauncesLoaded || !dmSansLoaded) return null;
-  return <GestureHandlerRootView style={{ flex: 1 }}><SafeAreaProvider><UnsortedApp /></SafeAreaProvider></GestureHandlerRootView>;
+
+
+  if (!frauncesLoaded) return null;
+  return <GestureHandlerRootView style={{ flex: 1 }}><SafeAreaProvider><JotfulApp /></SafeAreaProvider></GestureHandlerRootView>;
 }
 
-function UnsortedApp() {
+type Toast = { message: string; undo?: () => void };
+
+function JotfulApp() {
   const [draft, setDraft] = useState('');
   const [richDraft, setRichDraft] = useState('');
+  const [draftTagIds, setDraftTagIds] = useState<number[] | null>(null);
   const [search, setSearch] = useState('');
-  const [thoughts, setThoughts] = useState<Thought[]>([]);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [thoughts, setThoughts] = useState<Thought[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [filterTagIds, setFilterTagIds] = useState<number[]>([]);
+  const [showResolved, setShowResolved] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
   const [listening, setListening] = useState(false);
   const [screen, setScreen] = useState<'thoughts' | 'settings'>('thoughts');
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const [preferredAI, setPreferredAI] = useState('ChatGPT');
   const [preferredBrowser, setPreferredBrowser] = useState('System default');
   const [editingThoughtId, setEditingThoughtId] = useState<number | null>(null);
+  const [detail, setDetail] = useState<{ thought: Thought; attachments: Attachment[] } | null>(null);
+  const [tagTarget, setTagTarget] = useState<'draft' | number | null>(null);
+  const [toast, setToast] = useState<Toast | null>(null);
   const [capturePromptIndex] = useState(() => Math.floor(Math.random() * capturePrompts.length));
   const sheetRef = useRef<CaptureSheetHandle>(null);
   const recoveredDraft = useRef(false);
   const voiceBase = useRef('');
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const insets = useSafeAreaInsets();
+  // The collapsed capture sheet's height; the stack keeps its front card clear of it.
+  const peek = capturePeekHeight(insets.bottom);
   // This must run during the parent render, before CaptureSheet mounts. Its
   // empty initial state otherwise clears the journal before an effect can
   // restore the interrupted capture.
@@ -130,7 +81,16 @@ function UnsortedApp() {
     recoveredDraft.current = true;
   }
   const preview = useMemo(() => splitThoughts(draft), [draft]);
-  const refresh = () => setThoughts(listThoughts(search));
+  // Home is time order, newest first (the Rolodex stops at both ends).
+  const refresh = () => {
+    const list = listThoughts(search, { tagIds: filterTagIds, showResolved });
+    setThoughts([...list].sort((a, b) => b.createdAt - a.createdAt));
+    setDetail((current) => {
+      if (!current) return current;
+      const fresh = listThoughts('', { showResolved: true }).find((thought) => thought.id === current.thought.id);
+      return fresh ? { thought: fresh, attachments: listAttachments(fresh.id) } : null;
+    });
+  };
 
   useSpeechRecognitionEvent('start', () => setListening(true));
   useSpeechRecognitionEvent('end', () => setListening(false));
@@ -143,13 +103,20 @@ function UnsortedApp() {
     if (event.error !== 'aborted' && event.error !== 'no-speech') Alert.alert('Voice input stopped', event.message || 'Try again or type your thought.');
   });
 
-  useEffect(() => { setPreferredAI(getPreference('preferredAI', 'ChatGPT')); setPreferredBrowser(getPreference('preferredBrowser', 'System default')); refresh(); }, []);
-  useEffect(() => { refresh(); }, [search]);
+  useEffect(() => { setPreferredAI(getPreference('preferredAI', 'ChatGPT')); setPreferredBrowser(getPreference('preferredBrowser', 'System default')); setTags(listTags()); refresh(); }, []);
+  useEffect(() => { refresh(); }, [search, filterTagIds, showResolved]);
   useEffect(() => {
     if (Platform.OS !== 'ios') return;
     CaptureWidget.updateSnapshot({ thoughtCount: thoughts.filter((thought) => thought.resolvedAt === null).length });
-    RecentsWidget.updateSnapshot({ items: listRecentThoughts(5).map(({ id, text, kind }) => ({ id, text, kind })) });
+    RecentsWidget.updateSnapshot({ items: listRecentThoughts(5).map(({ id, text, kind, tags: [first] }) => ({ id, text, kind, ...(first ? { tag: { name: first.name, color: tokens.tag[first.color] } } : {}) })) });
   }, [thoughts]);
+
+  function showToast(next: Toast) {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast(next);
+    toastTimer.current = setTimeout(() => setToast(null), 4000);
+  }
+
   function openSheet(mode: 'write' | 'voice' = 'write') {
     setEditingThoughtId(null);
     sheetRef.current?.open(mode);
@@ -189,38 +156,46 @@ function UnsortedApp() {
     ExpoSpeechRecognitionModule.start({ lang: 'en-US', interimResults: true, continuous: true, requiresOnDeviceRecognition: true, addsPunctuation: true, iosTaskHint: 'dictation' });
   }
 
+  function resetDraft() {
+    setDraft('');
+    setRichDraft('');
+    setDraftTagIds(null);
+    clearCaptureDraft();
+  }
+
   function saveDraft() {
     const text = draft.trim();
     if (!text) return;
     if (editingThoughtId !== null) {
       updateThought(editingThoughtId, text, classifyThought(text), richDraft || undefined);
+      if (draftTagIds) setThoughtTags(editingThoughtId, draftTagIds);
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setDraft('');
-      setRichDraft('');
-      clearCaptureDraft();
+      resetDraft();
       setEditingThoughtId(null);
       closeSheet();
       refresh();
       return;
     }
-    if (richDraft) createThought(text, classifyThought(text), richDraft);
-    else preview.forEach((item) => createThought(item, classifyThought(item)));
+    // Picked tags win; otherwise each thought gets the tag its wording suggests.
+    const picked = draftTagIds ?? undefined;
+    if (richDraft) createThought(text, classifyThought(text), richDraft, picked);
+    else preview.forEach((item) => createThought(item, classifyThought(item), undefined, picked));
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setDraft('');
-    setRichDraft('');
-    clearCaptureDraft();
+    resetDraft();
     closeSheet();
     refresh();
   }
 
   function saveAttachments(attachments: Array<{ kind: AttachmentKind; uri: string; durationMillis?: number }>, caption?: string) {
     createAttachmentThoughts(attachments, caption);
+    if (draftTagIds?.length) {
+      const newest = listRecentThoughts(1)[0];
+      if (newest) setThoughtTags(newest.id, draftTagIds);
+    }
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     // Attachment saves bypass saveDraft(), so clear their optional caption here
     // before closing the shared capture sheet.
-    setDraft('');
-    setRichDraft('');
-    clearCaptureDraft();
+    resetDraft();
     sheetRef.current?.close();
     refresh();
   }
@@ -239,18 +214,39 @@ function UnsortedApp() {
     await Linking.openURL(base + encodeURIComponent(prompt));
   }
 
+  function askAI(thought: Thought) {
+    Alert.alert('Open with AI?', 'Only this thought will be opened in your browser.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Continue', onPress: () => void sendTo('ai', thought.text) }]);
+  }
+
   async function copyThought(text: string) {
     await Clipboard.setStringAsync(text);
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }
 
-  function showActions(thought: Thought) {
-    Alert.alert('Thought', 'It can stay here.', [
-      { text: 'Edit', onPress: () => { setDraft(thought.text); setRichDraft(thought.richText ?? ''); setEditingThoughtId(thought.id); sheetRef.current?.open('write'); } },
-      { text: thought.resolvedAt ? 'Bring it back' : 'Settle this thought', onPress: () => { toggleResolved(thought.id, thought.resolvedAt ? null : Date.now()); refresh(); } },
-      { text: 'Delete', style: 'destructive', onPress: () => { deleteThought(thought.id); refresh(); } },
-      { text: 'Cancel', style: 'cancel' }
-    ]);
+  function resolve(thought: Thought) {
+    const wasResolved = thought.resolvedAt !== null;
+    toggleResolved(thought.id, wasResolved ? null : Date.now());
+    refresh();
+    if (!wasResolved) showToast({ message: 'Resolved', undo: () => { toggleResolved(thought.id, null); refresh(); setToast(null); } });
+  }
+
+  function pin(thought: Thought) {
+    togglePinned(thought.id, thought.pinnedAt ? null : Date.now());
+    refresh();
+  }
+
+  function openDetail(thought: Thought) {
+    closeSheet();
+    setDetail({ thought, attachments: listAttachments(thought.id) });
+  }
+
+  function editThought(thought: Thought) {
+    setDetail(null);
+    setDraft(thought.text);
+    setRichDraft(thought.richText ?? '');
+    setDraftTagIds(thought.tags.map((tag) => tag.id));
+    setEditingThoughtId(thought.id);
+    sheetRef.current?.open('write');
   }
 
   function chooseAI() {
@@ -270,24 +266,44 @@ function UnsortedApp() {
     ]);
   }
 
-  if (screen === 'settings') return <View className="flex-1 bg-unsorted-canvas"><StatusBar style="dark" /><View className="flex-row items-center px-5" style={{ height: insets.top + 72, paddingTop: insets.top + 10 }}><Pressable onPress={() => setScreen('thoughts')} hitSlop={12}><X size={23} color={colors.roast} /></Pressable><Text className="ml-4 text-[25px] text-unsorted-ink" style={{ fontFamily: 'Fraunces_600SemiBold' }}>Settings</Text></View><View className="mx-5 h-px bg-unsorted-line" /><ScrollView contentContainerClassName="px-5 pb-12 pt-6"><Text className="text-[11px] uppercase tracking-[1px] text-unsorted-moss" style={{ fontFamily: 'DMSans_700Bold' }}>Open with</Text><View className="mt-2 rounded-3xl bg-unsorted-cream px-4"><SettingsRow title="Preferred AI" detail={preferredAI} onPress={chooseAI} /><SettingsRow title="Preferred browser" detail={preferredBrowser} onPress={chooseBrowser} /></View><Text className="mt-8 text-[11px] uppercase tracking-[1px] text-unsorted-moss" style={{ fontFamily: 'DMSans_700Bold' }}>Capture</Text><View className="mt-2 rounded-3xl bg-unsorted-cream px-4"><SettingsRow title="Voice input" detail="On-device Dictation" /><SettingsRow title="Photos, video & audio" detail="Coming soon" /></View><Text className="mt-8 text-[11px] uppercase tracking-[1px] text-unsorted-moss" style={{ fontFamily: 'DMSans_700Bold' }}>Your space</Text><View className="mt-2 rounded-3xl bg-unsorted-cream px-4"><SettingsRow title="Pinned thoughts" detail="Ready for widgets" /><SettingsRow title="Storage & privacy" detail="Thoughts stay on this iPhone" /></View><Text className="mt-8 text-[11px] uppercase tracking-[1px] text-unsorted-moss" style={{ fontFamily: 'DMSans_700Bold' }}>About</Text><View className="mt-2 rounded-3xl bg-unsorted-cream px-4"><SettingsRow title="Jotful" detail="Private thought inbox · version 1.0" /></View></ScrollView></View>;
+  const tagTargetIds = tagTarget === 'draft' ? (draftTagIds ?? []) : typeof tagTarget === 'number' ? (detail?.thought.tags.map((tag) => tag.id) ?? []) : [];
+  const draftTags = (draftTagIds ?? []).map((id) => tags.find((tag) => tag.id === id)).filter((tag): tag is Tag => Boolean(tag));
+  const tagRow = <View className="flex-row flex-wrap items-center gap-2">
+    {draftTags.map((tag) => <TagPill key={tag.id} tag={tag} selected onPress={() => setTagTarget('draft')} />)}
+    <Pressable onPress={() => setTagTarget('draft')} className="rounded-full bg-fill px-2.5 py-1" accessibilityLabel="Add a tag"><Text className="text-caption2 font-bold uppercase tracking-[0.6px] text-secondary">+ Tag</Text></Pressable>
+  </View>;
 
-  return <View className="flex-1 bg-unsorted-canvas"><StatusBar style="dark" />
-    <View className="z-10 flex-row items-center gap-2 px-5" style={{ height: insets.top + 72, paddingTop: insets.top + 10 }}>
-      {searchOpen ? <><TextInput autoFocus value={search} onChangeText={setSearch} placeholder="Search jots" placeholderTextColor={colors.moss} className="h-10 flex-1 py-0 text-base text-unsorted-ink" style={{ fontFamily: 'DMSans_400Regular' }} /><Pressable onPress={() => { setSearch(''); setSearchOpen(false); }} hitSlop={12}><X size={23} color={colors.roast} /></Pressable></> : <><View className="mr-auto"><Svg width={150} height={42} viewBox="0 0 150 42" accessibilityLabel="Jotful"><Defs><LinearGradient id="wordmark-gradient" x1="0" y1="0" x2="150" y2="0" gradientUnits="userSpaceOnUse"><Stop offset="0" stopColor="#EF705A" /><Stop offset="0.48" stopColor="#58795C" /><Stop offset="1" stopColor="#242019" /></LinearGradient></Defs><SvgText x="0" y="34" fill="url(#wordmark-gradient)" fontFamily="Fraunces_600SemiBold" fontSize="34" letterSpacing="-1">Jotful</SvgText></Svg></View><Pressable onPress={() => { closeSheet(); setSearchOpen(true); }} className="h-10 w-10 items-center justify-center rounded-xl bg-unsorted-mist" hitSlop={10}><Search size={19} color={colors.roast} /></Pressable><Pressable onPress={() => { setSheetExpanded(false); setScreen('settings'); }} className="ml-2 h-10 w-10 items-center justify-center rounded-xl bg-unsorted-mist" hitSlop={10} accessibilityLabel="Open settings"><Settings size={19} color={colors.roast} /></Pressable></>}
+  if (screen === 'settings') return <><StatusBar style="dark" /><SettingsScreen preferredAI={preferredAI} preferredBrowser={preferredBrowser} tagCount={tags.length} onChooseAI={chooseAI} onChooseBrowser={chooseBrowser} onClose={() => setScreen('thoughts')} /></>;
+
+  return <View className="flex-1 bg-page"><StatusBar style="dark" />
+    <HomeHeader topInset={insets.top} searchOpen={searchOpen} search={search} onSearchChange={setSearch} onOpenSearch={() => { closeSheet(); setSearchOpen(true); }} onCloseSearch={() => { setSearch(''); setSearchOpen(false); }} onOpenSettings={() => { setSheetExpanded(false); setScreen('settings'); }} />
+    <FilterRow tags={tags} selectedIds={filterTagIds} showResolved={showResolved} onOpenMenu={() => setFilterOpen(true)} onRemoveTag={(id) => setFilterTagIds((ids) => ids.filter((x) => x !== id))} onHideResolved={() => setShowResolved(false)} />
+    <View className="flex-1">
+      <ThoughtStack resetKey={filterTagIds.join(',') + (showResolved ? 'r' : '') + search} thoughts={thoughts} bottomInset={peek} onOpen={openDetail} onResolve={resolve} onPin={pin} onAskAI={askAI} onSearchWeb={(thought) => void sendTo('search', thought.text)} onCopy={(thought) => void copyThought(thought.text)} onReservedSwipe={() => showToast({ message: 'Long swipe is coming soon' })} />
     </View>
-    <View className="mx-5 h-px bg-unsorted-line" />
-    <ScrollView className="flex-1" contentContainerClassName="px-5 pb-28 pt-2" keyboardShouldPersistTaps="handled">
-      {thoughts.length === 0 ? <View className="items-center px-7 py-20"><MothMark size={58} /><Text className="mt-5 text-[22px] text-unsorted-ink" style={{ fontFamily: 'Fraunces_600SemiBold' }}>Hold that thought.</Text><Text className="mt-2 text-center leading-5 text-unsorted-ink" style={{ fontFamily: 'DMSans_400Regular' }}>Speak or type it exactly as it arrives.</Text></View> : thoughts.map((thought) => <SwipeableThought key={thought.id} thought={thought} onResolve={() => { toggleResolved(thought.id, thought.resolvedAt ? null : Date.now()); refresh(); }} onPin={() => { togglePinned(thought.id, thought.pinnedAt ? null : Date.now()); refresh(); }} onLongRight={() => Alert.alert('Gesture idea saved', 'Long right swipe is reserved for a future action.')}><View className={'p-4 ' + (thought.resolvedAt !== null ? 'opacity-60' : '')}>
-        <View className="flex-row items-center justify-between"><View className="flex-row items-center rounded-full bg-unsorted-mist px-2.5 py-1">{!thought.draftedAt && (thought.attachmentKind === 'image' ? <Image size={13} color={colors.roast} /> : thought.attachmentKind === 'video' ? <Video size={13} color={colors.roast} /> : thought.attachmentKind === 'audio' ? <AudioLines size={13} color={colors.roast} /> : null)}<Text className={'text-[11px] uppercase tracking-[0.7px] text-unsorted-ink ' + (!thought.draftedAt && thought.attachmentKind ? 'ml-1.5' : '')} style={{ fontFamily: 'DMSans_700Bold' }}>{thought.draftedAt ? 'Draft' : thought.attachmentKind === 'image' ? 'Photo' : thought.attachmentKind === 'video' ? 'Video' : thought.attachmentKind === 'audio' ? 'Audio' : thought.pinnedAt ? 'Pinned' : kindLabel(thought.kind)}</Text></View><Pressable onPress={() => showActions(thought)} hitSlop={12} accessibilityLabel={'Actions for ' + kindLabel(thought.kind)}><MoreHorizontal size={20} color={colors.roast} /></Pressable></View>
-        <ThoughtText text={thought.text} richText={thought.richText} resolved={thought.resolvedAt !== null} />
-        {thought.attachmentKind === 'image' && thought.attachmentUri && <NativeImage source={{ uri: thought.attachmentUri }} className="mt-3 h-32 w-full rounded-2xl bg-unsorted-mist" resizeMode="cover" accessibilityLabel="Attached photo" />}
-        {thought.attachmentKind === 'video' && <View className="mt-3 h-24 items-center justify-center rounded-2xl bg-unsorted-mist"><Text className="text-sm text-unsorted-ink" style={{ fontFamily: 'DMSans_700Bold' }}>Video attached</Text><Text className="mt-1 text-xs text-unsorted-moss" style={{ fontFamily: 'DMSans_400Regular' }}>Playback is coming next.</Text></View>}
-        {thought.attachmentKind === 'audio' && thought.attachmentUri && <View className="mt-3 h-9 w-[154px] rounded-full bg-unsorted-mist px-2"><AudioTimeline compact uri={thought.attachmentUri} fallbackDurationMillis={thought.attachmentDurationMillis ?? undefined} /></View>}
-        <View className="mt-3 flex-row flex-wrap gap-2"><Pressable onPress={() => void sendTo('search', thought.text)} className="rounded-full border border-unsorted-line bg-unsorted-canvas px-3 py-2"><Text className="text-xs text-unsorted-ink" style={{ fontFamily: 'DMSans_500Medium' }}>Search</Text></Pressable><Pressable onPress={() => Alert.alert('Open with AI?', 'Only this thought will be opened in your browser.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Continue', onPress: () => void sendTo('ai', thought.text) }])} className="rounded-full bg-unsorted-roast px-3 py-2"><Text className="text-xs text-unsorted-cream" style={{ fontFamily: 'DMSans_700Bold' }}>Ask AI</Text></Pressable><Pressable onPress={() => void copyThought(thought.text)} className="flex-row items-center rounded-full border border-unsorted-line bg-unsorted-canvas px-3 py-2" accessibilityLabel="Copy thought"><Copy size={13} color={colors.roast} /><Text className="ml-1.5 text-xs text-unsorted-ink" style={{ fontFamily: 'DMSans_500Medium' }}>Copy</Text></Pressable></View>
-      </View></SwipeableThought>)}
-    </ScrollView>
-    <Pressable pointerEvents={sheetExpanded ? 'auto' : 'none'} onPress={closeSheet} style={{ position: 'absolute', top: insets.top + 72, right: 0, bottom: 0, left: 0, zIndex: 19 }} accessibilityElementsHidden />
-    <CaptureSheet ref={sheetRef} prompt={capturePrompts[capturePromptIndex]} draft={draft} previewCount={preview.length} listening={listening} onDraftChange={setDraft} onRichTextChange={setRichDraft} onToggleVoice={() => void toggleVoiceInput()} onStopVoice={() => ExpoSpeechRecognitionModule.stop()} onSave={saveDraft} onClear={confirmClearDraft} onCollapseHaptic={() => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)} onOpenHaptic={() => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)} onExpandedChange={setSheetExpanded} onAttachments={saveAttachments} />
+    <Pressable pointerEvents={sheetExpanded ? 'auto' : 'none'} onPress={closeSheet} style={{ position: 'absolute', top: insets.top + 64, right: 0, bottom: 0, left: 0, zIndex: 19 }} accessibilityElementsHidden />
+    <CaptureSheet ref={sheetRef} prompt={capturePrompts[capturePromptIndex]} draft={draft} previewCount={preview.length} listening={listening} onDraftChange={setDraft} onRichTextChange={setRichDraft} onToggleVoice={() => void toggleVoiceInput()} onStopVoice={() => ExpoSpeechRecognitionModule.stop()} onSave={saveDraft} onClear={confirmClearDraft} onCollapseHaptic={() => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)} onOpenHaptic={() => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)} onExpandedChange={setSheetExpanded} onAttachments={saveAttachments} tagRow={tagRow} onVoiceDiscarded={(undo) => showToast({ message: 'Recording discarded', undo: () => { if (undo()) refresh(); setToast(null); } })} />
+    {toast && <View pointerEvents="box-none" className="absolute inset-x-0 items-center" style={{ bottom: peek + 12, zIndex: 40 }}>
+      <View className="flex-row items-center gap-3 rounded-full bg-ink py-2 pl-5 pr-2">
+        <Text className="text-subhead text-onInk">{toast.message}</Text>
+        {toast.undo ? <Pressable onPress={toast.undo} className="rounded-full bg-white/20 px-4 py-2" accessibilityLabel="Undo"><Text className="text-subhead font-semibold text-onInk">Undo</Text></Pressable> : <View className="w-3" />}
+      </View>
+    </View>}
+    <FilterMenu visible={filterOpen} top={insets.top + 100} tags={tags} selectedIds={filterTagIds} showResolved={showResolved} onToggleTag={(id) => setFilterTagIds((ids) => ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id])} onToggleResolved={setShowResolved} onClose={() => setFilterOpen(false)} />
+    <Modal visible={detail !== null} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setDetail(null)}>
+      {detail && <ThoughtDetail thought={detail.thought} attachments={detail.attachments}
+        onClose={() => setDetail(null)}
+        onToggleResolved={() => resolve(detail.thought)}
+        onTogglePinned={() => pin(detail.thought)}
+        onEdit={() => editThought(detail.thought)}
+        onDelete={() => { deleteThought(detail.thought.id); setDetail(null); refresh(); }}
+        onShare={() => void Share.share({ message: detail.thought.text })}
+        onAskAI={() => askAI(detail.thought)}
+        onSearchWeb={() => void sendTo('search', detail.thought.text)}
+        onCopy={() => void copyThought(detail.thought.text)}
+        onEditTags={() => setTagTarget(detail.thought.id)} />}
+      <TagPicker visible={typeof tagTarget === 'number'} tags={tags} selectedIds={tagTargetIds} onChange={(ids) => { if (typeof tagTarget === 'number') { setThoughtTags(tagTarget, ids); refresh(); } }} onClose={() => setTagTarget(null)} />
+    </Modal>
+    <TagPicker visible={tagTarget === 'draft'} tags={tags} selectedIds={tagTargetIds} onChange={setDraftTagIds} onClose={() => setTagTarget(null)} />
   </View>;
 }

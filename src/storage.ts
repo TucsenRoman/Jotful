@@ -288,6 +288,10 @@ export function toggleResolved(id: number, resolvedAt: number | null) {
   db.runSync('UPDATE thoughts SET resolvedAt = ? WHERE id = ?', resolvedAt, id);
 }
 
+export function setThoughtCreatedAt(id: number, createdAt: number) {
+  db.runSync('UPDATE thoughts SET createdAt = ? WHERE id = ?', createdAt, id);
+}
+
 export function togglePinned(id: number, pinnedAt: number | null) {
   db.runSync('UPDATE thoughts SET pinnedAt = ? WHERE id = ?', pinnedAt, id);
 }

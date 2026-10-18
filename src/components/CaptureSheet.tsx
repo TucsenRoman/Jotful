@@ -1,12 +1,11 @@
 import { BlurView } from "expo-blur";
-import { Directory, File, Paths } from "expo-file-system";
+import * as Haptics from "expo-haptics";
 import * as MediaLibrary from "expo-media-library/legacy";
 import {
   RecordingPresets,
   requestRecordingPermissionsAsync,
   setAudioModeAsync,
   useAudioRecorder,
-  useAudioRecorderState,
 } from "expo-audio";
 import { Camera as ExpoCamera, CameraView } from "expo-camera";
 import {
@@ -16,11 +15,7 @@ import {
   ChevronDown,
   ChevronLeft,
   Image,
-  Mic,
-  ImagePlus,
-  Pencil,
   RotateCw,
-  Square,
   Video,
   X,
 } from "lucide-react-native";
@@ -31,6 +26,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ReactNode,
 } from "react";
 import {
   Alert,
@@ -46,16 +42,16 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import Animated, {
   Easing,
   FadeIn,
-  FadeOut,
   runOnJS,
   useAnimatedKeyboard,
   useAnimatedStyle,
   useSharedValue,
+  withSpring,
   withTiming,
 } from "react-native-reanimated";
 import {
@@ -64,14 +60,54 @@ import {
   type AttachmentKind,
 } from "../storage";
 import AudioTimeline from "./AudioTimeline";
+import {
+  capturePeekHeight,
+  sheetBottomPad,
+  voiceContentHeight,
+  voiceUndoWindowMillis,
+} from "./capture/layout";
+import {
+  continueList,
+  kindAtCursor,
+  lineKind,
+  linePrefix,
+  stripPrefix,
+  toggleLineKind,
+  toRichHtml,
+} from "./capture/richDraft";
+import VoiceButton, { micSize } from "./capture/VoiceButton";
+import VoicePanel, { type VoicePhase } from "./capture/VoicePanel";
+import {
+  deleteQuietly,
+  dictationAvailable,
+  keepRecording,
+  transcriptSince,
+} from "./capture/voiceFiles";
+import WritingToolbar, { CircleButton } from "./capture/WritingToolbar";
 
-const collapsedHeight = 100;
-const collapsedActionSize = Math.min(64, Math.max(36, collapsedHeight - 30));
+export { capturePeekHeight, voiceUndoWindowMillis } from "./capture/layout";
+
+const tokens = require("../theme/tokens");
+const ink: string = tokens.color.ink;
+const onInk: string = tokens.color.onInk;
+const secondary: string = tokens.color.secondary;
 const transitionDuration = 300;
-// The capture controls need about 200px; the remaining height is supplied only by
-// the keyboard and the device safe area. This keeps the sheet compact by default.
+const spring = {
+  duration: tokens.motion.spring.duration,
+  dampingRatio: tokens.motion.spring.dampingRatio,
+};
+// The camera, library and media-choice panels keep their compact height.
 const expandedBaseHeight = 224;
-const colors = { canvas: "#FAF8F3", cream: "#FFFDF8", roast: "#242019", moss: "#74876A", quiet: "#9B9187" };
+const sheetPadding = 20;
+const peekPadding: number = tokens.space.margin;
+
+const caps = {
+  fontSize: 11,
+  lineHeight: 13,
+  fontWeight: "600" as const,
+  letterSpacing: 0.7,
+  textTransform: "uppercase" as const,
+};
 
 export type CaptureSheetHandle = {
   open: (mode?: "write" | "voice" | "media" | "media-choice") => void;
@@ -100,6 +136,14 @@ type Props = {
     }>,
     caption?: string,
   ) => void;
+  /** Tag pills for the writing sheet, drawn above the tool bar. */
+  tagRow?: ReactNode;
+  /**
+   * A recording was discarded by swiping the voice sheet down. Show an Undo
+   * toast; calling `undo` (within `voiceUndoWindowMillis`) saves it after all
+   * and returns true, or returns false once the window has passed.
+   */
+  onVoiceDiscarded?: (undo: () => boolean) => void;
 };
 
 type PendingAttachment = {
@@ -107,6 +151,22 @@ type PendingAttachment = {
   uri: string;
   durationMillis?: number;
 };
+
+type VoiceSession = {
+  stage: "idle" | "starting" | "recording" | "stopping";
+  released: boolean;
+  startedAt: number;
+  draftBefore: string;
+  dictating: boolean;
+};
+
+const idleSession = (): VoiceSession => ({
+  stage: "idle",
+  released: true,
+  startedAt: 0,
+  draftBefore: "",
+  dictating: false,
+});
 
 const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
   function CaptureSheet(
@@ -125,23 +185,30 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
       onOpenHaptic,
       onExpandedChange,
       onAttachments,
+      tagRow,
+      onVoiceDiscarded,
     },
     ref,
   ) {
     const insets = useSafeAreaInsets();
-    const { height: viewportHeight, width: viewportWidth } =
-      useWindowDimensions();
+    const { height: viewportHeight } = useWindowDimensions();
     const inputRef = useRef<TextInput>(null);
     const focusRichEditor = () => {
       requestAnimationFrame(() => inputRef.current?.focus());
     };
-    const pendingCollapse = useRef(false);
+    // Latest values for async voice work and gesture callbacks.
+    const draftRef = useRef(draft);
+    draftRef.current = draft;
+    const listeningRef = useRef(listening);
+    listeningRef.current = listening;
+    // Set while a save hands control to the app, so its close() collapses
+    // the sheet fully instead of only lowering the keyboard.
+    const forceCloseRef = useRef(false);
     // CaptureSheet stays mounted while collapsed, so the write input also stays
     // in the native view hierarchy. Keep its focus lifecycle separate from the
     // current mode so mounting the sheet cannot summon the keyboard.
     const [isExpanded, setIsExpanded] = useState(false);
     const [keyboardVisible, setKeyboardVisible] = useState(false);
-    const [keyboardHeight, setKeyboardHeight] = useState(0);
     const [activeMode, setActiveMode] = useState<
       | "write"
       | "voice"
@@ -162,8 +229,6 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
     const [selectedImageUri, setSelectedImageUri] = useState<string | null>(
       null,
     );
-    const [showMediaOptions, setShowMediaOptions] = useState(false);
-    const [audioDockOpen, setAudioDockOpen] = useState(false);
     const [cameraMode, setCameraMode] = useState<"photo" | "video">("photo");
     const [cameraFacing, setCameraFacing] = useState<"back" | "front">("back");
     const [cameraReady, setCameraReady] = useState(false);
@@ -175,6 +240,12 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
       MediaLibrary.Asset[]
     >([]);
     const [libraryLoading, setLibraryLoading] = useState(false);
+    const [cursor, setCursor] = useState(0);
+    const [forcedSelection, setForcedSelection] = useState<
+      { start: number; end: number } | undefined
+    >(undefined);
+    const [voicePhase, setVoicePhase] = useState<"idle" | VoicePhase>("idle");
+    const [holdHint, setHoldHint] = useState(false);
     const cameraRef = useRef<CameraView>(null);
     const recordingShape = useSharedValue(0);
     // 0 is open and 1 is collapsed. The sheet never unmounts or changes its view tree.
@@ -184,11 +255,10 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
       ...RecordingPresets.HIGH_QUALITY,
       isMeteringEnabled: true,
     });
-    const recorderState = useAudioRecorderState(recorder, 100);
-    const audioLevel = Math.max(
-      0,
-      Math.min(1, ((recorderState.metering ?? -60) + 60) / 60),
-    );
+    const voice = useRef<VoiceSession>(idleSession());
+    const stopChain = useRef<Promise<unknown>>(Promise.resolve());
+    const lockedSV = useSharedValue(0);
+    const levelSV = useSharedValue(0);
     const selectedPreviewAttachment =
       pendingImages.find((attachment) => attachment.uri === selectedImageUri) ??
       pendingImages[0];
@@ -201,58 +271,72 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
           : [];
       saveCaptureDraft(draft, attachments);
     }, [draft, pendingAttachment, pendingImages]);
-    const composerStageHeight = keyboardHeight
-      ? Math.min(
-          viewportWidth - 40,
-          Math.max(
-            160,
-            viewportHeight - keyboardHeight - insets.top - insets.bottom - 164,
-          ),
-        )
-      : viewportWidth - 40;
-    // Keep the resting composer as compact as the camera sheet. The extra room
-    // is reserved for active input, rather than left as an empty panel.
-    const expandedHeight = Math.max(expandedBaseHeight, viewportHeight * 0.62);
-    const restingSheetHeight = Math.min(
-      viewportHeight - insets.top - 12,
-      expandedHeight + insets.bottom,
-    );
 
-    const sheetStyle = useAnimatedStyle(() => {
-      // The thought composer is the primary surface, not a temporary popover.
-      // Give it enough quiet space for a thought while keeping the capture tools
-      // anchored together in the familiar message-composer position.
-      // The sheet stays docked to the bottom. When the translucent keyboard is
-      // present, extend its surface upward and inset its content above the keys
-      // instead of translating the entire sheet toward the keyboard.
-      const sheetHeight = Math.min(
-        viewportHeight - insets.top - 12,
-        restingSheetHeight + keyboard.height.value,
-      );
-      const collapsedOffset = sheetHeight - (collapsedHeight + insets.bottom);
-      return {
-        height: sheetHeight,
-        transform: [{ translateY: progress.value * collapsedOffset }],
-      };
-    }, [viewportHeight, insets.top, insets.bottom, activeMode]);
+    // Heights. The sheet is one full-height surface docked to the bottom; it
+    // slides so only the part a mode needs is on screen.
+    const bottomPad = sheetBottomPad(insets.bottom);
+    const fullHeight = viewportHeight - insets.top - 4;
+    const peekHeight = capturePeekHeight(insets.bottom);
+    const voiceHeight = Math.min(fullHeight, voiceContentHeight + bottomPad);
+    const mediaHeight = Math.min(
+      viewportHeight - insets.top - 12,
+      Math.max(expandedBaseHeight, viewportHeight * 0.62) + insets.bottom,
+    );
+    const modeHeight =
+      activeMode === "voice"
+        ? voiceHeight
+        : activeMode === "write" || activeMode === "audio"
+          ? fullHeight
+          : mediaHeight;
+    const targetHeight = isExpanded ? modeHeight : peekHeight;
+    // While collapsing, the fading content keeps the size it had.
+    const lastExpandedHeight = useRef(modeHeight);
+    if (isExpanded) lastExpandedHeight.current = modeHeight;
+    const layerHeight = isExpanded ? modeHeight : lastExpandedHeight.current;
+    const visibleHeight = useSharedValue(peekHeight);
+    const dragY = useSharedValue(0);
+    const micShown = useSharedValue(1);
+    const micActive = !isExpanded || activeMode === "voice";
+
+    useEffect(() => {
+      visibleHeight.value = withSpring(targetHeight, spring);
+    }, [targetHeight]);
+    useEffect(() => {
+      micShown.value = withTiming(micActive ? 1 : 0, {
+        duration: tokens.motion.fade,
+      });
+    }, [micActive]);
+
+    const sheetStyle = useAnimatedStyle(
+      () => ({
+        transform: [
+          {
+            translateY: Math.max(
+              0,
+              fullHeight - visibleHeight.value + dragY.value,
+            ),
+          },
+        ],
+      }),
+      [fullHeight],
+    );
     const collapsedStyle = useAnimatedStyle(
       () => ({ opacity: progress.value }),
       [],
     );
     const expandedStyle = useAnimatedStyle(
-      () => ({ opacity: 1 - progress.value }),
-      [],
-    );
-    const sheetShadowStyle = useAnimatedStyle(
       () => ({
-        // Keep a quiet edge on the compact composer so it remains distinct from
-        // the feed behind it, even after the expanded shadow has eased away.
-        shadowOpacity: 0.1 + (1 - progress.value) * 0.08,
-        shadowRadius: 10 + (1 - progress.value) * 10,
-        elevation: 8 + (1 - progress.value) * 6,
+        opacity: 1 - progress.value,
+        // The tool bar rides on the keyboard; without one it clears the home
+        // indicator.
+        paddingBottom: Math.max(keyboard.height.value, bottomPad) + 4,
       }),
-      [],
+      [bottomPad],
     );
+    const micStyle = useAnimatedStyle(() => ({
+      opacity: micShown.value,
+      transform: [{ translateY: Math.max(0, dragY.value) }],
+    }));
     const recordingShapeStyle = useAnimatedStyle(
       () => ({
         width: 46 - recordingShape.value * 16,
@@ -278,13 +362,10 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
       );
     };
 
-    const beginVoice = () => onToggleVoice();
-
-    const updateDraft = (text: string) => onDraftChange(text);
-
-    const collapseAfterKeyboard = () => {
-      pendingCollapse.current = false;
-      animate(1);
+    const setDraftText = (text: string) => {
+      draftRef.current = text;
+      onDraftChange(text);
+      onRichTextChange(toRichHtml(text));
     };
 
     const open = (
@@ -292,10 +373,15 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
     ) => {
       // Focus at the same moment the sheet rises so the iOS keyboard and sheet
       // animate as one movement instead of two consecutive animations.
+      if (mode === "voice") {
+        // No finger is on the button (widget, link): start already locked,
+        // so a tap on the stop square saves.
+        void beginVoiceSession(true);
+        return;
+      }
       setActiveMode(mode);
-      if (mode === "voice") beginVoice();
-      else if (mode === "write") {
-        setComposerMode(pendingAttachment ? "attachment" : "text");
+      if (mode === "write") {
+        setComposerMode(pendingImages.length ? "attachment" : "text");
         focusRichEditor();
       }
       animate(0);
@@ -343,7 +429,6 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
       setPendingAttachment(null);
       setPendingImages([]);
       setSelectedImageUri(null);
-      setAudioDockOpen(false);
       setComposerMode("text");
     };
 
@@ -351,7 +436,6 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
       setPendingAttachment(null);
       setPendingImages([]);
       setSelectedImageUri(null);
-      setAudioDockOpen(false);
       setActiveMode("write");
       setComposerMode("text");
     };
@@ -386,55 +470,57 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
     };
 
     const saveComposer = () => {
-      if (pendingAttachment) saveAttachment();
-      else onSave();
+      inputRef.current?.blur();
+      forceCloseRef.current = true;
+      try {
+        if (pendingAttachment) saveAttachment();
+        else onSave();
+      } finally {
+        forceCloseRef.current = false;
+      }
     };
 
-    const toggleAudioDock = async () => {
-      if (!audioDockOpen) {
-        setAudioDockOpen(true);
-        if (!(await startAudioRecording())) setAudioDockOpen(false);
-        return;
-      }
-      if (recorderState.isRecording) {
-        await finishAudioRecording();
-        return;
-      }
-      setPendingAttachment(null);
-      if (!(await startAudioRecording())) setAudioDockOpen(false);
+    const collapseNow = (haptic: boolean) => {
+      if (haptic) onCollapseHaptic();
+      inputRef.current?.blur();
+      Keyboard.dismiss();
+      setKeyboardVisible(false);
+      animate(1);
     };
 
-    const discardAudioDock = () => {
-      setPendingAttachment(null);
-      setAudioDockOpen(false);
-    };
+    const voiceBusy = () =>
+      voice.current.stage === "starting" || voice.current.stage === "recording";
 
     const close = () => {
+      const forced = forceCloseRef.current;
+      forceCloseRef.current = false;
+      // A tap outside never ends a recording; swiping the sheet down does.
+      if (!forced && voiceBusy()) return;
       // The first pull-down is a predictable keyboard dismissal. A second one
       // collapses the composer, so the two iOS transitions never compete.
-      if (keyboardVisible) {
+      if (!forced && keyboardVisible) {
         inputRef.current?.blur();
         Keyboard.dismiss();
         setKeyboardVisible(false);
         return;
       }
-      if (listening) onStopVoice();
-      onCollapseHaptic();
-      pendingCollapse.current = false;
-      inputRef.current?.blur();
-      animate(1);
+      if (listening && !voiceBusy()) onStopVoice();
+      collapseNow(!forced);
     };
 
-    const pickMedia = async (source: "library" | "camera" | "video") => {
+    const pickMedia = async (
+      source: "library" | "camera" | "video",
+      collapseOnDeny = false,
+    ) => {
       inputRef.current?.blur();
       Keyboard.dismiss();
       setKeyboardVisible(false);
-      setShowMediaOptions(false);
       if (source === "library") {
         setLibraryLoading(true);
         const permission = await MediaLibrary.requestPermissionsAsync(false);
         if (!permission.granted) {
           setLibraryLoading(false);
+          if (collapseOnDeny) animate(1);
           Alert.alert(
             "Photo access is needed",
             "Allow Jotful to browse the photos and videos you choose from.",
@@ -463,6 +549,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
       }
       const permission = await ExpoCamera.requestCameraPermissionsAsync();
       if (!permission.granted) {
+        if (collapseOnDeny) animate(1);
         Alert.alert(
           "Camera access is needed",
           "Allow camera access to capture it in Jotful.",
@@ -472,6 +559,14 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
       setCameraMode(source === "video" ? "video" : "photo");
       setCameraReady(false);
       setActiveMode("camera");
+    };
+
+    // Camera and photo buttons on the peek open straight into the picker.
+    const openMedia = (source: "library" | "camera") => {
+      onOpenHaptic();
+      setActiveMode("media");
+      animate(0);
+      void pickMedia(source, true);
     };
 
     const toggleLibraryAsset = (asset: MediaLibrary.Asset) => {
@@ -536,57 +631,304 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
     };
 
     const startAudioRecording = async () => {
-      const permission = await requestRecordingPermissionsAsync();
-      if (!permission.granted) {
+      try {
+        const permission = await requestRecordingPermissionsAsync();
+        if (!permission.granted) {
+          Alert.alert(
+            "Microphone access is needed",
+            "Allow microphone access to save a raw audio recording.",
+          );
+          return false;
+        }
+        await setAudioModeAsync({
+          allowsRecording: true,
+          playsInSilentMode: true,
+        });
+        await recorder.prepareToRecordAsync();
+        recorder.record();
+        return true;
+      } catch {
         Alert.alert(
-          "Microphone access is needed",
-          "Allow microphone access to save a raw audio recording.",
+          "Recording could not start",
+          "Try again in a moment. Another app may be using the microphone.",
         );
         return false;
       }
-      await setAudioModeAsync({
-        allowsRecording: true,
-        playsInSilentMode: true,
-      });
-      await recorder.prepareToRecordAsync();
-      recorder.record();
-      return true;
     };
 
-    const finishAudioRecording = async () => {
-      const durationMillis = recorderState.durationMillis;
-      await recorder.stop();
-      await setAudioModeAsync({ allowsRecording: false });
-      if (!recorder.uri) return;
+    // ——— Voice: one button ———
+
+    const resetVoiceUi = () => {
+      lockedSV.value = 0;
+      setVoicePhase("idle");
+    };
+
+    const waitForDictationEnd = async (dictating: boolean) => {
+      if (!dictating) return;
+      // The final words arrive just before dictation's "end" event.
+      const deadline = Date.now() + 900;
+      while (listeningRef.current && Date.now() < deadline)
+        await new Promise((resolve) => setTimeout(resolve, 50));
+    };
+
+    const stopCapture = async (session: VoiceSession) => {
+      let durationMillis = 0;
       try {
-        // Recorder URIs live in iOS's cache and can disappear after a reload.
-        // Copy the completed recording into durable app storage first.
-        const source = new File(recorder.uri);
-        const recordings = new Directory(Paths.document, "recordings");
-        recordings.create({ idempotent: true, intermediates: true });
-        const extension = source.extension || ".m4a";
-        const destination = new File(
-          recordings,
-          `recording-${Date.now()}${extension}`,
-        );
-        await source.copy(destination);
-        reviewAttachment({
-          kind: "audio",
-          uri: destination.uri,
-          durationMillis,
-        });
-      } catch {
-        Alert.alert(
-          "Recording could not be saved",
-          "Try recording again. Jotful did not save a broken audio note.",
-        );
-      }
+        durationMillis = recorder.getStatus().durationMillis;
+      } catch {}
+      if (session.dictating && listeningRef.current) onStopVoice();
+      try {
+        await recorder.stop();
+      } catch {}
+      await waitForDictationEnd(session.dictating);
+      try {
+        await setAudioModeAsync({ allowsRecording: false });
+      } catch {}
+      return { uri: recorder.uri, durationMillis };
     };
 
-    const toggleAudioRecording = async () => {
-      if (recorderState.isRecording) await finishAudioRecording();
-      else await startAudioRecording();
+    async function beginVoiceSession(locked: boolean) {
+      if (voiceBusy()) return;
+      const session: VoiceSession = {
+        stage: "starting",
+        released: locked,
+        startedAt: Date.now(),
+        draftBefore: draftRef.current,
+        dictating: false,
+      };
+      voice.current = session;
+      lockedSV.value = locked ? 1 : 0;
+      setVoicePhase(locked ? "locked" : "hold");
+      inputRef.current?.blur();
+      Keyboard.dismiss();
+      setActiveMode("voice");
+      animate(0);
+      // Let a previous save or discard finish with the recorder first.
+      await stopChain.current;
+      if (voice.current !== session) return;
+      session.draftBefore = draftRef.current;
+      const started = await startAudioRecording();
+      if (voice.current !== session) return;
+      if (!started) {
+        voice.current = idleSession();
+        resetVoiceUi();
+        animate(1);
+        return;
+      }
+      session.stage = "recording";
+      session.startedAt = Date.now();
+      if (dictationAvailable() && !listeningRef.current) {
+        session.dictating = true;
+        // The app starts dictation with its own light tap.
+        onToggleVoice();
+      } else void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      // The finger came up while the recorder was starting (often the
+      // permission prompt): that was a tap, not a hold.
+      if (session.released && !lockedSV.value) discardVoice(true);
+    }
+
+    function saveVoice() {
+      const session = voice.current;
+      if (session.stage !== "recording") return;
+      session.stage = "stopping";
+      voice.current = idleSession();
+      resetVoiceUi();
+      // Lower the sheet at once; the file and final words follow.
+      collapseNow(false);
+      const work = (async () => {
+        const { uri, durationMillis } = await stopCapture(session);
+        const transcript = transcriptSince(
+          draftRef.current,
+          session.draftBefore,
+        );
+        if (!uri) {
+          setDraftText(session.draftBefore);
+          collapseNow(false);
+          return;
+        }
+        try {
+          const file = await keepRecording(uri, "recordings");
+          forceCloseRef.current = true;
+          try {
+            onAttachments(
+              [{ kind: "audio", uri: file.uri, durationMillis }],
+              transcript || undefined,
+            );
+          } finally {
+            forceCloseRef.current = false;
+          }
+        } catch {
+          collapseNow(false);
+          Alert.alert(
+            "Recording could not be saved",
+            "Try recording again. Jotful did not save a broken audio note.",
+          );
+        }
+        // The transcript went into the recording's caption; put back any
+        // words that were in the draft before the hold.
+        setDraftText(session.draftBefore);
+      })();
+      stopChain.current = work.catch(() => undefined);
+    }
+
+    function discardVoice(quiet: boolean) {
+      const session = voice.current;
+      if (session.stage !== "recording") return;
+      session.stage = "stopping";
+      voice.current = idleSession();
+      resetVoiceUi();
+      collapseNow(false);
+      if (quiet) {
+        setHoldHint(true);
+        void Haptics.selectionAsync();
+        setTimeout(() => setHoldHint(false), 1600);
+      }
+      const work = (async () => {
+        const { uri, durationMillis } = await stopCapture(session);
+        const transcript = transcriptSince(
+          draftRef.current,
+          session.draftBefore,
+        );
+        setDraftText(session.draftBefore);
+        if (quiet || !onVoiceDiscarded || !uri) {
+          deleteQuietly(uri);
+          return;
+        }
+        // Keep the file aside until the Undo window passes.
+        let held: string | null = null;
+        try {
+          held = (await keepRecording(uri, "discarded")).uri;
+        } catch {}
+        let settled = held === null;
+        const timer = setTimeout(() => {
+          settled = true;
+          deleteQuietly(held);
+        }, voiceUndoWindowMillis);
+        onVoiceDiscarded(() => {
+          if (settled || !held) return false;
+          settled = true;
+          clearTimeout(timer);
+          const source = held;
+          void (async () => {
+            try {
+              const file = await keepRecording(source, "recordings");
+              deleteQuietly(source);
+              const keep = draftRef.current;
+              onAttachments(
+                [{ kind: "audio", uri: file.uri, durationMillis }],
+                transcript || undefined,
+              );
+              // Saving clears the app's draft; keep what is being written now.
+              setDraftText(keep);
+            } catch {
+              Alert.alert(
+                "Recording could not be restored",
+                "Jotful could not bring this recording back.",
+              );
+            }
+          })();
+          return true;
+        });
+      })();
+      stopChain.current = work.catch(() => undefined);
+    }
+
+    const onHoldStart = () => {
+      void beginVoiceSession(false);
     };
+    const onHoldRelease = () => {
+      const session = voice.current;
+      session.released = true;
+      if (session.stage !== "recording" || lockedSV.value) return;
+      // Under half a second is a tap: remind, don't save a blip.
+      if (Date.now() - session.startedAt < 500) discardVoice(true);
+      else saveVoice();
+    };
+    const onVoiceLock = () => {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
+      setVoicePhase("locking");
+      setTimeout(
+        () =>
+          setVoicePhase((phase) => (phase === "locking" ? "locked" : phase)),
+        480,
+      );
+    };
+    const onLockedTap = () => {
+      if (voice.current.stage === "recording") saveVoice();
+    };
+    const onDragChange = (dragging: boolean) =>
+      setVoicePhase((phase) =>
+        phase === "hold" || phase === "drag"
+          ? dragging
+            ? "drag"
+            : "hold"
+          : phase,
+      );
+
+    // ——— Sheet drag ———
+
+    const onSheetPanEnd = (direction: "up" | "down" | "none") => {
+      if (!isExpanded) {
+        if (direction === "up") {
+          onOpenHaptic();
+          open("write");
+        }
+        return;
+      }
+      if (activeMode === "voice") {
+        if (direction === "down" && voice.current.stage === "recording") {
+          onCollapseHaptic();
+          discardVoice(false);
+        }
+        return;
+      }
+      if (direction !== "down") return;
+      if (activeMode === "camera" || activeMode === "library") {
+        setActiveMode("write");
+        setComposerMode("text");
+        return;
+      }
+      close();
+    };
+    // Stable JS entry for the gestures, which are built once per enabled
+    // change so a re-render never rebuilds one under the finger.
+    const panEndRef = useRef(onSheetPanEnd);
+    panEndRef.current = onSheetPanEnd;
+    const callPanEnd = useMemo(
+      () => (direction: "up" | "down" | "none") => panEndRef.current(direction),
+      [],
+    );
+    const makeSheetPan = (enabled: boolean) =>
+      Gesture.Pan()
+        .enabled(enabled)
+        .activeOffsetY([-10, 10])
+        .failOffsetX([-24, 24])
+        .onUpdate((event) => {
+          dragY.value =
+            event.translationY >= 0
+              ? event.translationY
+              : event.translationY * 0.25;
+        })
+        .onEnd((event) => {
+          const direction =
+            event.translationY > 80 || event.velocityY > 900
+              ? "down"
+              : event.translationY < -40 || event.velocityY < -700
+                ? "up"
+                : "none";
+          runOnJS(callPanEnd)(direction);
+        })
+        .onFinalize(() => {
+          dragY.value = withSpring(0, spring);
+        });
+    // The peek and the voice sheet drag anywhere; the writing sheet only by
+    // its header, so the text keeps its own scrolling and selection.
+    const headerPanEnabled = isExpanded && activeMode !== "voice";
+    const bodyPan = useMemo(() => makeSheetPan(micActive), [micActive]);
+    const headerPan = useMemo(
+      () => makeSheetPan(headerPanEnabled),
+      [headerPanEnabled],
+    );
 
     useEffect(() => {
       const showEvent =
@@ -595,711 +937,473 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
         Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
       const show = Keyboard.addListener(showEvent, (event) => {
         setKeyboardVisible(event.endCoordinates.height > 0);
-        setKeyboardHeight(event.endCoordinates.height);
       });
       const hide = Keyboard.addListener(hideEvent, () => {
         setKeyboardVisible(false);
-        setKeyboardHeight(0);
-        if (pendingCollapse.current)
-          requestAnimationFrame(collapseAfterKeyboard);
       });
       return () => {
         show.remove();
         hide.remove();
       };
     }, []);
-    useImperativeHandle(
-      ref,
-      () => ({
-        open,
-        close,
-      }),
-      [keyboardVisible, listening, onCollapseHaptic, onStopVoice],
-    );
+    useImperativeHandle(ref, () => ({ open, close }));
 
+    // ——— Editor ———
+
+    const handleTextChange = (text: string) => {
+      const continued = continueList(draftRef.current, text);
+      const next = continued ? continued.text : text;
+      if (continued)
+        setForcedSelection({ start: continued.cursor, end: continued.cursor });
+      setDraftText(next);
+    };
+    const applyFormat = (kind: "heading" | "bullet" | "todo") => {
+      const result = toggleLineKind(draftRef.current, cursor, kind);
+      setForcedSelection({ start: result.cursor, end: result.cursor });
+      setCursor(result.cursor);
+      setDraftText(result.text);
+      void Haptics.selectionAsync();
+      if (!inputRef.current?.isFocused()) focusRichEditor();
+    };
+    const styledLines = draft.split("\n").map((line, index, lines) => {
+      const end = index < lines.length - 1 ? "\n" : "";
+      const kind = lineKind(line);
+      if (kind === "plain") return <Text key={index}>{line + end}</Text>;
+      const prefix = linePrefix[kind];
+      const body = stripPrefix(line);
+      if (kind === "heading")
+        return (
+          <Text
+            key={index}
+            style={{
+              fontSize: 22,
+              lineHeight: 28,
+              fontWeight: "600",
+              letterSpacing: -0.45,
+            }}
+          >
+            <Text style={{ color: tokens.color.faint }}>{prefix}</Text>
+            {body + end}
+          </Text>
+        );
+      return (
+        <Text key={index} style={{ lineHeight: 28 }}>
+          <Text style={{ color: kind === "bullet" ? ink : secondary }}>
+            {prefix}
+          </Text>
+          <Text
+            style={
+              kind === "done"
+                ? { color: secondary, textDecorationLine: "line-through" }
+                : undefined
+            }
+          >
+            {body}
+          </Text>
+          {end}
+        </Text>
+      );
+    });
+
+    const isMediaCapture = activeMode === "camera" || activeMode === "library";
     const needsDismissControl =
-      keyboardVisible ||
       activeMode === "media" ||
       activeMode === "media-choice" ||
       activeMode === "camera" ||
       activeMode === "library";
-    const isMediaCapture =
-      activeMode === "camera" || activeMode === "library";
+    const showReview =
+      composerMode === "attachment" && pendingImages.length > 0;
+    const firstDraftLine = draft
+      .split("\n")
+      .map((line) => stripPrefix(line).trim())
+      .find(Boolean);
+    const saveDisabled =
+      (!pendingAttachment && previewCount === 0) || listening;
+    const voiceTranscript =
+      activeMode === "voice" && voicePhase !== "idle"
+        ? transcriptSince(draft, voice.current.draftBefore)
+        : "";
 
     return (
-      <Animated.View
-        className="bg-unsorted-cream"
-        style={[
-          {
-            position: "absolute",
-            zIndex: 20,
-            elevation: 20,
-            bottom: -insets.bottom,
-            left: 0,
-            right: 0,
-            borderTopLeftRadius: 26,
-            borderTopRightRadius: 26,
-            shadowColor: colors.roast,
-            shadowOffset: { width: 0, height: -8 },
-            paddingHorizontal: activeMode === "camera" ? 12 : 20,
-            paddingTop: activeMode === "camera" ? 12 : 20,
-            paddingBottom: keyboardVisible
-              ? keyboardHeight + 8
-              : insets.bottom + 20,
-          },
-          sheetStyle,
-          sheetShadowStyle,
-        ]}
-        >
+      <View
+        pointerEvents="box-none"
+        style={[StyleSheet.absoluteFill, { zIndex: 20, elevation: 20 }]}
+      >
         <Animated.View
-          pointerEvents="none"
-          className="absolute left-5 right-5 top-0 h-px bg-unsorted-line"
-          style={expandedStyle}
-        />
-        <Animated.View
-          className="items-center justify-center"
+          className="bg-surface"
           style={[
             {
               position: "absolute",
-              top: 0,
-              left: 20,
-              right: 20,
-              height: collapsedHeight,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: fullHeight,
+              borderTopLeftRadius: tokens.radius.sheet,
+              borderTopRightRadius: tokens.radius.sheet,
+              shadowColor: ink,
+              shadowOffset: { width: 0, height: -4 },
+              shadowOpacity: 0.12,
+              shadowRadius: 30,
+              elevation: 14,
             },
-            collapsedStyle,
+            sheetStyle,
           ]}
         >
-          <Pressable
-            onPress={() => {
-              onOpenHaptic();
-              open("write");
-            }}
-            className="flex-1 flex-row items-center gap-16 px-1"
-            hitSlop={12}
-            accessibilityLabel="Open thought capture"
-          >
-            <View className="flex-1 items-center gap-4">
-              <Text
-                numberOfLines={collapsedHeight >= 86 ? 2 : 1}
-                className="text-[19px] leading-[22px] text-unsorted-ink text-center"
-                style={{ fontFamily: "Fraunces_600SemiBold" }}
+          <GestureDetector gesture={bodyPan}>
+            <View style={{ flex: 1 }}>
+              {/* Peek */}
+              <Animated.View
+                pointerEvents={isExpanded ? "none" : "auto"}
+                style={[
+                  {
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: peekHeight,
+                    paddingHorizontal: peekPadding,
+                    paddingTop: 11,
+                  },
+                  collapsedStyle,
+                ]}
               >
-                {prompt}
-              </Text>
-              <Text
-                className="mt-0.5 text-sm text-unsorted-quiet uppercase"
-                style={{ fontFamily: "DMSans_500Medium" }}
-              >
-                Tap to capture
-              </Text>
-            </View>
-
-            {/* <View className="items-center">
-              <View
-                className="flex flex-row gap-2 items-center justify-center rounded-full bg-unsorted-moss"
-                style={{ width: collapsedActionSize, height: collapsedActionSize }}
-              >
-                <Pencil
-                  size={Math.round(collapsedActionSize * 0.38)}
-                  color={colors.cream}
-                  strokeWidth={2.5}
-                />
-              </View>
-
-
-            </View> */}
-          </Pressable>
-        </Animated.View>
-        <Animated.View
-          style={[expandedStyle, { flex: 1 }]}
-          pointerEvents="auto"
-        >
-          {activeMode === "media-choice" ? (
-            <View className="flex-1 justify-center">
-              <Text
-                className="text-center text-xl text-unsorted-ink"
-                style={{ fontFamily: "Fraunces_600SemiBold" }}
-              >
-                Add media
-              </Text>
-              <Text
-                className="mt-2 text-center leading-5 text-unsorted-moss"
-                style={{ fontFamily: "DMSans_400Regular" }}
-              >
-                Choose where this photo or video comes from.
-              </Text>
-              <View className="mt-7 flex-row gap-2">
                 <Pressable
-                  onPress={() => void pickMedia("library")}
-                  className="flex-1 items-center rounded-2xl border border-unsorted-line bg-unsorted-canvas px-2 py-4"
-                >
-                  <Image size={21} color={colors.roast} />
-                  <Text
-                    className="mt-2 text-center text-[13px] text-unsorted-ink"
-                    style={{ fontFamily: "DMSans_700Bold" }}
-                  >
-                    Library
-                  </Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => void pickMedia("camera")}
-                  className="flex-1 items-center rounded-2xl border border-unsorted-line bg-unsorted-canvas px-2 py-4"
-                >
-                  <Camera size={21} color={colors.roast} />
-                  <Text
-                    className="mt-2 text-center text-[13px] text-unsorted-ink"
-                    style={{ fontFamily: "DMSans_700Bold" }}
-                  >
-                    Camera
-                  </Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => void pickMedia("video")}
-                  className="flex-1 items-center rounded-2xl border border-unsorted-line bg-unsorted-canvas px-2 py-4"
-                >
-                  <Video size={21} color={colors.roast} />
-                  <Text
-                    className="mt-2 text-center text-[13px] text-unsorted-ink"
-                    style={{ fontFamily: "DMSans_700Bold" }}
-                  >
-                    Video
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
-          ) : null}
-          {activeMode === "library" ? (
-            <View className="flex-1">
-              <View className="mb-3 flex-row items-center justify-between">
-                <Text
-                  className="text-xl text-unsorted-ink"
-                  style={{ fontFamily: "Fraunces_600SemiBold" }}
-                >
-                  Library
-                </Text>
-                <Pressable
-                  onPress={addSelectedLibraryAssets}
-                  disabled={selectedLibraryAssets.length === 0}
-                  className={
-                    "rounded-full px-3 py-1.5 " +
-                    (selectedLibraryAssets.length
-                      ? "bg-unsorted-persimmon"
-                      : "bg-unsorted-mist")
-                  }
+                  onPress={() => {
+                    onOpenHaptic();
+                    open("write");
+                  }}
+                  className="bg-fill justify-center"
+                  style={{
+                    marginTop: 16,
+                    height: 52,
+                    borderRadius: 26,
+                    paddingHorizontal: 20,
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open thought capture"
                 >
                   <Text
+                    numberOfLines={1}
                     className={
-                      "text-[13px] " +
-                      (selectedLibraryAssets.length
-                        ? "text-unsorted-roast"
-                        : "text-unsorted-moss")
+                      "text-body " +
+                      (firstDraftLine ? "text-ink" : "text-secondary")
                     }
-                    style={{ fontFamily: "DMSans_700Bold" }}
                   >
-                    {libraryLoading
-                      ? "Loading"
-                      : selectedLibraryAssets.length
-                        ? "Add " + selectedLibraryAssets.length
-                        : "Select"}
+                    {firstDraftLine ?? prompt}
                   </Text>
                 </Pressable>
-              </View>
-              <FlatList
-                data={libraryAssets}
-                keyExtractor={(asset) => asset.id}
-                numColumns={3}
-                contentContainerStyle={{ paddingBottom: 12 }}
-                columnWrapperStyle={{ gap: 6, marginBottom: 6 }}
-                renderItem={({ item }) => {
-                  const selected = selectedLibraryAssets.some(
-                    (asset) => asset.id === item.id,
-                  );
-                  return (
-                    <Pressable
-                      onPress={() => toggleLibraryAsset(item)}
-                      style={{ flex: 1, aspectRatio: 1 }}
-                      className={
-                        "overflow-hidden rounded-none bg-unsorted-mist " +
-                        (selected ? "border-2 border-unsorted-persimmon" : "")
-                      }
-                    >
-                      {item.mediaType === MediaLibrary.MediaType.video ? (
-                        <View className="h-full w-full items-center justify-center bg-unsorted-moss">
-                          <Video size={24} color={colors.cream} />
-                        </View>
-                      ) : (
-                        <NativeImage
-                          source={{ uri: item.uri }}
-                          style={{ width: "100%", height: "100%" }}
-                          resizeMode="cover"
-                        />
-                      )}
-                      {item.mediaType === MediaLibrary.MediaType.video && (
-                        <View className="absolute bottom-1.5 right-1.5 rounded-full bg-black/50 px-1.5 py-1">
-                          <Video size={12} color={colors.cream} />
-                        </View>
-                      )}
-                      {selected && (
-                        <View className="absolute right-1.5 top-1.5 h-6 w-6 items-center justify-center rounded-full bg-unsorted-persimmon">
-                          <Check
-                            size={14}
-                            strokeWidth={3}
-                            color={colors.roast}
-                          />
-                        </View>
-                      )}
-                    </Pressable>
-                  );
-                }}
-              />
-            </View>
-          ) : null}
-          {activeMode === "camera" ? (
-            <View className="flex-1 overflow-hidden rounded-3xl bg-unsorted-roast">
-              <CameraView
-                ref={cameraRef}
-                facing={cameraFacing}
-                mode={cameraMode === "video" ? "video" : "picture"}
-                onCameraReady={() => setCameraReady(true)}
-                onMountError={(event) =>
-                  Alert.alert("Camera unavailable", event.message)
-                }
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  right: 0,
-                  bottom: 0,
-                  left: 0,
-                }}
-              />
-              <View className="absolute inset-x-0 bottom-0 flex-row items-center px-4 pb-5">
-                <View className="flex-1 items-start">
-                  <Pressable
-                    onPress={() =>
-                      setCameraMode(cameraMode === "photo" ? "video" : "photo")
-                    }
-                    className="flex-row items-center rounded-full bg-black/40 p-1"
-                    hitSlop={10}
-                    accessibilityLabel="Switch between photo and video"
-                  >
-                    <View
-                      className={
-                        "h-8 w-8 items-center justify-center rounded-full " +
-                        (cameraMode === "photo" ? "bg-unsorted-cream" : "")
-                      }
-                    >
-                      <Camera
-                        size={16}
-                        color={
-                          cameraMode === "photo" ? colors.roast : colors.cream
-                        }
-                      />
-                    </View>
-                    <View
-                      className={
-                        "h-8 w-8 items-center justify-center rounded-full " +
-                        (cameraMode === "video" ? "bg-unsorted-persimmon" : "")
-                      }
-                    >
-                      <Video size={16} color={colors.cream} />
-                    </View>
-                  </Pressable>
-                </View>
-                <View className="flex-1 items-center">
-                  <Pressable
-                    onPress={() => void captureFromCamera()}
-                    disabled={!cameraReady}
-                    className={
-                      "h-16 w-16 items-center justify-center rounded-full " +
-                      "bg-unsorted-cream"
-                    }
-                  >
-                    <Animated.View
-                      className={
-                        cameraMode === "video"
-                          ? "bg-unsorted-persimmon"
-                          : "bg-unsorted-roast"
-                      }
-                      style={recordingShapeStyle}
-                    />
-                  </Pressable>
-                </View>
-                <View className="flex-1 items-end">
-                  <Pressable
-                    onPress={() =>
-                      setCameraFacing(
-                        cameraFacing === "back" ? "front" : "back",
-                      )
-                    }
-                    className="h-10 w-10 items-center justify-center rounded-full bg-black/40"
-                    hitSlop={10}
-                    accessibilityLabel="Switch camera"
-                  >
-                    <RotateCw size={20} color={colors.cream} />
-                  </Pressable>
-                </View>
-              </View>
-            </View>
-          ) : null}
-          {activeMode === "write" || activeMode === "voice" ? (
-            <View className="flex-1">
-              <View className="flex-row items-start">
                 <View
-                  className="flex-1 rounded-3xl border border-unsorted-line bg-unsorted-canvas px-3 py-2"
-                  style={{ height: composerStageHeight }}
+                  className="flex-row items-center"
+                  style={{ marginTop: 14, height: micSize, gap: 10 }}
                 >
-                  {composerMode === "text" && (
-                    <>
-                      <View className="flex-1" onTouchStart={focusRichEditor}>
-                        <TextInput
-                          ref={inputRef}
-                          value={draft}
-                          onChangeText={(text) => {
-                            onDraftChange(text);
-                            const escaped = text
-                              .replace(/&/g, "&amp;")
-                              .replace(/</g, "&lt;")
-                              .replace(/>/g, "&gt;")
-                              .replace(/\n/g, "<br>");
-                            onRichTextChange(escaped ? `<p>${escaped}</p>` : "");
-                          }}
-                          placeholder="Write your thought…"
-                          placeholderTextColor={colors.quiet}
-                          autoCapitalize="sentences"
-                          multiline
-                          textAlignVertical="top"
-                          style={{
-                            flex: 1,
-                            marginBottom: 108,
-                            color: colors.roast,
-                            fontFamily: "DMSans_400Regular",
-                            fontSize: 17,
-                            lineHeight: 26,
-                          }}
-                        />
-                      </View>
-                      <View className="absolute bottom-3 left-3 right-3 gap-2">
-                        <View className="items-end">
+                  <CircleButton
+                    onPress={() => openMedia("camera")}
+                    label="Take a photo or video"
+                  >
+                    <Camera size={22} color={ink} strokeWidth={1.9} />
+                  </CircleButton>
+                  <CircleButton
+                    onPress={() => openMedia("library")}
+                    label="Choose from photos"
+                  >
+                    <Image size={22} color={ink} strokeWidth={1.9} />
+                  </CircleButton>
+                  <View className="flex-1" />
+                  <Text
+                    className={holdHint ? "text-ink" : "text-secondary"}
+                    style={[caps, { marginRight: 4 }]}
+                  >
+                    Hold to talk
+                  </Text>
+                  {/* The mic itself floats above the sheet (below) so it never moves. */}
+                  <View style={{ width: micSize }} />
+                </View>
+              </Animated.View>
+
+              {/* Expanded */}
+              <Animated.View
+                pointerEvents={isExpanded ? "box-none" : "none"}
+                style={[{ height: layerHeight }, expandedStyle]}
+              >
+                {activeMode === "media-choice" ? (
+                  <View
+                    className="flex-1 justify-center"
+                    style={{ paddingHorizontal: sheetPadding }}
+                  >
+                    <Text className="text-center text-title2 font-semibold text-ink">
+                      Add media
+                    </Text>
+                    <Text className="mt-2 text-center text-subhead text-secondary">
+                      Choose where this photo or video comes from.
+                    </Text>
+                    <View className="mt-7 flex-row gap-2">
+                      {(
+                        [
+                          ["library", "Library", Image],
+                          ["camera", "Camera", Camera],
+                          ["video", "Video", Video],
+                        ] as const
+                      ).map(([source, label, Icon]) => (
+                        <Pressable
+                          key={source}
+                          onPress={() => void pickMedia(source)}
+                          className="flex-1 items-center rounded-2xl border border-separator bg-card px-2 py-4"
+                          accessibilityLabel={label}
+                        >
+                          <Icon size={21} color={ink} />
+                          <Text className="mt-2 text-center text-footnote font-semibold text-ink">
+                            {label}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </View>
+                ) : null}
+                {activeMode === "library" ? (
+                  <View
+                    className="flex-1"
+                    style={{ paddingHorizontal: sheetPadding, paddingTop: 20 }}
+                  >
+                    <View className="mb-3 flex-row items-center justify-between">
+                      <Text className="text-title2 font-semibold text-ink">
+                        Library
+                      </Text>
+                      <Pressable
+                        onPress={addSelectedLibraryAssets}
+                        disabled={selectedLibraryAssets.length === 0}
+                        className={
+                          "rounded-full px-3 py-1.5 " +
+                          (selectedLibraryAssets.length
+                            ? "bg-action"
+                            : "bg-fill")
+                        }
+                        accessibilityLabel="Add selected media"
+                      >
+                        <Text
+                          className={
+                            "text-footnote font-semibold " +
+                            (selectedLibraryAssets.length
+                              ? "text-onInk"
+                              : "text-secondary")
+                          }
+                        >
+                          {libraryLoading
+                            ? "Loading"
+                            : selectedLibraryAssets.length
+                              ? "Add " + selectedLibraryAssets.length
+                              : "Select"}
+                        </Text>
+                      </Pressable>
+                    </View>
+                    <FlatList
+                      data={libraryAssets}
+                      keyExtractor={(asset) => asset.id}
+                      numColumns={3}
+                      contentContainerStyle={{ paddingBottom: 12 }}
+                      columnWrapperStyle={{ gap: 6, marginBottom: 6 }}
+                      renderItem={({ item }) => {
+                        const selected = selectedLibraryAssets.some(
+                          (asset) => asset.id === item.id,
+                        );
+                        return (
                           <Pressable
-                            onPress={onToggleVoice}
+                            onPress={() => toggleLibraryAsset(item)}
+                            style={{ flex: 1, aspectRatio: 1 }}
                             className={
-                              "h-9 w-9 items-center justify-center rounded-full " +
-                              (listening ? "bg-unsorted-blush" : "bg-unsorted-blush")
-                            }
-                            hitSlop={10}
-                            accessibilityLabel={
-                              listening
-                                ? "Stop voice input"
-                                : "Speak to add text"
+                              "overflow-hidden rounded-none bg-fill " +
+                              (selected ? "border-2 border-action" : "")
                             }
                           >
-                            {listening ? (
-                              <Square
-                                size={12}
-                                fill={colors.roast}
-                                color={colors.roast}
-                              />
-                            ) : (
-                              <Mic size={16} color={colors.roast} />
-                            )}
-                          </Pressable>
-                        </View>
-                        <View className="mx-1 h-px bg-unsorted-line" />
-                        <View className="flex-row items-center justify-between gap-2">
-                          <View
-                            className="relative"
-                            style={{ zIndex: showMediaOptions ? 2 : undefined }}
-                          >
-                            {pendingImages.length > 0 ? (
-                              <View className="h-9 w-[72px] flex-row items-center">
-                                <Pressable
-                                  onPress={() => setComposerMode("attachment")}
-                                  className="h-8 w-[54px]"
-                                  hitSlop={10}
-                                  accessibilityLabel="Review attached photos"
-                                >
-                                  {pendingImages
-                                    .slice(-3)
-                                    .map((image, index) =>
-                                      image.kind === "video" ? (
-                                        <View
-                                          key={image.uri}
-                                          className="absolute h-8 w-8 items-center justify-center rounded-full border-2 border-unsorted-canvas bg-unsorted-moss"
-                                          style={{
-                                            left: index * 11,
-                                            top: 0,
-                                            zIndex: index,
-                                          }}
-                                        >
-                                          <Video
-                                            size={14}
-                                            color={colors.cream}
-                                          />
-                                        </View>
-                                      ) : (
-                                        <NativeImage
-                                          key={image.uri}
-                                          source={{ uri: image.uri }}
-                                          style={{
-                                            position: "absolute",
-                                            left: index * 11,
-                                            top: 0,
-                                            width: 32,
-                                            height: 32,
-                                            borderRadius: 16,
-                                            borderWidth: 2,
-                                            borderColor: colors.canvas,
-                                            zIndex: index,
-                                          }}
-                                          resizeMode="cover"
-                                        />
-                                      ),
-                                    )}
-                                </Pressable>
-                                <Pressable
-                                  onPress={() =>
-                                    setShowMediaOptions((visible) => !visible)
-                                  }
-                                  className={
-                                    "absolute right-1 top-0 h-9 w-9 items-center justify-center rounded-full border-2 border-unsorted-canvas " +
-                                    (showMediaOptions
-                                      ? "bg-unsorted-blush"
-                                      : "bg-unsorted-mist")
-                                  }
-                                  hitSlop={10}
-                                  accessibilityLabel="Add a photo or video"
-                                >
-                                  <ImagePlus size={18} color={colors.roast} />
-                                </Pressable>
+                            {item.mediaType === MediaLibrary.MediaType.video ? (
+                              <View className="h-full w-full items-center justify-center bg-ink">
+                                <Video size={24} color={onInk} />
                               </View>
                             ) : (
-                              <Pressable
-                                onPress={() =>
-                                  setShowMediaOptions((visible) => !visible)
-                                }
-                                className={
-                                  "h-9 w-9 items-center justify-center rounded-full border-2 border-unsorted-canvas " +
-                                  (showMediaOptions
-                                    ? "bg-unsorted-blush"
-                                    : "bg-unsorted-mist")
-                                }
-                                hitSlop={10}
-                                accessibilityLabel="Add a photo or video"
-                              >
-                                <ImagePlus size={18} color={colors.roast} />
-                              </Pressable>
+                              <NativeImage
+                                source={{ uri: item.uri }}
+                                style={{ width: "100%", height: "100%" }}
+                                resizeMode="cover"
+                              />
                             )}
-                            {showMediaOptions && (
-                              <Animated.View
-                                entering={FadeIn.duration(transitionDuration)}
-                                exiting={FadeOut.duration(transitionDuration)}
-                                className="absolute bottom-12 left-0 overflow-hidden rounded-2xl border border-unsorted-line bg-unsorted-canvas shadow-lg"
-                                style={{ minWidth: 184 }}
-                              >
-                                <Pressable
-                                  onPress={() => void pickMedia("camera")}
-                                  className="flex-row items-center gap-2 px-3 py-3"
-                                  hitSlop={10}
-                                  accessibilityLabel="Open camera and video capture"
-                                >
-                                  <Camera size={17} color={colors.roast} />
-                                  <Text
-                                    className="text-[14px] text-unsorted-ink"
-                                    style={{ fontFamily: "DMSans_700Bold" }}
-                                  >
-                                    Camera or video
-                                  </Text>
-                                </Pressable>
-                                <View className="mx-3 h-px bg-unsorted-line" />
-                                <Pressable
-                                  onPress={() => void pickMedia("library")}
-                                  className="flex-row items-center gap-2 px-3 py-3"
-                                  hitSlop={10}
-                                  accessibilityLabel="Open media library"
-                                >
-                                  <Image size={17} color={colors.roast} />
-                                  <Text
-                                    className="text-[14px] text-unsorted-ink"
-                                    style={{ fontFamily: "DMSans_700Bold" }}
-                                  >
-                                    Photo library
-                                  </Text>
-                                </Pressable>
-                              </Animated.View>
+                            {item.mediaType ===
+                              MediaLibrary.MediaType.video && (
+                              <View className="absolute bottom-1.5 right-1.5 rounded-full bg-ink/50 px-1.5 py-1">
+                                <Video size={12} color={onInk} />
+                              </View>
                             )}
-                          </View>
-                          {audioDockOpen ? (
-                            <Animated.View
-                              entering={FadeIn.duration(transitionDuration)}
-                              className="h-9 w-[154px] flex-row items-center justify-between gap-2 rounded-full bg-unsorted-mist px-2"
-                            >
-                              {pendingAttachment?.kind === "audio" ? (
-                                <View className="flex-1">
-                                  <AudioTimeline
-                                    compact
-                                    uri={pendingAttachment.uri}
-                                    fallbackDurationMillis={
-                                      pendingAttachment.durationMillis
-                                    }
-                                  />
-                                </View>
-                              ) : (
-                    <View className="flex-1 flex-row items-center justify-center gap-1">
-                                  {[0.42, 0.78, 0.55, 1, 0.64, 0.86, 0.48, 0.7, 0.92, 0.58, 0.38].map(
-                                    (multiplier, index) => (
-                                      <View
-                                        key={index}
-                          className="w-1 rounded-full bg-unsorted-persimmon"
-                                        style={{
-                                          height:
-                                            4 +
-                                            Math.max(0.16, audioLevel) *
-                                              20 *
-                                              multiplier,
-                                        }}
-                                      />
-                                    ),
-                                  )}
-                                </View>
-                              )}
-                              <Pressable
-                                onPress={
-                                  recorderState.isRecording
-                                    ? () => void toggleAudioDock()
-                                    : discardAudioDock
-                                }
-                                className="h-7 w-7 items-center justify-center rounded-full"
-                                hitSlop={10}
-                                accessibilityLabel={
-                                  recorderState.isRecording
-                                    ? "Stop recording"
-                                    : "Discard recording"
-                                }
-                              >
-                                {recorderState.isRecording ? (
-                                  <Square
-                                    size={12}
-                                    fill={colors.roast}
-                                    color={colors.roast}
-                                  />
-                                ) : (
-                                  <X size={16} color={colors.roast} />
-                                )}
-                              </Pressable>
-                            </Animated.View>
-                          ) : (
-                            <Pressable
-                              onPress={() => void toggleAudioDock()}
-                              className="h-9 w-9 items-center justify-center rounded-full bg-unsorted-mist"
-                              hitSlop={10}
-                              accessibilityLabel="Record raw audio"
-                            >
-                              <AudioLines size={18} color={colors.roast} />
-                            </Pressable>
-                          )}
-                        </View>
-                      </View>
-                      {showMediaOptions && (
+                            {selected && (
+                              <View className="absolute right-1.5 top-1.5 h-6 w-6 items-center justify-center rounded-full bg-action">
+                                <Check
+                                  size={14}
+                                  strokeWidth={3}
+                                  color={onInk}
+                                />
+                              </View>
+                            )}
+                          </Pressable>
+                        );
+                      }}
+                    />
+                  </View>
+                ) : null}
+                {activeMode === "camera" ? (
+                  <View
+                    className="flex-1 overflow-hidden rounded-card bg-ink"
+                    style={{ marginHorizontal: 12, marginTop: 16 }}
+                  >
+                    <CameraView
+                      ref={cameraRef}
+                      facing={cameraFacing}
+                      mode={cameraMode === "video" ? "video" : "picture"}
+                      onCameraReady={() => setCameraReady(true)}
+                      onMountError={(event) =>
+                        Alert.alert("Camera unavailable", event.message)
+                      }
+                      style={StyleSheet.absoluteFill}
+                    />
+                    <View className="absolute inset-x-0 bottom-0 flex-row items-center px-4 pb-5">
+                      <View className="flex-1 items-start">
                         <Pressable
-                          onPress={() => setShowMediaOptions(false)}
-                          style={[StyleSheet.absoluteFill, { zIndex: 1 }]}
-                          accessibilityLabel="Close media options"
-                        />
-                      )}
-                    </>
-                  )}
-                  {composerMode === "audio" && (
-                    <Animated.View
-                      entering={FadeIn.duration(transitionDuration)}
-                      className="h-full justify-end"
-                    >
-                      <View className="rounded-2xl bg-unsorted-mist px-3 py-3">
-                        <View className="flex-row items-center">
+                          onPress={() =>
+                            setCameraMode(
+                              cameraMode === "photo" ? "video" : "photo",
+                            )
+                          }
+                          className="flex-row items-center rounded-full bg-ink/40 p-1"
+                          hitSlop={10}
+                          accessibilityLabel="Switch between photo and video"
+                        >
                           <View
                             className={
-                              "h-10 w-10 items-center justify-center rounded-full " +
-                              (recorderState.isRecording
-                                ? "bg-unsorted-blush"
-                                : "bg-unsorted-canvas")
+                              "h-8 w-8 items-center justify-center rounded-full " +
+                              (cameraMode === "photo" ? "bg-surface" : "")
                             }
                           >
-                            <AudioLines size={19} color={colors.roast} />
+                            <Camera
+                              size={16}
+                              color={cameraMode === "photo" ? ink : onInk}
+                            />
                           </View>
-                          <View className="ml-3 flex-1">
-                            <Text
-                              className="text-[15px] text-unsorted-ink"
-                              style={{ fontFamily: "DMSans_700Bold" }}
-                            >
-                              {recorderState.isRecording
-                                ? "Recording…"
-                                : "Raw audio"}
-                            </Text>
-                            <Text
-                              className="mt-2 text-[13px] text-unsorted-moss"
-                              style={{ fontFamily: "DMSans_400Regular" }}
-                            >
-                              {recorderState.isRecording
-                                ? Math.ceil(
-                                    recorderState.durationMillis / 1000,
-                                  ) + " seconds"
-                                : "Keep this one as sound."}
-                            </Text>
-                          </View>
-                          <Pressable
-                            onPress={() => void toggleAudioRecording()}
+                          <View
                             className={
-                              "rounded-full px-4 py-2 " +
-                              (recorderState.isRecording
-                                ? "bg-unsorted-roast"
-                                : "bg-unsorted-persimmon")
+                              "h-8 w-8 items-center justify-center rounded-full " +
+                              (cameraMode === "video" ? "bg-danger" : "")
                             }
                           >
-                            <Text
-                              className={
-                                recorderState.isRecording
-                                  ? "text-unsorted-cream"
-                                  : "text-unsorted-roast"
-                              }
-                              style={{ fontFamily: "DMSans_700Bold" }}
-                            >
-                              {recorderState.isRecording ? "Stop" : "Start"}
+                            <Video size={16} color={onInk} />
+                          </View>
+                        </Pressable>
+                      </View>
+                      <View className="flex-1 items-center">
+                        <Pressable
+                          onPress={() => void captureFromCamera()}
+                          disabled={!cameraReady}
+                          className="h-16 w-16 items-center justify-center rounded-full bg-surface"
+                          accessibilityLabel={
+                            cameraMode === "video"
+                              ? recordingVideo
+                                ? "Stop video"
+                                : "Record video"
+                              : "Take photo"
+                          }
+                        >
+                          <Animated.View
+                            className={
+                              cameraMode === "video" ? "bg-danger" : "bg-ink"
+                            }
+                            style={recordingShapeStyle}
+                          />
+                        </Pressable>
+                      </View>
+                      <View className="flex-1 items-end">
+                        <Pressable
+                          onPress={() =>
+                            setCameraFacing(
+                              cameraFacing === "back" ? "front" : "back",
+                            )
+                          }
+                          className="h-10 w-10 items-center justify-center rounded-full bg-ink/40"
+                          hitSlop={10}
+                          accessibilityLabel="Switch camera"
+                        >
+                          <RotateCw size={20} color={onInk} />
+                        </Pressable>
+                      </View>
+                    </View>
+                  </View>
+                ) : null}
+                {activeMode === "write" || activeMode === "audio" ? (
+                  <View
+                    className="flex-1"
+                    style={{ paddingHorizontal: sheetPadding }}
+                  >
+                    <GestureDetector gesture={headerPan}>
+                      <View style={{ paddingTop: 11 }}>
+                        <View
+                          className="flex-row items-center justify-between"
+                          style={{ marginTop: 6 }}
+                        >
+                          <CircleButton
+                            onPress={() => {
+                              if (listening) onStopVoice();
+                              collapseNow(true);
+                            }}
+                            label="Close, keeping the draft"
+                          >
+                            <X size={22} color={ink} strokeWidth={1.9} />
+                          </CircleButton>
+                          <View className="flex-row items-center">
+                            <Text className="text-secondary" style={caps}>
+                              Draft kept if you close
                             </Text>
-                          </Pressable>
+                            {draft.trim().length > 0 && !listening && (
+                              <Pressable
+                                onPress={onClear}
+                                hitSlop={10}
+                                accessibilityRole="button"
+                                accessibilityLabel="Clear thought"
+                              >
+                                <Text className="text-ink" style={caps}>
+                                  {"  ·  "}Clear
+                                </Text>
+                              </Pressable>
+                            )}
+                          </View>
                         </View>
                       </View>
-                    </Animated.View>
-                  )}
-                  {composerMode === "attachment" &&
-                    (pendingImages.length > 0 || pendingAttachment) && (
-                      <Animated.View
-                        entering={FadeIn.duration(transitionDuration)}
-                        className="h-full"
-                      >
-                        {pendingImages.length > 0 ? (
-                          <View className="h-full overflow-hidden">
+                    </GestureDetector>
+                    <Text
+                      className="text-body text-secondary"
+                      style={{ marginTop: 14 }}
+                      numberOfLines={2}
+                    >
+                      {prompt}
+                    </Text>
+                    <View className="flex-1" style={{ marginTop: 6 }}>
+                      {showReview ? (
+                        <Animated.View
+                          entering={FadeIn.duration(transitionDuration)}
+                          className="flex-1"
+                        >
+                          <View className="flex-1 overflow-hidden rounded-media bg-card">
                             {selectedPreviewAttachment?.kind === "video" ? (
-                              <View className="h-full w-full items-center justify-center bg-unsorted-moss px-8">
-                                <View className="h-14 w-14 items-center justify-center rounded-full bg-black/20">
-                                  <Video size={26} color={colors.cream} />
+                              <View className="h-full w-full items-center justify-center bg-ink px-8">
+                                <View className="h-14 w-14 items-center justify-center rounded-full bg-surface/20">
+                                  <Video size={26} color={onInk} />
                                 </View>
-                                <Text
-                                  className="mt-4 text-center text-[16px] text-unsorted-cream"
-                                  style={{ fontFamily: "DMSans_700Bold" }}
-                                >
+                                <Text className="mt-4 text-center text-body font-semibold text-onInk">
                                   Video ready to save
                                 </Text>
                                 <Text
-                                  className="mt-1 text-center text-[13px] text-unsorted-cream"
-                                  style={{ fontFamily: "DMSans_400Regular", opacity: 0.78 }}
+                                  className="mt-1 text-center text-footnote text-onInk"
+                                  style={{ opacity: 0.78 }}
                                 >
                                   It will be attached to this thought.
                                 </Text>
                               </View>
                             ) : selectedPreviewAttachment ? (
                               <NativeImage
-                                source={{
-                                  uri: selectedPreviewAttachment.uri,
-                                }}
+                                source={{ uri: selectedPreviewAttachment.uri }}
                                 style={{ width: "100%", height: "100%" }}
                                 resizeMode="contain"
                               />
@@ -1307,7 +1411,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                             <View className="absolute left-3 right-3 top-3 flex-row items-center justify-between gap-3">
                               <Pressable
                                 onPress={() => setComposerMode("text")}
-                                className="h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-black/20"
+                                className="h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-ink/20"
                                 hitSlop={10}
                                 accessibilityLabel="Return to text"
                               >
@@ -1316,7 +1420,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                                   tint="dark"
                                   className="absolute inset-0"
                                 />
-                                <ChevronLeft size={22} color={colors.cream} />
+                                <ChevronLeft size={22} color={onInk} />
                               </Pressable>
                             </View>
                             <ScrollView
@@ -1335,13 +1439,14 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                                     "h-12 w-12 overflow-hidden rounded-xl border-2 " +
                                     ((selectedImageUri ??
                                       pendingImages[0]?.uri) === image.uri
-                                      ? "border-unsorted-persimmon"
+                                      ? "border-action"
                                       : "border-transparent")
                                   }
+                                  accessibilityLabel="Show this attachment"
                                 >
                                   {image.kind === "video" ? (
-                                    <View className="h-full w-full items-center justify-center bg-unsorted-moss">
-                                      <Video size={20} color={colors.cream} />
+                                    <View className="h-full w-full items-center justify-center bg-ink">
+                                      <Video size={20} color={onInk} />
                                     </View>
                                   ) : (
                                     <NativeImage
@@ -1354,271 +1459,243 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                               ))}
                             </ScrollView>
                           </View>
-                        ) : (
-                          <View className="flex-row items-center">
-                            <View className="h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-unsorted-mist">
-                              {pendingAttachment?.kind === "audio" ? (
-                                <AudioLines size={21} color={colors.roast} />
-                              ) : (
-                                <Video size={21} color={colors.roast} />
-                              )}
-                            </View>
-                            <Text
-                              className="ml-3 flex-1 text-[14px] text-unsorted-ink"
-                              style={{ fontFamily: "DMSans_700Bold" }}
-                            >
-                              {pendingAttachment?.kind === "audio"
-                                ? "Audio attached"
-                                : "Video attached"}
-                            </Text>
+                          <View
+                            className="items-center"
+                            style={{ marginTop: 12 }}
+                          >
                             <Pressable
-                              onPress={discardAttachment}
-                              className="h-8 w-8 items-center justify-center rounded-full bg-unsorted-mist"
-                              hitSlop={10}
-                              accessibilityLabel="Remove attachment"
+                              onPress={confirmRemoveSelectedImage}
+                              className="bg-fill items-center justify-center"
+                              style={{
+                                height: 44,
+                                borderRadius: 22,
+                                paddingHorizontal: 16,
+                              }}
+                              hitSlop={6}
+                              accessibilityLabel="Remove selected image"
                             >
-                              <X size={16} color={colors.roast} />
+                              <Text className="text-subhead font-semibold text-danger">
+                                Remove Image
+                              </Text>
                             </Pressable>
                           </View>
-                        )}
-                        {pendingImages.length === 0 && (
-                          <TextInput
-                            ref={inputRef}
-                            value={draft}
-                            onChangeText={onDraftChange}
-                            placeholder="Add a label (optional)…"
-                            placeholderTextColor={colors.moss}
-                            multiline
-                            scrollEnabled
-                            className="mt-2 flex-1 px-2 py-1 text-[16px] leading-6 text-unsorted-ink"
-                            style={{
-                              fontFamily: "DMSans_400Regular",
-                              textAlignVertical: "top",
-                            }}
-                          />
-                        )}
-                      </Animated.View>
-                    )}
-                </View>
-              </View>
-              {composerMode !== "audio" && (
-                <View className="mt-3 items-center">
-                  {composerMode === "attachment" && pendingImages.length > 0 ? (
-                    <Pressable
-                      onPress={confirmRemoveSelectedImage}
-                      className="rounded-full bg-unsorted-blush px-6 py-3"
-                      hitSlop={10}
-                      accessibilityLabel="Remove selected image"
-                    >
-                      <Text
-                        className="text-[14px] text-unsorted-roast"
-                        style={{ fontFamily: "DMSans_700Bold" }}
-                      >
-                        Remove image
-                      </Text>
-                    </Pressable>
-                  ) : (
-                    <>
-                      <Pressable
-                        onPress={saveComposer}
-                        disabled={
-                          (!pendingAttachment && previewCount === 0) ||
-                          listening
-                        }
-                        className={
-                          "items-center overflow-hidden rounded-full px-6 py-3 " +
-                          (listening
-                            ? "bg-unsorted-blush"
-                            : pendingAttachment || previewCount
-                              ? "bg-unsorted-persimmon"
-                              : "bg-unsorted-mist")
-                        }
-                        style={{
-                          opacity:
-                            listening || pendingAttachment || previewCount
-                              ? 1
-                              : 0.52,
-                        }}
-                        accessibilityLabel="Save thought"
-                      >
-                        {!listening &&
-                          (pendingAttachment || previewCount > 0) && (
-                          <Svg
-                            style={StyleSheet.absoluteFill}
-                            pointerEvents="none"
-                            viewBox="0 0 240 48"
-                            preserveAspectRatio="none"
-                          >
-                            <Defs>
-                              <LinearGradient
-                                id="capture-save-gradient-diagonal-v2"
-                                gradientUnits="userSpaceOnUse"
-                                x1="0"
-                                y1="0"
-                                x2="240"
-                                y2="48"
-                              >
-                                <Stop offset="0" stopColor="#E89A89" />
-                                <Stop offset="0.3" stopColor="#C5A096" />
-                                <Stop offset="0.58" stopColor="#9CAA94" />
-                                <Stop offset="0.82" stopColor="#899985" />
-                                <Stop offset="1" stopColor="#74876A" />
-                              </LinearGradient>
-                            </Defs>
-                            <Rect
-                              width="100%"
-                              height="100%"
-                              fill="url(#capture-save-gradient-diagonal-v2)"
-                            />
-                          </Svg>
-                        )}
-                        {listening ? (
-                          <Text
-                            className="text-[14px] text-unsorted-roast"
-                            style={{ fontFamily: "DMSans_700Bold" }}
-                          >
-                            Listening
-                          </Text>
-                        ) : (
-                          <Text
-                            className={
-                              "text-[14px] " +
-                              (pendingAttachment || previewCount
-                                ? "text-unsorted-cream"
-                                : "text-unsorted-quiet")
-                            }
-                            style={{ fontFamily: "DMSans_700Bold" }}
-                          >
-                            Save thought
-                          </Text>
-                        )}
-                      </Pressable>
-                      {draft.trim().length > 0 && !listening && (
-                        <Animated.View
-                          entering={FadeIn.duration(transitionDuration)}
-                          exiting={FadeOut.duration(transitionDuration)}
-                        >
-                          <Pressable
-                            onPress={onClear}
-                            className="mt-2 border-b border-unsorted-quiet pb-0.5"
-                            hitSlop={10}
-                            accessibilityLabel="Clear thought"
-                          >
-                            <Text
-                              className="text-[13px] text-unsorted-quiet"
-                              style={{ fontFamily: "DMSans_500Medium" }}
-                            >
-                              Clear thought
-                            </Text>
-                          </Pressable>
                         </Animated.View>
+                      ) : (
+                        <TextInput
+                          ref={inputRef}
+                          onChangeText={handleTextChange}
+                          onSelectionChange={(event) => {
+                            setCursor(event.nativeEvent.selection.start);
+                            if (forcedSelection)
+                              requestAnimationFrame(() =>
+                                setForcedSelection(undefined),
+                              );
+                          }}
+                          selection={forcedSelection}
+                          placeholder={
+                            pendingAttachment
+                              ? "Add a label (optional)…"
+                              : undefined
+                          }
+                          placeholderTextColor={secondary}
+                          autoCapitalize="sentences"
+                          multiline
+                          scrollEnabled
+                          textAlignVertical="top"
+                          style={{
+                            flex: 1,
+                            paddingTop: 4,
+                            color: ink,
+                            fontSize: tokens.type.body[0],
+                            lineHeight: tokens.type.body[1],
+                          }}
+                        >
+                          {styledLines}
+                        </TextInput>
                       )}
-                    </>
-                  )}
-                </View>
-              )}
+                    </View>
+                    {!showReview && pendingImages.length > 0 && (
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={{ flexGrow: 0, marginTop: 8 }}
+                        contentContainerStyle={{ gap: 8 }}
+                        keyboardShouldPersistTaps="always"
+                      >
+                        {pendingImages.map((image) => (
+                          <Pressable
+                            key={image.uri}
+                            onPress={() => {
+                              setSelectedImageUri(image.uri);
+                              setComposerMode("attachment");
+                            }}
+                            className="overflow-hidden rounded-media bg-fill"
+                            style={{ width: 44, height: 44 }}
+                            accessibilityLabel="Review attached photos"
+                          >
+                            {image.kind === "video" ? (
+                              <View className="h-full w-full items-center justify-center bg-ink">
+                                <Video size={16} color={onInk} />
+                              </View>
+                            ) : (
+                              <NativeImage
+                                source={{ uri: image.uri }}
+                                style={{ width: "100%", height: "100%" }}
+                                resizeMode="cover"
+                              />
+                            )}
+                          </Pressable>
+                        ))}
+                      </ScrollView>
+                    )}
+                    {pendingImages.length === 0 && pendingAttachment && (
+                      <View
+                        className="flex-row items-center"
+                        style={{ marginTop: 8, gap: 12 }}
+                      >
+                        <View className="h-11 w-11 items-center justify-center rounded-full bg-fill">
+                          {pendingAttachment.kind === "audio" ? (
+                            <AudioLines size={20} color={ink} />
+                          ) : (
+                            <Video size={20} color={ink} />
+                          )}
+                        </View>
+                        {pendingAttachment.kind === "audio" ? (
+                          <View
+                            className="flex-1 justify-center rounded-full bg-fill px-2"
+                            style={{ height: 36 }}
+                          >
+                            <AudioTimeline
+                              compact
+                              uri={pendingAttachment.uri}
+                              fallbackDurationMillis={
+                                pendingAttachment.durationMillis
+                              }
+                            />
+                          </View>
+                        ) : (
+                          <Text className="flex-1 text-subhead font-semibold text-ink">
+                            Video attached
+                          </Text>
+                        )}
+                        <CircleButton
+                          onPress={discardAttachment}
+                          label="Remove attachment"
+                          size={32}
+                        >
+                          <X size={16} color={ink} />
+                        </CircleButton>
+                      </View>
+                    )}
+                    {tagRow ? (
+                      <View style={{ marginTop: 10 }}>{tagRow}</View>
+                    ) : null}
+                    <View style={{ marginHorizontal: -8 }}>
+                      <WritingToolbar
+                        activeKind={
+                          showReview ? "plain" : kindAtCursor(draft, cursor)
+                        }
+                        onFormat={applyFormat}
+                        onCamera={() => void pickMedia("camera")}
+                        onPhoto={() => void pickMedia("library")}
+                        onSave={saveComposer}
+                        saveDisabled={saveDisabled}
+                        saveLabel={listening ? "Listening" : "Save"}
+                      />
+                    </View>
+                  </View>
+                ) : null}
+                {activeMode === "voice" ? (
+                  <View
+                    style={{ paddingHorizontal: sheetPadding, paddingTop: 11 }}
+                  >
+                    <VoicePanel
+                      recorder={recorder}
+                      phase={voicePhase === "idle" ? "hold" : voicePhase}
+                      transcript={voiceTranscript}
+                      listening={listening}
+                      levelSV={levelSV}
+                    />
+                  </View>
+                ) : null}
+                {needsDismissControl ? (
+                  <View className="mt-4 items-center">
+                    <Pressable
+                      onPress={
+                        isMediaCapture
+                          ? () => {
+                              setActiveMode("write");
+                              setComposerMode("text");
+                            }
+                          : close
+                      }
+                      className="h-8 w-14 items-center justify-center overflow-hidden rounded-full bg-ink/60"
+                      hitSlop={12}
+                      accessibilityLabel={
+                        isMediaCapture
+                          ? "Exit media capture"
+                          : "Collapse thought capture"
+                      }
+                    >
+                      <BlurView
+                        intensity={20}
+                        tint="dark"
+                        className="absolute inset-0"
+                      />
+                      {isMediaCapture ? (
+                        <X size={19} color={onInk} />
+                      ) : (
+                        <ChevronDown size={20} color={onInk} />
+                      )}
+                    </Pressable>
+                  </View>
+                ) : null}
+              </Animated.View>
             </View>
-          ) : null}
-          {activeMode === "audio" ? (
-            <View className="flex-1 items-center justify-center px-8">
-              <View
-                className={
-                  "h-16 w-16 items-center justify-center rounded-full " +
-                  (recorderState.isRecording
-                    ? "bg-unsorted-blush"
-                    : "bg-unsorted-mist")
-                }
-              >
-                <AudioLines size={28} color={colors.roast} />
-              </View>
-              <Text
-                className="mt-5 text-center text-xl text-unsorted-ink"
-                style={{ fontFamily: "Fraunces_600SemiBold" }}
-              >
-                {recorderState.isRecording
-                  ? "Recording…"
-                  : "Raw audio recording"}
-              </Text>
-              <Text
-                className="mt-2 text-center leading-5 text-unsorted-moss"
-                style={{ fontFamily: "DMSans_400Regular" }}
-              >
-                {recorderState.isRecording
-                  ? Math.ceil(recorderState.durationMillis / 1000) + " seconds"
-                  : "A recording you keep as audio, rather than turn into text."}
-              </Text>
-              <Pressable
-                onPress={() => void toggleAudioRecording()}
-                className={
-                  "mt-7 rounded-full px-6 py-3 " +
-                  (recorderState.isRecording
-                    ? "bg-unsorted-roast"
-                    : "bg-unsorted-persimmon")
-                }
-              >
-                <Text
-                  className={
-                    recorderState.isRecording
-                      ? "text-unsorted-cream"
-                      : "text-unsorted-roast"
-                  }
-                  style={{ fontFamily: "DMSans_700Bold" }}
-                >
-                  {recorderState.isRecording
-                    ? "Stop & save"
-                    : "Start recording"}
-                </Text>
-              </Pressable>
-            </View>
-          ) : null}
-          {needsDismissControl ? (
-            <View
-              className="mt-4 items-center"
-              style={
-                keyboardVisible
-                  ? {
-                      position: "absolute",
-                      bottom: 44,
-                      left: 0,
-                      right: 0,
-                      zIndex: 3,
-                    }
-                  : undefined
-              }
-            >
-            <Pressable
-              onPress={
-                isMediaCapture
-                  ? () => {
-                      setActiveMode("write");
-                      setComposerMode("text");
-                    }
-                  : close
-              }
-              className="h-8 w-14 items-center justify-center overflow-hidden rounded-full"
-              style={{ backgroundColor: "rgba(36, 32, 25, 0.6)" }}
-              hitSlop={12}
-              accessibilityLabel={
-                isMediaCapture
-                  ? "Exit media capture"
-                  : "Collapse thought capture"
-              }
-            >
-              <BlurView
-                intensity={20}
-                tint="dark"
-                className="absolute inset-0"
-              />
-              {isMediaCapture ? (
-                <X size={19} color={colors.cream} />
-              ) : (
-                <ChevronDown size={20} color={colors.cream} />
-              )}
-            </Pressable>
-            </View>
-          ) : null}
+          </GestureDetector>
+          {/* Grabber */}
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              top: 6,
+              alignSelf: "center",
+              width: 36,
+              height: 5,
+              borderRadius: 3,
+              backgroundColor: tokens.primitive.grey3,
+            }}
+          />
         </Animated.View>
-      </Animated.View>
+
+        {/* The one voice button: same spot in the peek and the voice sheet. */}
+        <Animated.View
+          pointerEvents={micActive ? "box-none" : "none"}
+          style={[
+            {
+              position: "absolute",
+              right: peekPadding,
+              bottom: bottomPad,
+              width: micSize,
+              height: micSize,
+            },
+            micStyle,
+          ]}
+        >
+          <VoiceButton
+            phase={activeMode === "voice" && isExpanded ? voicePhase : "idle"}
+            enabled={micActive}
+            lockedSV={lockedSV}
+            levelSV={levelSV}
+            sheetGesture={bodyPan}
+            onHoldStart={onHoldStart}
+            onHoldRelease={onHoldRelease}
+            onDragChange={onDragChange}
+            onLock={onVoiceLock}
+            onLockedTap={onLockedTap}
+          />
+        </Animated.View>
+      </View>
     );
   },
 );

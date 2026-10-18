@@ -7,8 +7,9 @@ type CaptureWidgetProps = { thoughtCount: number };
 function CaptureWidget(props: CaptureWidgetProps, environment: WidgetEnvironment) {
   'widget';
   const isAccented = environment.widgetRenderingMode === 'accented' || environment.widgetRenderingMode === 'vibrant';
-  const ink = isAccented ? '#FFFFFF' : '#242019';
-  const cream = isAccented ? '#FFFFFF' : '#F5F0E6';
+  const ink = isAccented ? '#FFFFFF' : '#020204';
+  const secondary = isAccented ? '#FFFFFF' : 'rgba(60,60,67,0.6)';
+  const fill = isAccented ? '#FFFFFF' : 'rgba(118,118,128,0.12)';
   const moss = isAccented ? '#FFFFFF' : '#58795C';
   const persimmon = isAccented ? '#FFFFFF' : '#EF705A';
   const openJots = props.thoughtCount ?? 0;
@@ -24,24 +25,24 @@ function CaptureWidget(props: CaptureWidgetProps, environment: WidgetEnvironment
   return (
     <VStack
       alignment="leading"
-      modifiers={[padding({ all: 18 }), containerBackground('#F5F0E6', 'widget')]}
+      modifiers={[padding({ all: 18 }), containerBackground('#FFFFFF', 'widget')]}
     >
       <HStack spacing={10}>
         {moth}
         <VStack alignment="leading" spacing={2}>
-          <Text modifiers={[font({ size: 15, weight: 'bold', design: 'rounded' }), foregroundStyle(ink)]}>JOTFUL</Text>
-          <Text modifiers={[font({ size: 12, weight: 'medium' }), foregroundStyle(moss)]}>{countLabel}</Text>
+          <Text modifiers={[font({ size: 15, weight: 'semibold' }), foregroundStyle(ink)]}>Jotful</Text>
+          <Text modifiers={[font({ size: 12, weight: 'medium' }), foregroundStyle(secondary)]}>{countLabel}</Text>
         </VStack>
       </HStack>
       <Spacer />
       <HStack spacing={12}>
         <Link destination="jotful://capture?mode=write">
-          <ZStack modifiers={[frame({ width: 48, height: 44 }), background(persimmon), cornerRadius(16)]}>
-            <Image systemName="square.and.pencil" size={18} color={ink} />
+          <ZStack modifiers={[frame({ width: 48, height: 44 }), background(ink), cornerRadius(16)]}>
+            <Image systemName="square.and.pencil" size={18} color={isAccented ? '#000000' : '#FFFFFF'} />
           </ZStack>
         </Link>
         <Link destination="jotful://capture?mode=voice">
-          <ZStack modifiers={[frame({ width: 48, height: 44 }), background(cream), cornerRadius(16)]}>
+          <ZStack modifiers={[frame({ width: 48, height: 44 }), background(fill), cornerRadius(16)]}>
             <Image systemName="mic" size={18} color={ink} />
           </ZStack>
         </Link>
