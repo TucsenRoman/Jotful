@@ -30,7 +30,7 @@ The UI is quiet greys, black and white. Colour comes only from tags.
 | To-do | `#0FA3A3` |
 | Untagged | white card, no pill |
 
-Persimmon `#EF705A`, Moth Green `#58795C`, Roast `#242019` and Cream `#F5F0E6` now live only in the moth and the wordmark. Light only; the dark values in the brand book are a proposal.
+Persimmon `#EF705A` and Moth Green `#58795C` now live only in the moth's wings and the wordmark. Roast and Cream are retired: the moth's body is Ink `#020204` on light and White `#FFFFFF` on dark, dark tiles and the app icon field are Apple graphite `#1C1C1E`, and the wordmark ends in Ink. (The SVG files, `MothMark` and the app icons still carry Roast/Cream until the build updates them.) Light only; the dark values in the brand book are a proposal.
 
 ## Type
 
@@ -45,7 +45,7 @@ Persimmon `#EF705A`, Moth Green `#58795C`, Roast `#242019` and Cream `#F5F0E6` n
 
 ## Wordmark
 
-"Jotful" in Fraunces SemiBold, 34pt, -1 letter spacing. The gradient runs 150px from the text's left edge: Persimmon → Moth Green (48%) → Roast. The header shows it with the small moth before it. Don't invent other treatments for the name.
+"Jotful" in Fraunces SemiBold, 34pt, -1 letter spacing. The gradient runs 150px from the text's left edge: Persimmon → Moth Green (48%) → Ink. The header shows it with the small moth before it. Don't invent other treatments for the name.
 
 ## Moth files
 
@@ -56,7 +56,7 @@ Persimmon `#EF705A`, Moth Green `#58795C`, Roast `#242019` and Cream `#F5F0E6` n
 | `assets/brand/moth-light.svg`, `moth-dark.svg` | Square tiles with a background field |
 | `assets/brand/moth-light-loop.svg`, `moth-dark-loop.svg`, `moth-tinted-loop.svg` | App icon appearances |
 
-- React Native: `MothMark` (`src/brand/MothMark.tsx`) is transparent by default; `dark` gives a Cream body; `withBackdrop` only for a square tile.
+- React Native: `MothMark` (`src/brand/MothMark.tsx`) is transparent by default; `dark` gives a white body (Cream until the build); `withBackdrop` only for a square tile.
 - Never redraw, stretch, rotate, mirror, outline, shadow or recolor it. Minimum 20px; clear space is a quarter of its width.
 
 ## Updating the moth or icons
