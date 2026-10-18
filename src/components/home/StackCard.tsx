@@ -38,6 +38,7 @@ type Props = {
   fan: number;
   debug: StackDebug;
   p: SharedValue<number>;
+  flying: SharedValue<number>;
   maxIdx: SharedValue<number>;
   solo: SharedValue<number>;
   swipeX: SharedValue<number>;
@@ -49,12 +50,12 @@ type Props = {
 };
 
 function StackCardBase(props: Props) {
-  const { index, zIndex, thought, isFront, interactive, more, cardW, cardTop, fan, debug, p, maxIdx, solo, swipeX, pop } = props;
+  const { index, zIndex, thought, isFront, interactive, more, cardW, cardTop, fan, debug, p, flying, maxIdx, solo, swipeX, pop } = props;
   const { onPressCard, onAction, onSwipeDetent, onSwipeCommit } = props;
   const id = thought.id;
 
   const outer = useAnimatedStyle(() => {
-    const s = poseFor(index, p.value, fan, maxIdx.value);
+    const s = poseFor(index, p.value, fan, maxIdx.value, flying.value);
     // Hidden cards return a constant style so they cost nothing per frame.
     if (s.opacity <= 0) return { opacity: 0, transform: [{ translateY: 0 }, { scaleX: 1 }, { scaleY: 1 }] };
     const front = clamp(Math.round(p.value), 0, maxIdx.value) === index;

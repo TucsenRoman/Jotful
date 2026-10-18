@@ -96,7 +96,12 @@ function JotfulApp() {
   // Home is time order, newest first (the Rolodex stops at both ends).
   const refresh = () => {
     const list = listThoughts(search, { tagIds: filterTagIds, showResolved });
-    setThoughts([...list].sort((a, b) => b.createdAt - a.createdAt));
+    // With a tag filter on, a card leads with the tag you filtered by, so a Movie + Place
+    // thought under "Place" shows as Place (its first tag colours the card).
+    const shown = filterTagIds.length
+      ? list.map((t) => ({ ...t, tags: [...t.tags.filter((tag) => filterTagIds.includes(tag.id)), ...t.tags.filter((tag) => !filterTagIds.includes(tag.id))] }))
+      : list;
+    setThoughts([...shown].sort((a, b) => b.createdAt - a.createdAt));
     setDetail((current) => {
       if (!current) return current;
       const fresh = listThoughts('', { showResolved: true }).find((thought) => thought.id === current.thought.id);

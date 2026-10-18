@@ -2,11 +2,12 @@
 // One shared value, p = cards fallen so far, drives every card on the UI thread.
 // Drag down flips the front card forward; drag up brings the previous one back. No loop.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Image, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
+import { Image, StyleSheet, TextInput, View, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   cancelAnimation,
   useAnimatedReaction,
+  useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
@@ -38,6 +39,8 @@ import {
 } from './stackMath';
 
 const tokens = require('../../theme/tokens');
+// The floating count changes every frame on the UI thread (a React Text lagged by 3-4 cards).
+const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
 const COUNT_FADE_IN = 200;
 const COUNT_HOLD: number = tokens.motion.countFadeOut; // 600
 const COUNT_LINE = 15;
@@ -49,6 +52,7 @@ const Z_GAP = 600;
 // mounted and drawn (with 10, cards ahead popped in late and the fling looked choppy).
 // Cards travelled = GLIDE_K * (cards per second)^2: ~4 cards/s -> 1.6, ~12 cards/s -> 14.
 const GLIDE_K = 0.1;
+const MAX_SPEED = 9; // cards per second a glide can move at most
 const POOL = 18;
 const AHEAD = 12; // slots from the front card back; the other 6 hold cards that already fell (a drag up brings them back)
 // iOS scroll-view deceleration (0.998 per ms): a hard flick coasts through several cards.
@@ -255,7 +259,8 @@ export function ThoughtStack(props: ThoughtStackProps) {
           if (!flying.value) notify(tg);
           p.value = withSpring(
             tg,
-            { duration: Math.min(1600, 380 + 110 * dist), dampingRatio: 1, velocity: v, overshootClamping: true },
+            // Capped at MAX_SPEED so a long glide stays readable instead of strobing.
+            { duration: Math.max(380 + 60 * Math.min(dist, 4), (dist / MAX_SPEED) * 1000), dampingRatio: 1, velocity: Math.sign(v) * Math.min(Math.abs(v), MAX_SPEED), overshootClamping: true },
             (finished) => {
               if (!flying.value) return;
               flying.value = 0;
@@ -343,6 +348,10 @@ export function ThoughtStack(props: ThoughtStackProps) {
   const labels = useMemo(() => thoughts.map((t) => shortDate(t.createdAt)), [thoughts]);
 
   const stackStyle = useAnimatedStyle(() => ({ opacity: stackFade.value }));
+  const countProps = useAnimatedProps(() => {
+    const i = clamp(Math.round(p.value), 0, maxIdx.value);
+    return { text: moreLabel(i, maxIdx.value + 1, SHOW) } as object;
+  });
   const countStyle = useAnimatedStyle(() => {
     const max = maxIdx.value;
     const depth = Math.min(SHOW, max - clamp(p.value, 0, max));
@@ -380,12 +389,13 @@ export function ThoughtStack(props: ThoughtStackProps) {
                     thought={t}
                     isFront={i === frontIndex}
                     interactive={i >= frontIndex}
-                    more={moreLabel(i, N)}
+                    more={moreLabel(i, N, SHOW)}
                     cardW={cardW}
                     cardTop={cardTop}
                     fan={fan}
                     debug={debug}
                     p={p}
+                    flying={flying}
                     maxIdx={maxIdx}
                     solo={solo}
                     swipeX={swipeX}
@@ -400,13 +410,14 @@ export function ThoughtStack(props: ThoughtStackProps) {
             </Animated.View>
           </GestureDetector>
 
-          <Animated.Text
+          <AnimatedTextInput
             pointerEvents="none"
-            numberOfLines={1}
+            editable={false}
+            underlineColorAndroid="transparent"
+            defaultValue={moreLabel(frontIndex, N, SHOW)}
+            animatedProps={countProps}
             style={[styles.count, { left: CARD_LEFT, width: cardW }, countStyle]}
-          >
-            {moreLabel(frontIndex, N)}
-          </Animated.Text>
+          />
 
           <DateScrubber
             p={p}
@@ -436,6 +447,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 12,
     lineHeight: COUNT_LINE,
+    padding: 0,
     color: tokens.color.faint,
   },
 });

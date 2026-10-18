@@ -81,7 +81,12 @@ export function metaLabel(t: Thought) {
   return parts.join(' · ');
 }
 
-export function moreLabel(index: number, count: number) {
+// Cards you can't see yet: the fan already shows `shown` cards behind the front one.
+// Nothing when all of them are on screen; 'Last one' on the oldest card.
+export function moreLabel(index: number, count: number, shown = 4) {
+  'worklet';
   const left = count - 1 - index;
-  return left > 0 ? `${left} more` : 'Last one';
+  if (left <= 0) return 'Last one';
+  const hidden = left - shown;
+  return hidden > 0 ? `${hidden} more` : '';
 }

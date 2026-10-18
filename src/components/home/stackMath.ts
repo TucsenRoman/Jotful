@@ -19,6 +19,7 @@ export const FADE_FROM = 0.7;
 export const COMMIT = 0.35;
 export const FLICK = 0.5; // px/ms
 export const RUBBER = 0.3;
+export const EXIT_SHRINK = 0.15; // the leaving front card shrinks this much as it goes
 export const POP_RISE = 26; // how far below its place a new back card starts
 export const JUMP = 2; // scrubber jumps past this many cards skip the fall
 
@@ -67,7 +68,8 @@ function stretch(over: number) {
 }
 
 // Pose of the card at time-order index i for a given p (max = last index).
-export function poseFor(i: number, p: number, fan = 1, max = Number.MAX_SAFE_INTEGER): CardPose {
+// flying = 1 during a long glide: new back cards skip their pop so the stack doesn't strobe.
+export function poseFor(i: number, p: number, fan = 1, max = Number.MAX_SAFE_INTEGER, flying = 0): CardPose {
   'worklet';
   if (p < 0 || p > max) {
     const atEnd = p < 0 ? 0 : max;
@@ -88,12 +90,12 @@ export function poseFor(i: number, p: number, fan = 1, max = Number.MAX_SAFE_INT
   const k = i - f;
   if (k < 0) return { y: D, scaleX: 1 + GROW, scaleY: 0.1, dim: 0, opacity: 0 };
   if (k === 0) {
-    // Flat fall for now (user, 2026-10-18): slide down, grow a little, fade. The forward
-    // tilt comes back once it can render without flicker on iOS.
+    // Flat fall for now (user, 2026-10-18): slide down, shrink, fade. The forward tilt
+    // comes back once it can render without flicker on iOS.
     return {
       y: D * t,
-      scaleX: 1 + GROW * t,
-      scaleY: 1 + GROW * t,
+      scaleX: 1 - EXIT_SHRINK * t,
+      scaleY: 1 - EXIT_SHRINK * t,
       dim: 0,
       // Fades the whole way out (it used to stay solid until 70%, which felt harsh).
       opacity: 1 - t * t * (3 - 2 * t),
@@ -105,7 +107,7 @@ export function poseFor(i: number, p: number, fan = 1, max = Number.MAX_SAFE_INT
   // A card arriving at the back pops up into the fan: from half size and a little lower,
   // easing up to its place as it fades in (e = 1 hidden, 0 in place).
   const e = clamp(d - SHOW, 0, 1);
-  const pop = e * e * (3 - 2 * e);
+  const pop = flying ? 0 : e * e * (3 - 2 * e);
   return {
     y: stackY(d, fan) + POP_RISE * pop,
     scaleX: sc * (1 - 0.5 * pop),
