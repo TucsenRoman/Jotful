@@ -2,7 +2,7 @@
 // One shared value, p = cards fallen so far, drives every card on the UI thread.
 // Drag down flips the front card forward; drag up brings the previous one back. No loop.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
+import { Image, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   cancelAnimation,
@@ -43,7 +43,14 @@ const tokens = require('../../theme/tokens');
 const COUNT_FADE_IN = 200;
 const COUNT_HOLD: number = tokens.motion.countFadeOut; // 600
 const COUNT_LINE = 15;
-const POOL = 10; // mounted card slots
+// iOS sorts 3D layers by depth: with zIndex 1 apart the tilting card sliced through the cards
+// behind it (the flicker; flat flip stopped it). Spacing them wider than a card is tall keeps
+// the tilt and makes the cut-through impossible.
+const Z_GAP = 600;
+// Mounted card slots. Wide enough that a hard fling runs into cards that are already
+// mounted and drawn (with 10, cards ahead popped in late and the fling looked choppy).
+const POOL = 18;
+const AHEAD = 12; // slots from the front card back; the other 6 hold cards that already fell (a drag up brings them back)
 const FLING = 900; // pt/s: below, a release moves at most one card
 // iOS scroll-view deceleration (0.998 per ms): a hard flick coasts through several cards.
 // the same feel as an iOS scroll view decelerating at 0.997/ms.
@@ -97,6 +104,14 @@ export function ThoughtStack(props: ThoughtStackProps) {
   const swipeX = useSharedValue(0);
   const pop = useSharedValue(1);
   const flying = useSharedValue(0); // a hard flick is decaying through several cards
+
+  // Warm the image cache for remote photos (the sample thoughts) so a fast fling
+  // doesn't show cards whose photo is still downloading. Local photos load from disk.
+  useEffect(() => {
+    thoughts.forEach((t) => {
+      if (t.attachmentKind === 'image' && t.attachmentUri?.startsWith('http')) void Image.prefetch(t.attachmentUri).catch(() => {});
+    });
+  }, [thoughts]);
 
   // ---- keep p on the same thought when the list changes ----
   const idsKey = useMemo(() => thoughts.map((t) => t.id).join(','), [thoughts]);
@@ -176,7 +191,7 @@ export function ThoughtStack(props: ThoughtStackProps) {
     () => {
       const i = clamp(Math.round(p.value), 0, maxIdx.value);
       const settled = !dragging.value && !flying.value && Math.abs(p.value - target.value) < 0.01;
-      return settled || Math.abs(i - jsFront.value) >= 3 ? i : -1;
+      return settled || Math.abs(i - jsFront.value) >= 4 ? i : -1; // 4 < the 6 behind, so a card coming back is always mounted
     },
     (i) => {
       if (i >= 0 && i !== jsFront.value) {
@@ -347,12 +362,12 @@ export function ThoughtStack(props: ThoughtStackProps) {
     };
   });
 
-  // A fixed pool of slots, keyed by slot. Slot s shows the one index in [front-3, front+6] with
+  // A fixed pool of slots, keyed by slot. Slot s shows the one index in [front-6, front+11] with
   // index % POOL === s, so a slot only changes thought while it is invisible (fallen, or deeper
   // than the fan), and no card ever mounts or remounts while it can be seen.
   const slots: { slot: number; index: number }[] = [];
   for (let s = 0; s < POOL; s++) {
-    const lo = frontIndex - 3;
+    const lo = frontIndex - (POOL - AHEAD);
     const index = lo + ((((s - lo) % POOL) + POOL) % POOL);
     if (index >= 0 && index < N) slots.push({ slot: s, index });
   }
@@ -371,7 +386,7 @@ export function ThoughtStack(props: ThoughtStackProps) {
                   <StackCard
                     key={`slot-${slot}`}
                     index={i}
-                    zIndex={N - i}
+                    zIndex={(N - i) * Z_GAP}
                     thought={t}
                     isFront={i === frontIndex}
                     interactive={i >= frontIndex}
