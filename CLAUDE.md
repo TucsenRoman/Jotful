@@ -15,7 +15,7 @@ Expo SDK 57 · React Native 0.86 · TypeScript · NativeWind (Tailwind 3) · exp
 ## Commands
 
 ```bash
-npx expo start --dev-client      # dev server for an installed dev build
+npm run dev                      # dev server for the "Jotful Dev" app (APP_VARIANT=development)
 npx tsc --noEmit                 # typecheck
 npm run verify:segmentation      # segmentation checks
 npm run icons:ios                # re-render iOS icon variants from assets/brand
@@ -25,8 +25,8 @@ npm run icons:ios                # re-render iOS icon variants from assets/brand
 
 | Profile | Use |
 |---|---|
-| `development` | Dev client including the Watch target |
-| `development-phone` | Dev client without the Watch target |
+| `development` | "Jotful Dev" app (bundle id `com.tucsenroman.unsorted.dev`, scheme `jotful-dev`), including the Watch target. Installs next to the store/TestFlight app |
+| `development-phone` | Same "Jotful Dev" app without the Watch target |
 | `preview` | Internal test build |
 | `production` | App Store build. Phone-only for now (`JOTFUL_PHONE_ONLY_BUILD=1`) until the Watch provisioning profile exists |
 | `production-watch` | App Store/TestFlight build including the Watch app. Testing it before it replaces `production` |
@@ -39,14 +39,14 @@ npm run icons:ios                # re-render iOS icon variants from assets/brand
 ## Verifying a change
 
 1. Typecheck, and run `verify:segmentation` if capture or classification logic changed.
-2. Check it on the iPhone through the dev client (`npx expo start --dev-client`).
+2. Check it on the iPhone in the "Jotful Dev" app (`npm run dev`). Its data is separate from the store app's.
 3. Before any release build, run [RELEASE_TEST_PLAN.md](RELEASE_TEST_PLAN.md) and work through [APP_STORE_CONNECT_CHECKLIST.md](APP_STORE_CONNECT_CHECKLIST.md).
 
 ## UI foundations
 - Brand book: https://claude.ai/artifact/88xS8w3fFuU4Key1M8FjHA (source: [BRAND_BOOK.html](BRAND_BOOK.html); refresh with the `brand-book` skill)
 - Design (approved Oct 2026 reskin, being built): [design/README.md](design/README.md) (mocks + decisions). Specs: `.claude/skills/apple-wallet-dna` (home stack, cards) and `apple-photos-dna` (detail, media, scrubber).
 - Docs: [BRAND.md](BRAND.md) holds the short rules for code: colors, tag palette, type, sizes, wordmark, moth files.
-- Tokens: still `tailwind.config.js` (`unsorted-*`, old look) plus a `colors` object in `App.tsx` until the reskin's single tokens file lands.
+- Tokens: `src/theme/tokens.js` (source of truth; `tailwind.config.js` reads it for NativeWind classes). The old `unsorted-*` colours remain only until nothing uses them.
 - Fonts: Fraunces 600 for the wordmark only; the system font for everything else (DM Sans goes with the reskin).
 - Platforms: Expo (iPhone), light theme only for now.
 - Signature: moth mark, gradient Fraunces wordmark, Rolodex stack (front card falls forward), date scrubber, bright tag pills on tinted cards, swipe right to resolve / left to pin, black Ask AI pill, one-card detail view, capture sheet with a random prompt, one-button voice capture, "Hold that thought." empty state.

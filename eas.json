@@ -6,13 +6,17 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "APP_VARIANT": "development"
+      }
     },
     "development-phone": {
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "JOTFUL_PHONE_ONLY_BUILD": "1"
+        "JOTFUL_PHONE_ONLY_BUILD": "1",
+        "APP_VARIANT": "development"
       }
     },
     "preview": {

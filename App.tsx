@@ -2,6 +2,7 @@ import './global.css';
 
 import { Fraunces_600SemiBold, useFonts as useFraunces } from '@expo-google-fonts/fraunces';
 
+import Constants from 'expo-constants';
 import { StatusBar } from 'expo-status-bar';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
@@ -111,7 +112,7 @@ function JotfulApp() {
   useEffect(() => startWatchSync(() => refreshRef.current()), []);
   useEffect(() => {
     if (Platform.OS !== 'ios') return;
-    CaptureWidget.updateSnapshot({ thoughtCount: thoughts.filter((thought) => thought.resolvedAt === null).length });
+    CaptureWidget.updateSnapshot({ thoughtCount: thoughts.filter((thought) => thought.resolvedAt === null).length, scheme: String(Constants.expoConfig?.scheme ?? 'jotful') });
     RecentsWidget.updateSnapshot({ items: listRecentThoughts(5).map(({ id, text, kind, tags: [first] }) => ({ id, text, kind, ...(first ? { tag: { name: first.name, color: tokens.tag[first.color] } } : {}) })) });
   }, [thoughts]);
 

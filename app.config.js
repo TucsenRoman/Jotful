@@ -11,4 +11,15 @@ if (process.env.JOTFUL_PHONE_ONLY_BUILD === '1') {
   });
 }
 
+// Dev builds install next to the TestFlight / App Store app (same setup as viseez):
+// their own name, bundle id and link scheme. APP_VARIANT=development is set by
+// eas.json's development profiles and when starting the dev server. The widget
+// App Group (group.<bundle id>) and the Watch app (<bundle id>.watch) follow the
+// bundle id, so the dev app's widgets and Watch never touch the store app's data.
+if (process.env.APP_VARIANT === 'development') {
+  expo.name = 'Jotful Dev';
+  expo.scheme = 'jotful-dev';
+  expo.ios = { ...expo.ios, bundleIdentifier: 'com.tucsenroman.unsorted.dev' };
+}
+
 module.exports = { expo };

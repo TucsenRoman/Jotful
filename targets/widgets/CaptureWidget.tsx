@@ -2,7 +2,9 @@ import { Ellipse, HStack, Image, Link, Spacer, Text, VStack, ZStack } from '@exp
 import { background, containerBackground, cornerRadius, font, foregroundStyle, frame, offset, padding, rotationEffect } from '@expo/ui/swift-ui/modifiers';
 import { createWidget, type WidgetEnvironment } from 'expo-widgets';
 
-type CaptureWidgetProps = { thoughtCount: number };
+// `scheme` comes from the app (jotful, or jotful-dev in the dev app) so the dev app's
+// widget opens the dev app, not the store one.
+type CaptureWidgetProps = { thoughtCount: number; scheme?: string };
 
 function CaptureWidget(props: CaptureWidgetProps, environment: WidgetEnvironment) {
   'widget';
@@ -13,6 +15,7 @@ function CaptureWidget(props: CaptureWidgetProps, environment: WidgetEnvironment
   const moss = isAccented ? '#FFFFFF' : '#58795C';
   const persimmon = isAccented ? '#FFFFFF' : '#EF705A';
   const openJots = props.thoughtCount ?? 0;
+  const scheme = props.scheme ?? 'jotful';
   const countLabel = openJots === 1 ? '1 jot waiting' : `${openJots} jots waiting`;
   const moth = (
     <ZStack modifiers={[frame({ width: 54, height: 46 })]}>
@@ -36,12 +39,12 @@ function CaptureWidget(props: CaptureWidgetProps, environment: WidgetEnvironment
       </HStack>
       <Spacer />
       <HStack spacing={12}>
-        <Link destination="jotful://capture?mode=write">
+        <Link destination={scheme + '://capture?mode=write'}>
           <ZStack modifiers={[frame({ width: 48, height: 44 }), background(ink), cornerRadius(16)]}>
             <Image systemName="square.and.pencil" size={18} color={isAccented ? '#000000' : '#FFFFFF'} />
           </ZStack>
         </Link>
-        <Link destination="jotful://capture?mode=voice">
+        <Link destination={scheme + '://capture?mode=voice'}>
           <ZStack modifiers={[frame({ width: 48, height: 44 }), background(fill), cornerRadius(16)]}>
             <Image systemName="mic" size={18} color={ink} />
           </ZStack>
