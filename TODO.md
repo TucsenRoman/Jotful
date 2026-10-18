@@ -3,7 +3,9 @@
 Temporary list. Once tasks have a more stable home (a Notion database, for example), move the open items there, point `CLAUDE.md` at it, and delete this file.
 
 ## 1.0.3: Apple Watch
-- [ ] TestFlight build with the Watch app (`eas build -p ios --profile production-watch`, then `eas submit -p ios --profile production-watch`). Test a Watch capture landing on the iPhone.
+- [x] Builds with the Watch app (`production-watch` profile): 15 and 16 reached TestFlight; 17 (`0f9ccfd`, ships the Watch JS as source) finished on EAS Oct 14, 2026.
+- [ ] Check build 17 is in TestFlight (submit it if not), then test a Watch capture landing on the iPhone on real devices.
+- [ ] Merge `feat/watch-sync` into main once the Watch test passes.
 
 ## 1.0.2 release
 - [x] Watch 1.0.2 (build 10, EAS `394acc07`) through App Store review. Approved Oct 11, 2026; auto-released. Carries the Jotful alert text, 5 new screenshots, and the new support and privacy links.
@@ -16,3 +18,5 @@ Temporary list. Once tasks have a more stable home (a Notion database, for examp
 ## Next
 - [ ] Set up the Apple Watch provisioning profile, then drop `JOTFUL_PHONE_ONLY_BUILD` from the `production` profile so the Watch app ships.
 - [x] Watch capture acknowledgement and deduplication: the iPhone saves each Watch capture once by id and confirms it back (`src/watchSync.ts`). Needs a real-device test.
+- [ ] **Security alerts (found 2026-10-18).** `npm audit`: 45 issues (1 critical `shell-quote`, 28 high), nearly all in Expo and Metro build tooling; most fixes come with the next Expo SDK. No Dependabot yet.
+- [ ] **Local Node.js is 20** (end of life Oct 2026). Upgrade on this PC.
