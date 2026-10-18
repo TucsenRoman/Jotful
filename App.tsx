@@ -1,4 +1,5 @@
 import './global.css';
+import './src/theme/interop';
 
 import { Fraunces_600SemiBold, useFonts as useFraunces } from '@expo-google-fonts/fraunces';
 

@@ -1,6 +1,6 @@
 import { BlurView } from 'expo-blur';
 import { ListFilter, Search, Settings, X } from 'lucide-react-native';
-import { Modal, Pressable, Switch, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Stop, Text as SvgText } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { MothMark } from '../../brand/MothMark';
@@ -18,13 +18,17 @@ export function Wordmark() {
 
 // White Liquid-Glass-style capsule holding icon buttons (APPLE_SPECS: glass only on controls).
 export function GlassGroup({ children }: { children: React.ReactNode }) {
-  return <View className="flex-row overflow-hidden rounded-full" style={{ shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } }}>
-    <BlurView intensity={40} tint="light" className="flex-row items-center bg-surface/70 px-1">{children}</BlurView>
+  // BlurView ignores NativeWind classes, so the glass is a fill behind the row.
+  return <View style={{ borderRadius: 999, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } }}>
+    <View style={{ borderRadius: 999, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4, backgroundColor: 'rgba(255,255,255,0.72)' }}>
+      <BlurView intensity={40} tint="light" style={StyleSheet.absoluteFill} />
+      {children}
+    </View>
   </View>;
 }
 
 export function GlassIcon({ onPress, label, children }: { onPress(): void; label: string; children: React.ReactNode }) {
-  return <Pressable onPress={onPress} accessibilityLabel={label} hitSlop={4} className="h-control w-control items-center justify-center">{children}</Pressable>;
+  return <Pressable onPress={onPress} accessibilityLabel={label} hitSlop={4} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>{children}</Pressable>;
 }
 
 type HeaderProps = {
@@ -84,14 +88,15 @@ export function FilterMenu({ visible, top, tags, selectedIds, showResolved, onTo
   return <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
     <Pressable className="flex-1" onPress={onClose} accessibilityLabel="Close filter">
       <Pressable onPress={() => {}} className="absolute overflow-hidden rounded-card" style={{ top, left: tokens.space.margin, width: 300, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 24, shadowOffset: { width: 0, height: 10 } }}>
-        <BlurView intensity={60} tint="light" className="bg-surface/80 p-4">
+        <View style={{ padding: 16, backgroundColor: 'rgba(255,255,255,0.86)' }}>
+          <BlurView intensity={60} tint="light" style={StyleSheet.absoluteFill} />
           <Text className="mb-2 text-footnote text-secondary">Tags</Text>
           <View className="flex-row flex-wrap gap-2">
             {tags.map((tag) => <TagPill key={tag.id} tag={tag} selected={selectedIds.includes(tag.id)} onPress={() => { void Haptics.selectionAsync(); onToggleTag(tag.id); }} />)}
           </View>
           <View className="my-3 h-px bg-fill" />
           <View className="flex-row items-center justify-between"><Text className="text-body text-ink">Show resolved</Text><Switch value={showResolved} onValueChange={onToggleResolved} /></View>
-        </BlurView>
+        </View>
       </Pressable>
     </Pressable>
   </Modal>;

@@ -9,6 +9,7 @@ import Animated, {
   useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
+  withDecay,
   withDelay,
   withSequence,
   withSpring,
@@ -42,6 +43,15 @@ const tokens = require('../../theme/tokens');
 const COUNT_FADE_IN = 200;
 const COUNT_HOLD: number = tokens.motion.countFadeOut; // 600
 const COUNT_LINE = 15;
+const POOL = 10; // mounted card slots
+const FLING = 1200; // pt/s: below, a release moves at most one card
+// Reanimated's decay slows by exp(-(1 - d) * 0.1 * ms), so 0.97 here travels about v * 0.33s:
+// the same feel as an iOS scroll view decelerating at 0.997/ms.
+const FLING_DECEL = 0.97;
+
+const selection = () => {
+  void Haptics.selectionAsync();
+};
 
 export type ThoughtStackProps = {
   thoughts: Thought[]; // filtered, newest first; index 0 = front card
@@ -85,6 +95,7 @@ export function ThoughtStack(props: ThoughtStackProps) {
   const solo = useSharedValue(0); // others fade while the front card slides
   const swipeX = useSharedValue(0);
   const pop = useSharedValue(1);
+  const flying = useSharedValue(0); // a hard flick is decaying through several cards
 
   // ---- keep p on the same thought when the list changes ----
   const idsKey = useMemo(() => thoughts.map((t) => t.id).join(','), [thoughts]);
@@ -150,7 +161,9 @@ export function ThoughtStack(props: ThoughtStackProps) {
   useAnimatedReaction(
     () => clamp(Math.round(p.value), 0, maxIdx.value),
     (i, prev) => {
-      if (i !== prev) scheduleOnRN(setFrontIndex, i);
+      if (i === prev) return;
+      scheduleOnRN(setFrontIndex, i);
+      if (flying.value && prev !== null) scheduleOnRN(selection); // a light tick per card while flying
     },
   );
 
@@ -169,6 +182,7 @@ export function ThoughtStack(props: ThoughtStackProps) {
         .activeOffsetY([-8, 8])
         .failOffsetX([-12, 12])
         .onStart(() => {
+          flying.value = 0;
           cancelAnimation(p);
           p0.value = unrubber(p.value, maxIdx.value);
           dragging.value = 1;
@@ -183,6 +197,32 @@ export function ThoughtStack(props: ThoughtStackProps) {
         })
         .onEnd((e) => {
           const max = maxIdx.value;
+          if (Math.abs(e.velocityY) >= FLING && p.value >= 0 && p.value <= max && max > 0) {
+            // Hard flick: decay with the release velocity (rubber band at the ends),
+            // then snap to the nearest card. Ticks per card on the way, one rigid tap at the end.
+            flying.value = 1;
+            const dir = Math.sign(e.velocityY);
+            p.value = withDecay(
+              {
+                velocity: e.velocityY / D,
+                deceleration: FLING_DECEL,
+                clamp: [0, max],
+                rubberBandEffect: true,
+                rubberBandFactor: 0.6,
+              },
+              (finished) => {
+                flying.value = 0;
+                if (!finished) return;
+                const tg = clamp(Math.round(p.value), 0, maxIdx.value);
+                target.value = tg;
+                notify(tg);
+                // Decay stops at ~1 card/s; hand that speed to the spring when it points at the target.
+                const vel = (tg - p.value) * dir > 0 ? dir : 0;
+                p.value = withSpring(tg, { ...SPRING, velocity: vel });
+              },
+            );
+            return;
+          }
           const v = e.velocityY / 1000; // px/ms
           const f = Math.floor(p.value);
           const frac = p.value - f;
@@ -203,7 +243,7 @@ export function ThoughtStack(props: ThoughtStackProps) {
           dragging.value = 0;
           pulse();
         }),
-    [p, p0, maxIdx, notified, dragging, target, notify, pulse],
+    [p, p0, maxIdx, notified, dragging, target, flying, notify, pulse],
   );
 
   // ---- JS callbacks (stable, read the latest props through a ref) ----
@@ -218,6 +258,7 @@ export function ThoughtStack(props: ThoughtStackProps) {
         return;
       }
       // Tap a card in the fan: spin to it.
+      flying.value = 0;
       cancelAnimation(p);
       target.value = index;
       p.value = withSpring(index, SPRING);
@@ -226,7 +267,7 @@ export function ThoughtStack(props: ThoughtStackProps) {
         rigid();
       }
     },
-    [p, target, notified],
+    [p, target, notified, flying],
   );
 
   const onAction = useCallback(
@@ -283,10 +324,15 @@ export function ThoughtStack(props: ThoughtStackProps) {
     };
   });
 
-  const first = Math.max(0, frontIndex - 2);
-  const last = Math.min(N - 1, frontIndex + SHOW + 2);
-  const windowed: number[] = [];
-  for (let i = last; i >= first; i--) windowed.push(i); // oldest first, so newer cards draw on top
+  // A fixed pool of slots, keyed by slot. Slot s shows the one index in [front-3, front+6] with
+  // index % POOL === s, so a slot only changes thought while it is invisible (fallen, or deeper
+  // than the fan), and no card ever mounts or remounts while it can be seen.
+  const slots: { slot: number; index: number }[] = [];
+  for (let s = 0; s < POOL; s++) {
+    const lo = frontIndex - 3;
+    const index = lo + ((((s - lo) % POOL) + POOL) % POOL);
+    if (index >= 0 && index < N) slots.push({ slot: s, index });
+  }
 
   return (
     <View style={styles.root} onLayout={onLayout}>
@@ -296,12 +342,13 @@ export function ThoughtStack(props: ThoughtStackProps) {
         <>
           <GestureDetector gesture={pan}>
             <Animated.View style={[StyleSheet.absoluteFill, stackStyle]}>
-              {windowed.map((i) => {
+              {slots.map(({ slot, index: i }) => {
                 const t = thoughts[i];
                 return (
                   <StackCard
-                    key={t.id}
+                    key={`slot-${slot}`}
                     index={i}
+                    zIndex={N - i}
                     thought={t}
                     isFront={i === frontIndex}
                     interactive={i >= frontIndex}

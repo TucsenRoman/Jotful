@@ -1,4 +1,6 @@
-// One card in the Rolodex: its pose comes from p on the UI thread (stackMath.poseFor).
+// One slot in the Rolodex: its pose comes from p on the UI thread (stackMath.poseFor).
+// Slots are pooled (ThoughtStack keys them by slot, not by thought), so a card never remounts
+// mid-animation; draw order is a fixed zIndex per time index (newer above older).
 // The front card also takes the horizontal swipe (right = resolve, left = pin).
 import { memo, useMemo } from 'react';
 import { StyleSheet } from 'react-native';
@@ -26,6 +28,7 @@ export type SwipeAction = 'resolve' | 'pin' | 'later';
 
 type Props = {
   index: number;
+  zIndex: number;
   thought: Thought;
   isFront: boolean;
   interactive: boolean;
@@ -44,7 +47,7 @@ type Props = {
 };
 
 function StackCardBase(props: Props) {
-  const { index, thought, isFront, interactive, more, cardW, cardTop, p, maxIdx, solo, swipeX, pop } = props;
+  const { index, zIndex, thought, isFront, interactive, more, cardW, cardTop, p, maxIdx, solo, swipeX, pop } = props;
   const { onPressCard, onAction, onSwipeDetent, onSwipeCommit } = props;
   const id = thought.id;
 
@@ -52,9 +55,8 @@ function StackCardBase(props: Props) {
     const s = poseFor(index, p.value);
     const front = clamp(Math.round(p.value), 0, maxIdx.value) === index;
     const others = front ? 0 : solo.value;
-    const opacity = s.opacity * (1 - others);
     return {
-      opacity,
+      opacity: s.opacity * (1 - others),
       transform: [
         { perspective: 900 },
         { translateY: s.y },
@@ -66,66 +68,74 @@ function StackCardBase(props: Props) {
 
   const dim = useAnimatedStyle(() => ({ opacity: poseFor(index, p.value).dim }));
 
-  const face = useAnimatedStyle(() => ({
-    transform: [{ translateX: isFront ? swipeX.value : 0 }],
+  // Shadow and the quiet count follow the distance from the front, so nothing pops at a swap.
+  const face = useAnimatedStyle(() => {
+    const d = clamp(Math.abs(index - p.value), 0, 1);
+    return {
+      shadowOpacity: 0.16 - 0.06 * d,
+      shadowRadius: 14 - 10 * d,
+      shadowOffset: { width: 0, height: 10 - 12 * d },
+      transform: [{ translateX: isFront ? swipeX.value : 0 }],
+    };
+  });
+  const moreStyle = useAnimatedStyle(() => ({
+    opacity: clamp(1 - 2 * Math.abs(index - p.value), 0, 1),
   }));
 
   const det = useSharedValue(0);
-  const swipe = useMemo(() => {
-    return Gesture.Pan()
-      .enabled(isFront)
-      .activeOffsetX([-12, 12])
-      .failOffsetY([-10, 10])
-      .onStart(() => {
-        det.value = 0;
-        solo.value = withTiming(1, { duration: FADE });
-      })
-      .onUpdate((e) => {
-        const x = clamp(e.translationX, -M.swipeClamp, M.swipeClamp);
-        swipeX.value = x;
-        const nd = x <= -M.swipeLong ? 2 : Math.abs(x) >= M.swipeDetent ? 1 : 0;
-        if (nd !== det.value) {
-          if (nd > det.value) scheduleOnRN(onSwipeDetent, nd);
-          det.value = nd;
-        }
-      })
-      .onEnd(() => {
-        const x = swipeX.value;
-        const action: SwipeAction | null =
-          x >= M.swipeDetent ? 'resolve' : x <= -M.swipeLong ? 'later' : x <= -M.swipeDetent ? 'pin' : null;
-        if (!action) {
-          swipeX.value = withSpring(0, SPRING);
-          solo.value = withTiming(0, { duration: FADE });
-          return;
-        }
-        const off = action === 'resolve' ? 110 : action === 'later' ? -130 : -110;
-        swipeX.value = withTiming(off, { duration: FADE }, (done) => {
-          if (!done) return;
-          pop.value = withSequence(withTiming(1.12, { duration: 90 }), withTiming(1, { duration: 150 }));
-          scheduleOnRN(onSwipeCommit, action, id);
-          swipeX.value = withDelay(120, withSpring(0, SPRING));
-          solo.value = withDelay(420, withTiming(0, { duration: FADE }));
-        });
-      });
-  }, [isFront, id, onSwipeDetent, onSwipeCommit, solo, swipeX, pop, det]);
+  const swipe = useMemo(
+    () =>
+      Gesture.Pan()
+        .enabled(isFront)
+        .activeOffsetX([-12, 12])
+        .failOffsetY([-10, 10])
+        .onStart(() => {
+          det.value = 0;
+          solo.value = withTiming(1, { duration: FADE });
+        })
+        .onUpdate((e) => {
+          const x = clamp(e.translationX, -M.swipeClamp, M.swipeClamp);
+          swipeX.value = x;
+          const nd = x <= -M.swipeLong ? 2 : Math.abs(x) >= M.swipeDetent ? 1 : 0;
+          if (nd !== det.value) {
+            if (nd > det.value) scheduleOnRN(onSwipeDetent, nd);
+            det.value = nd;
+          }
+        })
+        .onEnd(() => {
+          const x = swipeX.value;
+          const action: SwipeAction | null =
+            x >= M.swipeDetent ? 'resolve' : x <= -M.swipeLong ? 'later' : x <= -M.swipeDetent ? 'pin' : null;
+          if (!action) {
+            swipeX.value = withSpring(0, SPRING);
+            solo.value = withTiming(0, { duration: FADE });
+            return;
+          }
+          const off = action === 'resolve' ? 110 : action === 'later' ? -130 : -110;
+          swipeX.value = withTiming(off, { duration: FADE }, (done) => {
+            if (!done) return;
+            pop.value = withSequence(withTiming(1.12, { duration: 90 }), withTiming(1, { duration: 150 }));
+            scheduleOnRN(onSwipeCommit, action, id);
+            swipeX.value = withDelay(120, withSpring(0, SPRING));
+            solo.value = withDelay(420, withTiming(0, { duration: FADE }));
+          });
+        }),
+    [isFront, id, onSwipeDetent, onSwipeCommit, solo, swipeX, pop, det],
+  );
 
   return (
     <Animated.View
       pointerEvents={interactive ? 'box-none' : 'none'}
-      style={[styles.slot, { top: cardTop, width: cardW }, outer]}
+      style={[styles.slot, { top: cardTop, width: cardW, zIndex }, outer]}
     >
       {isFront && <SwipeActions x={swipeX} pop={pop} cardW={cardW} />}
       <GestureDetector gesture={swipe}>
-        <Animated.View style={[
-            styles.card,
-            { backgroundColor: cardBackground(thought) },
-            isFront ? styles.frontShadow : styles.backShadow,
-            face,
-          ]}>
+        <Animated.View style={[styles.card, { backgroundColor: cardBackground(thought) }, face]}>
           <ThoughtCard
             thought={thought}
             isFront={isFront}
             more={more}
+            moreStyle={moreStyle}
             onPress={() => onPressCard(index)}
             onAskAI={() => onAction('askAI', id)}
             onSearchWeb={() => onAction('searchWeb', id)}
@@ -147,19 +157,7 @@ const styles = StyleSheet.create({
     height: CARD_H,
     transformOrigin: 'top',
   },
-  card: { flex: 1, borderRadius: tokens.radius.homeCard },
-  frontShadow: {
-    shadowColor: tokens.primitive.ink,
-    shadowOpacity: 0.16,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 10 },
-  },
-  backShadow: {
-    shadowColor: tokens.primitive.ink,
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: -2 },
-  },
+  card: { flex: 1, borderRadius: tokens.radius.homeCard, shadowColor: tokens.primitive.ink },
   dim: {
     position: 'absolute',
     top: 0,

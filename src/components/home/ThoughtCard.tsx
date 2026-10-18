@@ -1,7 +1,8 @@
 // One card face of the home stack (design/mocks/r6/home.html, r3/swipe/cards.css).
 // Static content only; StackCard moves it.
-import { memo } from 'react';
+import { memo, type ComponentProps } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { Copy, Globe, MessageSquare, Mic, Pin, Play } from 'lucide-react-native';
 import { RichTextViewer } from '@apollohg/react-native-rich-text-editor';
 import AudioTimeline from '../AudioTimeline';
@@ -15,7 +16,7 @@ const p = tokens.primitive;
 
 const RESOLVED_BG: string = tokens.mix(p.grey, 0.18);
 const BODY_TOP = 71; // 11 + 28 title + 3 + 19 meta + 10
-const ACTS_H = 44 + 14;
+const ACTS_H = 44 + 16; // buttons sit 16pt (the card inner padding) from the bottom
 const BODY_H = CARD_H - BODY_TOP - ACTS_H - 10;
 
 export function cardBackground(t: Thought) {
@@ -27,19 +28,20 @@ export function cardBackground(t: Thought) {
 type Props = {
   thought: Thought;
   isFront: boolean;
-  more: string; // "14 more" / "Last one", shown on the front card only
+  more: string; // "14 more" / "Last one"
+  moreStyle?: ComponentProps<typeof Animated.Text>['style']; // animated: visible on the front card only
   onPress: () => void; // front: open; behind: spin to it
   onAskAI?: () => void;
   onSearchWeb?: () => void;
   onCopy?: () => void;
 };
 
-function ThoughtCardBase({ thought: t, isFront, more, onPress, onAskAI, onSearchWeb, onCopy }: Props) {
+function ThoughtCardBase({ thought: t, isFront, more, moreStyle, onPress, onAskAI, onSearchWeb, onCopy }: Props) {
   const resolved = !!t.resolvedAt;
   const tag = t.tags[0];
   const title = titleOf(t);
   const body = bodyOf(t);
-  const rich = isFront ? richBodyOf(t) : null;
+  const rich = richBodyOf(t);
   const hasImage = t.attachmentKind === 'image' && !!t.attachmentUri;
   const hasAudio = t.attachmentKind === 'audio' && !!t.attachmentUri;
   const hasBody = !!(rich || body);
@@ -71,7 +73,7 @@ function ThoughtCardBase({ thought: t, isFront, more, onPress, onAskAI, onSearch
             <Text numberOfLines={1} style={styles.metaText}>
               {metaLabel(t)}
             </Text>
-            {isFront && <Text style={styles.more}>{more}</Text>}
+            <Animated.Text style={[styles.more, moreStyle]}>{more}</Animated.Text>
           </View>
 
           <View style={styles.body}>
@@ -112,8 +114,9 @@ function ThoughtCardBase({ thought: t, isFront, more, onPress, onAskAI, onSearch
         </View>
       </Pressable>
 
-      {isFront && (
-        <View style={[styles.acts, resolved && { opacity: 0.45 }]}>
+      {/* Rendered on every card so nothing pops in when a card becomes the front;
+          cards behind are covered by the front card here, so only its buttons get touches. */}
+      <View style={[styles.acts, resolved && { opacity: 0.45 }]}>
           <Pressable onPress={onAskAI} style={[styles.pill, styles.askPill]} accessibilityRole="button" accessibilityLabel="Ask AI">
             <MessageSquare size={17} color={c.onInk} strokeWidth={2} />
             <Text style={[styles.pillText, { color: c.onInk }]}>Ask AI</Text>
@@ -125,8 +128,7 @@ function ThoughtCardBase({ thought: t, isFront, more, onPress, onAskAI, onSearch
           <Pressable onPress={onCopy} style={[styles.pill, styles.iconPill]} accessibilityRole="button" accessibilityLabel="Copy">
             <Copy size={17} color={c.ink} strokeWidth={2} />
           </Pressable>
-        </View>
-      )}
+      </View>
     </View>
   );
 }
@@ -175,7 +177,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   voiceTime: { fontSize: 13, lineHeight: 18, color: c.secondary, fontVariant: ['tabular-nums'] },
-  acts: { position: 'absolute', left: 14, right: 14, bottom: 14, flexDirection: 'row', gap: 12 },
+  acts: { position: 'absolute', left: 16, right: 16, bottom: 16, flexDirection: 'row', gap: 12 },
   pill: {
     height: tokens.size.control,
     borderRadius: tokens.size.control / 2,

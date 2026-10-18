@@ -48,7 +48,6 @@ import Animated, {
   Easing,
   FadeIn,
   runOnJS,
-  useAnimatedKeyboard,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -98,7 +97,7 @@ const spring = {
 };
 // The camera, library and media-choice panels keep their compact height.
 const expandedBaseHeight = 224;
-const sheetPadding = 20;
+const sheetPadding: number = tokens.space.margin;
 const peekPadding: number = tokens.space.margin;
 
 const caps = {
@@ -209,6 +208,8 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
     // current mode so mounting the sheet cannot summon the keyboard.
     const [isExpanded, setIsExpanded] = useState(false);
     const [keyboardVisible, setKeyboardVisible] = useState(false);
+    // From Keyboard events: the writing tool bar sits right on top of it.
+    const [keyboardHeight, setKeyboardHeight] = useState(0);
     const [activeMode, setActiveMode] = useState<
       | "write"
       | "voice"
@@ -250,7 +251,6 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
     const recordingShape = useSharedValue(0);
     // 0 is open and 1 is collapsed. The sheet never unmounts or changes its view tree.
     const progress = useSharedValue(1);
-    const keyboard = useAnimatedKeyboard();
     const recorder = useAudioRecorder({
       ...RecordingPresets.HIGH_QUALITY,
       isMeteringEnabled: true,
@@ -325,14 +325,15 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
       [],
     );
     const expandedStyle = useAnimatedStyle(
-      () => ({
-        opacity: 1 - progress.value,
-        // The tool bar rides on the keyboard; without one it clears the home
-        // indicator.
-        paddingBottom: Math.max(keyboard.height.value, bottomPad) + 4,
-      }),
-      [bottomPad],
+      () => ({ opacity: 1 - progress.value }),
+      [],
     );
+    // Bottom of the expanded content: on top of the keyboard while typing,
+    // otherwise clear of the home indicator.
+    const contentBottom =
+      (keyboardVisible && keyboardHeight > 0
+        ? Math.max(keyboardHeight, bottomPad)
+        : bottomPad) + 8;
     const micStyle = useAnimatedStyle(() => ({
       opacity: micShown.value,
       transform: [{ translateY: Math.max(0, dragY.value) }],
@@ -937,9 +938,11 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
         Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
       const show = Keyboard.addListener(showEvent, (event) => {
         setKeyboardVisible(event.endCoordinates.height > 0);
+        setKeyboardHeight(event.endCoordinates.height);
       });
       const hide = Keyboard.addListener(hideEvent, () => {
         setKeyboardVisible(false);
+        setKeyboardHeight(0);
       });
       return () => {
         show.remove();
@@ -1051,94 +1054,105 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
         >
           <GestureDetector gesture={bodyPan}>
             <View style={{ flex: 1 }}>
-              {/* Peek */}
-              <Animated.View
-                pointerEvents={isExpanded ? "none" : "auto"}
-                style={[
-                  {
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: peekHeight,
-                    paddingHorizontal: peekPadding,
-                    paddingTop: 11,
-                  },
-                  collapsedStyle,
-                ]}
-              >
-                <Pressable
-                  onPress={() => {
-                    onOpenHaptic();
-                    open("write");
-                  }}
-                  className="bg-fill flex-row items-center"
-                  style={{
-                    marginTop: 16,
-                    height: 52,
-                    borderRadius: 26,
-                    paddingLeft: 20,
-                    paddingRight: firstDraftLine ? 4 : 20,
-                    gap: 8,
-                  }}
-                  accessibilityRole="button"
-                  accessibilityLabel="Open thought capture"
+              {/* Peek: gone entirely while the sheet is open. */}
+              {isExpanded ? null : (
+                <Animated.View
+                  pointerEvents={isExpanded ? "none" : "auto"}
+                  style={[
+                    {
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: peekHeight,
+                      paddingHorizontal: peekPadding,
+                      paddingTop: 11,
+                    },
+                    collapsedStyle,
+                  ]}
                 >
-                  <Text
-                    numberOfLines={1}
-                    className={
-                      "flex-1 text-body " +
-                      (firstDraftLine ? "text-ink" : "text-secondary")
-                    }
+                  <Pressable
+                    onPress={() => {
+                      onOpenHaptic();
+                      open("write");
+                    }}
+                    className="bg-fill flex-row items-center"
+                    style={{
+                      marginTop: 16,
+                      height: 52,
+                      borderRadius: 26,
+                      paddingLeft: 20,
+                      paddingRight: firstDraftLine ? 4 : 20,
+                      gap: 8,
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Open thought capture"
                   >
-                    {firstDraftLine ?? prompt}
-                  </Text>
-                  {/* A waiting draft can be saved straight from the peek. */}
-                  {firstDraftLine ? (
-                    <Pressable
-                      onPress={saveComposer}
-                      disabled={saveDisabled}
-                      className="bg-action items-center justify-center rounded-full"
-                      style={{ height: 44, paddingHorizontal: 18, opacity: saveDisabled ? 0.4 : 1 }}
-                      accessibilityRole="button"
-                      accessibilityLabel="Save thought"
+                    <Text
+                      numberOfLines={1}
+                      className={
+                        "flex-1 text-body " +
+                        (firstDraftLine ? "text-ink" : "text-secondary")
+                      }
                     >
-                      <Text className="text-body font-semibold text-onInk">Save</Text>
-                    </Pressable>
-                  ) : null}
-                </Pressable>
-                <View
-                  className="flex-row items-center"
-                  style={{ marginTop: 14, height: micSize, gap: 10 }}
-                >
-                  <CircleButton
-                    onPress={() => openMedia("camera")}
-                    label="Take a photo or video"
+                      {firstDraftLine ?? prompt}
+                    </Text>
+                    {/* A waiting draft can be saved straight from the peek. */}
+                    {firstDraftLine ? (
+                      <Pressable
+                        onPress={saveComposer}
+                        disabled={saveDisabled}
+                        className="bg-action items-center justify-center rounded-full"
+                        style={{
+                          height: 44,
+                          paddingHorizontal: 18,
+                          opacity: saveDisabled ? 0.4 : 1,
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Save thought"
+                      >
+                        <Text className="text-body font-semibold text-onInk">
+                          Save
+                        </Text>
+                      </Pressable>
+                    ) : null}
+                  </Pressable>
+                  <View
+                    className="flex-row items-center"
+                    style={{ marginTop: 14, height: micSize, gap: 12 }}
                   >
-                    <Camera size={22} color={ink} strokeWidth={1.9} />
-                  </CircleButton>
-                  <CircleButton
-                    onPress={() => openMedia("library")}
-                    label="Choose from photos"
-                  >
-                    <Image size={22} color={ink} strokeWidth={1.9} />
-                  </CircleButton>
-                  <View className="flex-1" />
-                  <Text
-                    className={holdHint ? "text-ink" : "text-secondary"}
-                    style={[caps, { marginRight: 4 }]}
-                  >
-                    Hold to talk
-                  </Text>
-                  {/* The mic itself floats above the sheet (below) so it never moves. */}
-                  <View style={{ width: micSize }} />
-                </View>
-              </Animated.View>
+                    <CircleButton
+                      onPress={() => openMedia("camera")}
+                      label="Take a photo or video"
+                    >
+                      <Camera size={22} color={ink} strokeWidth={1.9} />
+                    </CircleButton>
+                    <CircleButton
+                      onPress={() => openMedia("library")}
+                      label="Choose from photos"
+                    >
+                      <Image size={22} color={ink} strokeWidth={1.9} />
+                    </CircleButton>
+                    <View className="flex-1" />
+                    <Text
+                      className={holdHint ? "text-ink" : "text-secondary"}
+                      style={caps}
+                    >
+                      Hold to talk
+                    </Text>
+                    {/* The mic itself floats above the sheet (below) so it never moves. */}
+                    <View style={{ width: micSize }} />
+                  </View>
+                </Animated.View>
+              )}
 
               {/* Expanded */}
               <Animated.View
                 pointerEvents={isExpanded ? "box-none" : "none"}
-                style={[{ height: layerHeight }, expandedStyle]}
+                style={[
+                  { height: layerHeight, paddingBottom: contentBottom },
+                  expandedStyle,
+                ]}
               >
                 {activeMode === "media-choice" ? (
                   <View
@@ -1177,7 +1191,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                 {activeMode === "library" ? (
                   <View
                     className="flex-1"
-                    style={{ paddingHorizontal: sheetPadding, paddingTop: 20 }}
+                    style={{ paddingHorizontal: sheetPadding, paddingTop: 24 }}
                   >
                     <View className="mb-3 flex-row items-center justify-between">
                       <Text className="text-title2 font-semibold text-ink">
@@ -1264,7 +1278,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                 {activeMode === "camera" ? (
                   <View
                     className="flex-1 overflow-hidden rounded-card bg-ink"
-                    style={{ marginHorizontal: 12, marginTop: 16 }}
+                    style={{ marginHorizontal: sheetPadding, marginTop: 20 }}
                   >
                     <CameraView
                       ref={cameraRef}
@@ -1367,14 +1381,21 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                           >
                             <X size={22} color={ink} strokeWidth={1.9} />
                           </CircleButton>
-                          <View className="flex-row items-center">
-                            <Text className="text-secondary" style={caps}>
+                          <View
+                            className="flex-1 flex-row items-center justify-center"
+                            style={{ marginHorizontal: 12 }}
+                          >
+                            <Text
+                              className="text-secondary"
+                              style={caps}
+                              numberOfLines={1}
+                            >
                               Draft kept if you close
                             </Text>
                             {draft.trim().length > 0 && !listening && (
                               <Pressable
                                 onPress={onClear}
-                                hitSlop={10}
+                                hitSlop={12}
                                 accessibilityRole="button"
                                 accessibilityLabel="Clear thought"
                               >
@@ -1384,17 +1405,39 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                               </Pressable>
                             )}
                           </View>
+                          {/* Apple-style Save opposite the X, always on screen. */}
+                          <Pressable
+                            onPress={saveComposer}
+                            disabled={saveDisabled}
+                            hitSlop={8}
+                            accessibilityRole="button"
+                            accessibilityLabel="Save thought"
+                            style={{
+                              height: 44,
+                              minWidth: 44,
+                              alignItems: "flex-end",
+                              justifyContent: "center",
+                              opacity: saveDisabled ? 0.4 : 1,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color: tokens.color.action,
+                                fontSize: 17,
+                                lineHeight: 22,
+                                fontWeight: "600",
+                              }}
+                            >
+                              Save
+                            </Text>
+                          </Pressable>
                         </View>
                       </View>
                     </GestureDetector>
-                    <Text
-                      className="text-body text-secondary"
-                      style={{ marginTop: 14 }}
-                      numberOfLines={2}
+                    <View
+                      className="flex-1 overflow-hidden"
+                      style={{ marginTop: 12, minHeight: 0 }}
                     >
-                      {prompt}
-                    </Text>
-                    <View className="flex-1" style={{ marginTop: 6 }}>
                       {showReview ? (
                         <Animated.View
                           entering={FadeIn.duration(transitionDuration)}
@@ -1510,7 +1553,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                           placeholder={
                             pendingAttachment
                               ? "Add a label (optional)…"
-                              : undefined
+                              : prompt
                           }
                           placeholderTextColor={secondary}
                           autoCapitalize="sentences"
@@ -1525,7 +1568,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                             lineHeight: tokens.type.body[1],
                           }}
                         >
-                          {styledLines}
+                          {draft ? styledLines : null}
                         </TextInput>
                       )}
                     </View>
@@ -1605,7 +1648,7 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                     {tagRow ? (
                       <View style={{ marginTop: 10 }}>{tagRow}</View>
                     ) : null}
-                    <View style={{ marginHorizontal: -8 }}>
+                    <View>
                       <WritingToolbar
                         activeKind={
                           showReview ? "plain" : kindAtCursor(draft, cursor)

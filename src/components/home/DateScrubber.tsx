@@ -20,7 +20,7 @@ const tokens = require('../../theme/tokens');
 const c = tokens.color;
 const ink: string = tokens.primitive.ink;
 
-const TRACK_X = 17;
+const TRACK_X = 7; // inside the 16pt left margin; cards stay centred
 const HIT = 44;
 
 type Props = {
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
   bubble: {
     position: 'absolute',
     top: 0,
-    left: 44,
+    left: 28, // the bubble may overlap the cards while dragging
     height: 34,
     paddingHorizontal: 14,
     borderRadius: 17,

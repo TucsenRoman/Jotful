@@ -69,7 +69,7 @@ export default function WritingToolbar({
   saveLabel = "Save",
 }: Props) {
   return (
-    <View className="flex-row items-center" style={{ height: 56, gap: 8 }}>
+    <View className="flex-row items-center" style={{ height: 56, gap: 12 }}>
       <View
         className="bg-fill flex-row items-center"
         style={{ height: 44, borderRadius: 22, paddingHorizontal: 4 }}
