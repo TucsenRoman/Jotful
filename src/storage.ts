@@ -305,6 +305,55 @@ export function toggleResolved(id: number, resolvedAt: number | null) {
   db.runSync('UPDATE thoughts SET resolvedAt = ? WHERE id = ?', resolvedAt, id);
 }
 
+// Dev app only (Settings > Developer). Sample thoughts carry collection = 'sample'
+// so removing them never touches the person's own. Photos and video are remote
+// Unsplash URLs (design/README.md credits) so no media ships in the app bundle.
+const SAMPLE = 'sample';
+const UNSPLASH = (id: string) => `https://images.unsplash.com/${id}?w=1200&q=80&fm=jpg`;
+type Sample = { text: string; daysAgo: number; tags: string[]; resolved?: boolean; pinned?: boolean; media?: Array<{ kind: AttachmentKind; uri: string; durationMillis?: number }> };
+const SAMPLE_THOUGHTS: Sample[] = [
+  { text: 'Birthday gift for Mom: the pottery class she keeps mentioning', daysAgo: 0, tags: ['Idea'], pinned: true },
+  { text: 'Why do I always remember the dream right after I stop thinking about it?', daysAgo: 1, tags: ['Question'] },
+  { text: 'Past Lives\nSara said watch it on a plane, not at home', daysAgo: 9, tags: ['Movie'] },
+  { text: 'Perfect Days\nThe quiet one with the toilet cleaner.', daysAgo: 5, tags: ['Movie'] },
+  { text: 'Melody idea in the car — the bit after the chorus', daysAgo: 18, tags: ['Music'] },
+  { text: 'Song from the café\nAsk what was playing around 3pm', daysAgo: 22, tags: ['Music'] },
+  { text: 'That bakery sign on 5th — steal the lettering', daysAgo: 40, tags: ['Place'], media: [{ kind: 'image', uri: UNSPLASH('photo-1541663038764-58fefe6f66b8') }, { kind: 'image', uri: UNSPLASH('photo-1554428350-f46d65e299bb') }] },
+  { text: 'The Overstory\nFinish before the trip.', daysAgo: 27, tags: ['Book'] },
+  { text: 'Shelf for the hallway\nMeasure the gap by the door first', daysAgo: 14, tags: ['Idea'] },
+  { text: 'Ask Dev about the camera he used for the wedding', daysAgo: 49, tags: ['Person', 'Idea'], media: [{ kind: 'image', uri: UNSPLASH('photo-1510127034890-ba27508e9f1c') }] },
+  { text: '# Weekend\n• farmers market\n• fix bike tire\n• finish the book', daysAgo: 2, tags: ['To-do'], media: [{ kind: 'image', uri: UNSPLASH('photo-1485637701894-09ad422f6de6') }] },
+  { text: 'Call the dentist back', daysAgo: 76, tags: [], resolved: true },
+  { text: 'Return the library books', daysAgo: 33, tags: ['To-do'], resolved: true },
+  { text: 'Pottery wheel night is Thursday. Ask if the beginner set is included.', daysAgo: 4, tags: ['Place'], media: [{ kind: 'image', uri: UNSPLASH('photo-1590605095243-072811dbe64c') }] },
+  { text: 'Cinema near the station has the 35mm print this week', daysAgo: 11, tags: ['Movie', 'Place'], media: [{ kind: 'image', uri: UNSPLASH('photo-1517604931442-7e0c8ed2963c') }] },
+  { text: 'What makes a croissant stay crisp the next day?', daysAgo: 61, tags: ['Question'] },
+  { text: 'Before the trip: passport photos, charger, the good notebook', daysAgo: 7, tags: ['To-do'] },
+];
+
+export function addSampleThoughts() {
+  const tagId = new Map(listTags().map((tag) => [tag.name, tag.id]));
+  const day = 86400000;
+  db.withTransactionSync(() => {
+    SAMPLE_THOUGHTS.forEach((sample, index) => {
+      const createdAt = Date.now() - sample.daysAgo * day - index * 37 * 60000;
+      const kind = sample.tags.includes('Question') ? 'question' : sample.tags.includes('Idea') ? 'idea' : 'thought';
+      const result = db.runSync('INSERT INTO thoughts (text, kind, collection, createdAt, resolvedAt, pinnedAt) VALUES (?, ?, ?, ?, ?, ?)', sample.text, kind, SAMPLE, createdAt, sample.resolved ? createdAt + day : null, sample.pinned ? createdAt : null);
+      const id = Number(result.lastInsertRowId);
+      sample.tags.forEach((name, position) => { const tag = tagId.get(name); if (tag) db.runSync('INSERT OR IGNORE INTO thoughtTags (thoughtId, tagId, position) VALUES (?, ?, ?)', id, tag, position); });
+      sample.media?.forEach((media) => db.runSync('INSERT INTO attachments (thoughtId, kind, uri, durationMillis, createdAt) VALUES (?, ?, ?, ?, ?)', id, media.kind, media.uri, media.durationMillis ?? null, createdAt));
+    });
+  });
+}
+
+export function removeSampleThoughts() {
+  db.withTransactionSync(() => {
+    db.runSync('DELETE FROM attachments WHERE thoughtId IN (SELECT id FROM thoughts WHERE collection = ?)', SAMPLE);
+    db.runSync('DELETE FROM thoughtTags WHERE thoughtId IN (SELECT id FROM thoughts WHERE collection = ?)', SAMPLE);
+    db.runSync('DELETE FROM thoughts WHERE collection = ?', SAMPLE);
+  });
+}
+
 export function setThoughtCreatedAt(id: number, createdAt: number) {
   db.runSync('UPDATE thoughts SET createdAt = ? WHERE id = ?', createdAt, id);
 }

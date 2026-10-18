@@ -17,13 +17,17 @@ import { ThoughtDetail } from './src/components/detail/ThoughtDetail';
 import SettingsScreen from './src/components/settings/SettingsScreen';
 import { FilterMenu, FilterRow, HomeHeader, TagPill } from './src/components/header/HomeHeader';
 import { TagPicker } from './src/components/header/TagPicker';
+import { SearchScreen } from './src/components/search/SearchScreen';
 import { startWatchSync } from './src/watchSync';
 import CaptureWidget from './targets/widgets/CaptureWidget';
 import RecentsWidget from './targets/widgets/RecentsWidget';
 import { classifyThought, splitThoughts } from './src/segmentation';
-import { clearCaptureDraft, createAttachmentThoughts, createThought, deleteThought, getPreference, initializeDatabase, listAttachments, listRecentThoughts, listTags, listThoughts, recoverCaptureDraft, setPreference, setThoughtTags, togglePinned, toggleResolved, updateThought, type Attachment, type AttachmentKind, type Tag, type Thought } from './src/storage';
+import { addSampleThoughts, removeSampleThoughts, clearCaptureDraft, createAttachmentThoughts, createThought, deleteThought, getPreference, initializeDatabase, listAttachments, listRecentThoughts, listTags, listThoughts, recoverCaptureDraft, setPreference, setThoughtTags, togglePinned, toggleResolved, updateThought, type Attachment, type AttachmentKind, type Tag, type Thought } from './src/storage';
 
 const tokens = require('./src/theme/tokens');
+
+// The Jotful Dev app (APP_VARIANT=development) gets developer tools in Settings.
+const IS_DEV_APP = Constants.expoConfig?.scheme === 'jotful-dev';
 
 const capturePrompts = [
   'What are you daydreaming of?',
@@ -278,10 +282,10 @@ function JotfulApp() {
     <Pressable onPress={() => setTagTarget('draft')} className="rounded-full bg-fill px-2.5 py-1" accessibilityLabel="Add a tag"><Text className="text-caption2 font-bold uppercase tracking-[0.6px] text-secondary">+ Tag</Text></Pressable>
   </View>;
 
-  if (screen === 'settings') return <><StatusBar style="dark" /><SettingsScreen preferredAI={preferredAI} preferredBrowser={preferredBrowser} tagCount={tags.length} onChooseAI={chooseAI} onChooseBrowser={chooseBrowser} onClose={() => setScreen('thoughts')} /></>;
+  if (screen === 'settings') return <><StatusBar style="dark" /><SettingsScreen preferredAI={preferredAI} preferredBrowser={preferredBrowser} tagCount={tags.length} onChooseAI={chooseAI} onChooseBrowser={chooseBrowser} onAddSampleData={IS_DEV_APP ? () => { addSampleThoughts(); refresh(); void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); setScreen('thoughts'); } : undefined} onClearSampleData={IS_DEV_APP ? () => { removeSampleThoughts(); refresh(); void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } : undefined} onClose={() => setScreen('thoughts')} /></>;
 
   return <View className="flex-1 bg-page"><StatusBar style="dark" />
-    <HomeHeader topInset={insets.top} searchOpen={searchOpen} search={search} onSearchChange={setSearch} onOpenSearch={() => { closeSheet(); setSearchOpen(true); }} onCloseSearch={() => { setSearch(''); setSearchOpen(false); }} onOpenSettings={() => { setSheetExpanded(false); setScreen('settings'); }} />
+    <HomeHeader topInset={insets.top} searchOpen={false} search="" onSearchChange={() => {}} onOpenSearch={() => { closeSheet(); setSearchOpen(true); }} onCloseSearch={() => { setSearch(''); setSearchOpen(false); }} onOpenSettings={() => { setSheetExpanded(false); setScreen('settings'); }} />
     <FilterRow tags={tags} selectedIds={filterTagIds} showResolved={showResolved} onOpenMenu={() => setFilterOpen(true)} onRemoveTag={(id) => setFilterTagIds((ids) => ids.filter((x) => x !== id))} onHideResolved={() => setShowResolved(false)} />
     <View className="flex-1">
       <ThoughtStack resetKey={filterTagIds.join(',') + (showResolved ? 'r' : '') + search} thoughts={thoughts} bottomInset={peek} onOpen={openDetail} onResolve={resolve} onPin={pin} onAskAI={askAI} onSearchWeb={(thought) => void sendTo('search', thought.text)} onCopy={(thought) => void copyThought(thought.text)} onReservedSwipe={() => showToast({ message: 'Long swipe is coming soon' })} />
@@ -295,6 +299,9 @@ function JotfulApp() {
       </View>
     </View>}
     <FilterMenu visible={filterOpen} top={insets.top + 100} tags={tags} selectedIds={filterTagIds} showResolved={showResolved} onToggleTag={(id) => setFilterTagIds((ids) => ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id])} onToggleResolved={setShowResolved} onClose={() => setFilterOpen(false)} />
+    <Modal visible={searchOpen} animationType="fade" presentationStyle="fullScreen" onRequestClose={() => setSearchOpen(false)}>
+      <SearchScreen onCancel={() => setSearchOpen(false)} onOpen={(thought) => { setSearchOpen(false); setTimeout(() => openDetail(thought), 350); }} />
+    </Modal>
     <Modal visible={detail !== null} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setDetail(null)}>
       {detail && <ThoughtDetail thought={detail.thought} attachments={detail.attachments}
         onClose={() => setDetail(null)}

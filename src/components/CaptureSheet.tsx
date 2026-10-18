@@ -1072,12 +1072,14 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                     onOpenHaptic();
                     open("write");
                   }}
-                  className="bg-fill justify-center"
+                  className="bg-fill flex-row items-center"
                   style={{
                     marginTop: 16,
                     height: 52,
                     borderRadius: 26,
-                    paddingHorizontal: 20,
+                    paddingLeft: 20,
+                    paddingRight: firstDraftLine ? 4 : 20,
+                    gap: 8,
                   }}
                   accessibilityRole="button"
                   accessibilityLabel="Open thought capture"
@@ -1085,12 +1087,25 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
                   <Text
                     numberOfLines={1}
                     className={
-                      "text-body " +
+                      "flex-1 text-body " +
                       (firstDraftLine ? "text-ink" : "text-secondary")
                     }
                   >
                     {firstDraftLine ?? prompt}
                   </Text>
+                  {/* A waiting draft can be saved straight from the peek. */}
+                  {firstDraftLine ? (
+                    <Pressable
+                      onPress={saveComposer}
+                      disabled={saveDisabled}
+                      className="bg-action items-center justify-center rounded-full"
+                      style={{ height: 44, paddingHorizontal: 18, opacity: saveDisabled ? 0.4 : 1 }}
+                      accessibilityRole="button"
+                      accessibilityLabel="Save thought"
+                    >
+                      <Text className="text-body font-semibold text-onInk">Save</Text>
+                    </Pressable>
+                  ) : null}
                 </Pressable>
                 <View
                   className="flex-row items-center"

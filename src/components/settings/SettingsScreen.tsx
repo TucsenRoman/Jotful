@@ -16,6 +16,9 @@ export type SettingsScreenProps = {
   onChooseAI(): void;
   onChooseBrowser(): void;
   onManageTags?(): void;
+  // Dev app only: fill or clear the sample thoughts.
+  onAddSampleData?(): void;
+  onClearSampleData?(): void;
   onClose(): void;
 };
 
@@ -55,7 +58,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-export default function SettingsScreen({ preferredAI, preferredBrowser, tagCount, onChooseAI, onChooseBrowser, onManageTags, onClose }: SettingsScreenProps) {
+export default function SettingsScreen({ preferredAI, preferredBrowser, tagCount, onChooseAI, onChooseBrowser, onManageTags, onAddSampleData, onClearSampleData, onClose }: SettingsScreenProps) {
   const insets = useSafeAreaInsets();
   return (
     <View className="flex-1 bg-page">
@@ -87,6 +90,10 @@ export default function SettingsScreen({ preferredAI, preferredBrowser, tagCount
           <Row title="Pinned thoughts" detail="Ready for widgets" />
           <Row title="Storage & privacy" detail="Thoughts stay on this iPhone" last />
         </Section>
+        {onAddSampleData && onClearSampleData ? <Section title="Developer (Jotful Dev only)">
+          <Row title="Add sample thoughts" detail="17 thoughts, Aug–Oct" onPress={onAddSampleData} />
+          <Row title="Remove sample thoughts" detail="Keeps your own" onPress={onClearSampleData} last />
+        </Section> : null}
         <Section title="About">
           <Row title="Jotful" detail="Private thought inbox · version 1.0" last />
         </Section>
