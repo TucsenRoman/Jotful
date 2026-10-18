@@ -27,8 +27,11 @@ import { addSampleThoughts, removeSampleThoughts, clearCaptureDraft, createAttac
 
 const tokens = require('./src/theme/tokens');
 
-// The Jotful Dev app (APP_VARIANT=development) gets developer tools in Settings.
-const IS_DEV_APP = Constants.expoConfig?.scheme === 'jotful-dev';
+// The Jotful Dev app gets developer tools in Settings. Every dev-client build is the Jotful Dev
+// app (both development profiles set APP_VARIANT), and store builds are never __DEV__, so this
+// doesn't depend on how the dev server was started.
+const IS_DEV_APP = __DEV__ || Constants.expoConfig?.scheme === 'jotful-dev';
+const APP_SCHEME = IS_DEV_APP ? 'jotful-dev' : 'jotful';
 
 const capturePrompts = [
   'What are you daydreaming of?',
@@ -119,7 +122,7 @@ function JotfulApp() {
   useEffect(() => startWatchSync(() => refreshRef.current()), []);
   useEffect(() => {
     if (Platform.OS !== 'ios') return;
-    CaptureWidget.updateSnapshot({ thoughtCount: thoughts.filter((thought) => thought.resolvedAt === null).length, scheme: String(Constants.expoConfig?.scheme ?? 'jotful') });
+    CaptureWidget.updateSnapshot({ thoughtCount: thoughts.filter((thought) => thought.resolvedAt === null).length, scheme: APP_SCHEME });
     RecentsWidget.updateSnapshot({ items: listRecentThoughts(5).map(({ id, text, kind, tags: [first] }) => ({ id, text, kind, ...(first ? { tag: { name: first.name, color: tokens.tag[first.color] } } : {}) })) });
   }, [thoughts]);
 
