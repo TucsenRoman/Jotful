@@ -54,37 +54,26 @@ function StackCardBase(props: Props) {
   const id = thought.id;
 
   const outer = useAnimatedStyle(() => {
-    const s = poseFor(index, p.value, fan);
+    const s = poseFor(index, p.value, fan, maxIdx.value);
+    // Hidden cards return a constant style so they cost nothing per frame.
+    if (s.opacity <= 0) return { opacity: 0, transform: [{ translateY: 0 }, { scaleX: 1 }, { scaleY: 1 }] };
     const front = clamp(Math.round(p.value), 0, maxIdx.value) === index;
     const others = front ? 0 : solo.value;
-    const scale = s.scale * (1 - 0.03 * others);
-    // Only the falling card gets a 3D transform. With perspective on every card, iOS
-    // treated the whole stack as coplanar 3D layers and kept re-deciding which drew on
-    // top (z-fighting), which read as cards flickering through each other.
-    if (s.rot > 0.01 && !debug.flat) {
-      return {
-        opacity: s.opacity * (1 - others),
-        transform: [{ perspective: 900 }, { translateY: s.y }, { rotateX: `${s.rot}deg` }, { scale }],
-      };
-    }
+    const shrink = 1 - 0.03 * others;
+    // 2D only (see poseFor): real 3D layers flickered through each other on iOS.
     return {
       opacity: s.opacity * (1 - others),
-      transform: [{ translateY: s.y }, { scale }],
+      transform: [{ translateY: s.y }, { scaleX: s.scaleX * shrink }, { scaleY: s.scaleY * shrink }],
     };
   });
 
-  const dim = useAnimatedStyle(() => ({ opacity: poseFor(index, p.value).dim }));
+  const dim = useAnimatedStyle(() => ({ opacity: poseFor(index, p.value, fan, maxIdx.value).dim }));
 
-  // Shadow and the quiet count follow the distance from the front, so nothing pops at a swap.
-  const face = useAnimatedStyle(() => {
-    const d = clamp(Math.abs(index - p.value), 0, 1);
-    return {
-      shadowOpacity: debug.noShadow ? 0 : 0.16 - 0.06 * d,
-      shadowRadius: 14 - 10 * d,
-      shadowOffset: { width: 0, height: 10 - 12 * d },
-      transform: [{ translateX: isFront ? swipeX.value : 0 }],
-    };
-  });
+  // Only the front card casts a shadow, and it doesn't animate: iOS redrew every card's
+  // changing shadow each frame (no shadow path), which made the stack choppy.
+  const face = useAnimatedStyle(() => ({
+    transform: [{ translateX: isFront ? swipeX.value : 0 }],
+  }));
   const moreStyle = useAnimatedStyle(() => ({
     opacity: clamp(1 - 2 * Math.abs(index - p.value), 0, 1),
   }));
@@ -137,7 +126,7 @@ function StackCardBase(props: Props) {
     >
       {isFront && <SwipeActions x={swipeX} pop={pop} cardW={cardW} />}
       <GestureDetector gesture={swipe}>
-        <Animated.View style={[styles.card, { backgroundColor: cardBackground(thought) }, face]}>
+        <Animated.View style={[styles.card, { backgroundColor: cardBackground(thought) }, isFront && !debug.noShadow ? styles.shadow : null, face]}>
           <ThoughtCard
             plain={debug.plain}
             thought={thought}
@@ -165,7 +154,8 @@ const styles = StyleSheet.create({
     height: CARD_H,
     transformOrigin: 'top',
   },
-  card: { flex: 1, borderRadius: tokens.radius.homeCard, shadowColor: tokens.primitive.ink },
+  card: { flex: 1, borderRadius: tokens.radius.homeCard },
+  shadow: { shadowColor: tokens.primitive.ink, shadowOpacity: 0.14, shadowRadius: 14, shadowOffset: { width: 0, height: 8 } },
   dim: {
     position: 'absolute',
     top: 0,

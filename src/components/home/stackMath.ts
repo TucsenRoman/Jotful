@@ -56,41 +56,56 @@ export function unrubber(v: number, max: number) {
   return v > max ? max + (v - max) / RUBBER : v < 0 ? v / RUBBER : v;
 }
 
-export type CardPose = { y: number; rot: number; scale: number; dim: number; opacity: number };
+export type CardPose = { y: number; scaleX: number; scaleY: number; dim: number; opacity: number };
 
-// Pose of the card at time-order index i for a given p.
-export function poseFor(i: number, p: number, fan = 1): CardPose {
+// Ends of the stack: a short, firm stretch (never a falling card), at most END_PULL.
+const END_PULL = 28;
+function stretch(over: number) {
   'worklet';
-  if (p < 0) {
-    // Rubber band at the newest end: the front card lifts a little, the rest stay put.
-    const dc = Math.min(i, SHOW);
+  return END_PULL * (1 - Math.exp(-Math.abs(over) * D / END_PULL / 2)) * Math.sign(over);
+}
+
+// Pose of the card at time-order index i for a given p (max = last index).
+// The fall is a 2D fake of a forward tilt on a top hinge: the card foreshortens toward
+// its top edge (scaleY = cos of the tilt), widens a little and darkens. Real 3D
+// (perspective + rotateX) flickered on iOS, which depth-sorts 3D layers.
+export function poseFor(i: number, p: number, fan = 1, max = Number.MAX_SAFE_INTEGER): CardPose {
+  'worklet';
+  if (p < 0 || p > max) {
+    const atEnd = p < 0 ? 0 : max;
+    const pull = stretch(p - atEnd);
+    const d = i - atEnd;
+    if (d < 0) return { y: D, scaleX: 1 + GROW, scaleY: 0.1, dim: 0, opacity: 0 };
+    const dc = Math.min(d, SHOW);
     return {
-      y: i === 0 ? p * D : stackY(i, fan),
-      rot: 0,
-      scale: 1 - SCALE_STEP * dc,
+      y: d === 0 ? pull : stackY(d, fan),
+      scaleX: 1 - SCALE_STEP * dc,
+      scaleY: 1 - SCALE_STEP * dc,
       dim: DIM_STEP * dc,
-      opacity: clamp(SHOW + 1 - i, 0, 1),
+      opacity: clamp(SHOW + 1 - d, 0, 1),
     };
   }
   const f = Math.floor(p);
   const t = p - f;
   const k = i - f;
-  if (k < 0) return { y: D, rot: ROT_MAX, scale: 1 + GROW, dim: 0, opacity: 0 };
+  if (k < 0) return { y: D, scaleX: 1 + GROW, scaleY: 0.1, dim: 0, opacity: 0 };
   if (k === 0) {
+    const tilt = (ROT_MAX * t * Math.PI) / 180;
     return {
       y: D * t,
-      rot: ROT_MAX * t,
-      scale: 1 + GROW * t,
-      dim: 0,
+      scaleX: 1 + GROW * t,
+      scaleY: Math.max(0.1, Math.cos(tilt)),
+      dim: 0.25 * t,
       opacity: clamp((1 - t) / (1 - FADE_FROM), 0, 1),
     };
   }
   const d = k - t;
   const dc = Math.min(d, SHOW);
+  const sc = 1 - SCALE_STEP * dc;
   return {
     y: stackY(d, fan),
-    rot: 0,
-    scale: 1 - SCALE_STEP * dc,
+    scaleX: sc,
+    scaleY: sc,
     dim: DIM_STEP * dc,
     opacity: clamp(SHOW + 1 - d, 0, 1),
   };

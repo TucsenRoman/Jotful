@@ -241,8 +241,7 @@ export function ThoughtStack(props: ThoughtStackProps) {
                 velocity: e.velocityY / D,
                 deceleration: FLING_DECEL,
                 clamp: [0, max],
-                rubberBandEffect: true,
-                rubberBandFactor: 0.6,
+                rubberBandEffect: false, // a fling stops at the end; it never overshoots and springs back
               },
               (finished) => {
                 flying.value = 0;
@@ -271,7 +270,8 @@ export function ThoughtStack(props: ThoughtStackProps) {
           tg = clamp(tg, 0, max);
           notify(tg);
           target.value = tg;
-          p.value = withSpring(tg, { ...SPRING, velocity: e.velocityY / D });
+          // At either end, settle without bouncing past it.
+          p.value = withSpring(tg, { ...SPRING, velocity: e.velocityY / D, overshootClamping: tg === 0 || tg === max });
         })
         .onFinalize(() => {
           dragging.value = 0;
