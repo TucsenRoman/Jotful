@@ -76,6 +76,10 @@ Chosen: **Apple Wallet's skin on Jotful's structure** (like Apple Fitness → Vi
 - Voice ring lock approved; scrubber-with-count approved. Last tweak: count text 8pt above the fan, 12pt tertiary grey.
 - Final mock set: design/mocks/r6/home.html (+count, filter, scrubber, frames strips), design/mocks/r8/detail (template + NOTES.md), design/mocks/r3/sheet (peek, writing, voice-one*), design/mocks/r3/swipe (frames, swipe).
 
+## Brand book decisions (2026-10-18)
+- Wordmark: KEEP the gradient Fraunces "Jotful" (persimmon → moth green → roast, BRAND.md spec) as the one brand moment in the header; the rest of the UI is system font. The mocks' plain system "Jotful" is superseded.
+- Light is the truth; dark values shown as a proposal.
+
 Lost: Moonjar (lavender wash, highlighter), Amy (chunky outlines, peeking moth). Carry-overs: pending user answer.
 
 Round-1 rough mock (not kept). Known rough edges: card titles cut mid-line by the next card; capture buttons cut at the bottom; no swipe hint; pinned uses an Apple Card-like gradient (check against Wallet's real finishes).

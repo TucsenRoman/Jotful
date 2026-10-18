@@ -43,8 +43,9 @@ npm run icons:ios                # re-render iOS icon variants from assets/brand
 
 ## UI foundations
 - Brand book: https://claude.ai/artifact/88xS8w3fFuU4Key1M8FjHA (source: [BRAND_BOOK.html](BRAND_BOOK.html); refresh with the `brand-book` skill)
-- Docs: [BRAND.md](BRAND.md) holds the short rules for code: colors, type, wordmark, moth files, icon workflow.
-- Tokens: `tailwind.config.js` (`unsorted-*` colors, an old name) plus a `colors` object in `App.tsx`. No single tokens file yet.
-- Fonts: Fraunces 600 and DM Sans 400/500/700 via `@expo-google-fonts`, loaded in `App.tsx`.
+- Design (approved Oct 2026 reskin, being built): [design/README.md](design/README.md) (mocks + decisions). Specs: `.claude/skills/apple-wallet-dna` (home stack, cards) and `apple-photos-dna` (detail, media, scrubber).
+- Docs: [BRAND.md](BRAND.md) holds the short rules for code: colors, tag palette, type, sizes, wordmark, moth files.
+- Tokens: still `tailwind.config.js` (`unsorted-*`, old look) plus a `colors` object in `App.tsx` until the reskin's single tokens file lands.
+- Fonts: Fraunces 600 for the wordmark only; the system font for everything else (DM Sans goes with the reskin).
 - Platforms: Expo (iPhone), light theme only for now.
-- Signature: moth mark, gradient Fraunces wordmark, swipe-to-resolve/pin thought cards, small all-caps kind tags, dark Ask AI pill, capture sheet with a random prompt, audio timeline, "Hold that thought." empty state.
+- Signature: moth mark, gradient Fraunces wordmark, Rolodex stack (front card falls forward), date scrubber, bright tag pills on tinted cards, swipe right to resolve / left to pin, black Ask AI pill, one-card detail view, capture sheet with a random prompt, one-button voice capture, "Hold that thought." empty state.
