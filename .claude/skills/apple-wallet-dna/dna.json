@@ -1,0 +1,136 @@
+{
+  "meta": {
+    "name": "Apple Wallet (iOS 26)",
+    "slug": "apple-wallet-dna",
+    "source": "Apple Wallet on iPhone, iOS 26: home card stack, card detail (Digital ID), boarding pass detail, permission sheet, app icon. Press screenshots (9to5Mac, WWDC 2025) plus Apple's App Store promo images.",
+    "captured": "2026-10-18",
+    "medium_of_origin": "iPhone app UI, light appearance",
+    "use": "The visual bar for Jotful's reskin: thoughts become passes. Jotful borrows Wallet's system, never its marks.",
+    "not_copied": ["Apple logo and Apple Card/Cash marks", "bank, airline and loyalty artwork on the cards", "SF Pro (system font is used at runtime on iOS; the web fallback is -apple-system/Inter)", "the Wallet app icon"]
+  },
+  "soul": {
+    "one_line": "A pale grey page holding a deep stack of solid, saturated cards, each showing only its top strip, with big black titles and white glass buttons.",
+    "adjectives": ["physical", "tidy", "confident", "colourful-in-objects-only", "quiet chrome"],
+    "lineage": "Physical wallet and passbook; iOS grouped-list system; Liquid Glass controls (iOS 26).",
+    "read_distance": "Arm's length: the stack of coloured strips reads as Wallet from 3 metres.",
+    "energy": { "density": 6, "variance": 7, "contrast": 8, "warmth": 4 }
+  },
+  "palette": {
+    "colors": [
+      { "role": "page", "hex": "#F2F1F6", "name": "cool pale grey (grouped background)", "measured": true },
+      { "role": "panels, tiles, secondary buttons", "hex": "#FFFFFF", "name": "white", "measured": true },
+      { "role": "glass header buttons", "hex": "#F9F8FE", "name": "white glass with soft shadow", "measured": true },
+      { "role": "title and primary text", "hex": "#020204", "name": "near black", "measured": true },
+      { "role": "secondary text", "hex": "#8E8E93", "name": "system grey", "measured": false, "note": "sampled #999BA8 on anti-aliased text; system grey inferred" },
+      { "role": "card finishes", "hex": "varies", "name": "one saturated, full-bleed finish per card: deep navy #081F49, cobalt #0066CA, carbon #171717, warm yellow, iridescent white", "measured": true },
+      { "role": "system action", "hex": "#0A84FF", "name": "system blue (only on a primary sheet button)", "measured": false }
+    ],
+    "coverage_pct": { "page": 30, "cards": 55, "white panels/buttons": 8, "text": 6, "system blue": 1 },
+    "banned_behaviours": [
+      "No brand colour in chrome: colour lives inside cards only.",
+      "No gradients on the page or on buttons; gradients only as a card's own finish.",
+      "No coloured text on the page except system blue links."
+    ]
+  },
+  "type": {
+    "families": [
+      { "role": "all UI", "family": "SF Pro (system)", "fallback": "-apple-system, 'Inter', 'Helvetica Neue', Arial, sans-serif", "weights": [400, 600, 700] },
+      { "role": "card titles", "family": "the card's own wordmark style", "fallback": "system bold", "weights": [600, 700] }
+    ],
+    "scale": {
+      "display_to_body_ratio": "2:1 (34pt large title : 17pt body)",
+      "steps_pt": { "large_title": 34, "card_value": 22, "card_title": 22, "pass_primary": 34, "headline": 17, "body": 17, "subhead": 15, "caption_caps": 11 },
+      "max_sizes_per_frame": 4
+    },
+    "treatment": {
+      "tracking": "tight on large title (-0.4pt); caps labels +0.6pt",
+      "leading": "1.2 for titles, 1.3 for body",
+      "case": "Sentence/Title case for titles; ALL CAPS only for small field labels on cards (BOARDS, GATE, PASSPORT VERIFIED)",
+      "numerals": "proportional; big values right-aligned in the card header"
+    }
+  },
+  "space": {
+    "grid": "single column",
+    "margin_pct": "page side margin ~5.5% of width (≈22pt on 393)",
+    "card_width_pct": "88% of screen width",
+    "card_aspect": "1.586 (credit card, CR80)",
+    "stack_strip_pct": "each stacked card shows 25% of its height (≈54pt of 218pt)",
+    "card_inner_padding_pct": "≈4.5% of card width (16pt)",
+    "header": "large title baseline ≈ 60pt below the status bar; header buttons 44pt, vertically centred on the title",
+    "rhythm": "panels below a card sit 16pt under it; panel inner padding 16–20pt",
+    "safe_area": "respect top and home indicator"
+  },
+  "surface": {
+    "edges": "card radius ≈ 3.3% of card width (≈11–12pt); panels and tiles 20–24pt; buttons fully round",
+    "elevation": "cards: hairline-free, a soft shadow only on the front/open card; stacked cards separate by colour edge alone",
+    "texture": "cards carry their own finish: flat colour, brushed/metal sheen, art, or iridescent white; the page has none",
+    "glass": "iOS 26 header buttons are white glass circles/capsules with a faint shadow; grouped capsule for Search + More",
+    "iconography": "SF Symbols, regular weight, black on glass; coloured only inside tiles (one coloured glyph top-left)"
+  },
+  "signatures": [
+    { "move": "The deep stack", "how": "Cards 88% wide stacked top-down; each card except the last shows only its top 25% strip; the strip shows the card's title top-left and one value top-right.", "never": "Never space cards apart like a list; never show two full cards." },
+    { "move": "Large title + glass buttons", "how": "34pt bold black title top-left; on the right one 44pt glass circle (+) and one glass capsule holding two icons (search, more).", "never": "No centred nav titles, no tinted buttons." },
+    { "move": "One saturated finish per card", "how": "Every card is a solid object with its own full-bleed colour/finish; white text on dark finishes, black on light ones.", "never": "No two adjacent cards in the same finish." },
+    { "move": "Card header grammar", "how": "Title or wordmark top-left (22pt semibold), value or caps meta top-right; small caps field labels (11pt) over values (17pt) in rows.", "never": "No centred card text except a code/QR block." },
+    { "move": "Detail = card + white panels", "how": "Opening a card shows it full size near the top under X and (i) glass circles; below it white rounded panels (20–24pt radius) with rows and a full-width light grey capsule button.", "never": "No chrome over the card face." },
+    { "move": "Action tiles", "how": "Two-up white tiles under a pass: one coloured SF Symbol top-left, 15pt semibold title, 13pt grey subtitle.", "never": "No borders on tiles." },
+    { "move": "Quiet page, loud objects", "how": "All colour lives in cards; page, panels and buttons are greyscale.", "never": "No colourful backgrounds, no accent bars in chrome." }
+  ],
+  "weird_move": {
+    "name": "Cropped on purpose",
+    "what": "Each stacked card is cut off by the next one mid-artwork and sometimes mid-word (BONVOY 'BOUNDLESS' sliced). The design accepts clipped content as the price of the stack.",
+    "rule": "Exactly at the strip line, the next card covers the previous one; only the header row must stay readable, everything below it may be clipped.",
+    "never": "Never shrink or ellipsize the header row to avoid the clip; never fade the overlap; never fill the clipped zone with decorative filler text: it holds the card's real art or its next line of content."
+  },
+  "archetypes": [
+    { "id": "stack-home", "purpose": "browse everything", "anatomy": "large title + glass buttons; deep stack starting ~24pt under the title; last card fully visible; with many cards the stack runs past the bottom edge (scrolls), no empty page under it", "content_shape": "4–10 cards" },
+    { "id": "card-detail", "purpose": "one item open", "anatomy": "X and (i) glass circles; full card; white panel(s) with rows; full-width grey capsule; optional two-up action tiles", "content_shape": "1 card + 1–3 panels" },
+    { "id": "pass-detail", "purpose": "a rich card with fields", "anatomy": "header row (logo left, meta right), big primary values, caps field row, code block centred", "content_shape": "3–8 fields" },
+    { "id": "sheet", "purpose": "ask or explain", "anatomy": "illustration band on a tinted top, bold 20pt title, grey body, blue filled capsule + white capsule at the bottom", "content_shape": "1 question" }
+  ],
+  "motion": {
+    "easing": "spring, no bounce for stack; light bounce on card open",
+    "entrances": "opening a card lifts it out of the stack and slides the others down off screen",
+    "never_moves": "no fades between cards, no parallax on the page",
+    "reduced_motion": "cross-fade to detail"
+  },
+  "voice": { "register": "plain, short, Apple product copy", "headline_shape": "Title Case on buttons and panels (How to Use, Share Flight Tracker)", "banned_words": ["awesome", "magic", "supercharge"] },
+  "bans": [
+    "No colour on the page, panels or buttons; colour lives inside cards only.",
+    "No borders or hairlines around cards or tiles.",
+    "No centred navigation titles.",
+    "No fully visible cards in the stack except the last one.",
+    "No gradients outside a card's own finish.",
+    "No serif or display fonts in chrome.",
+    "No more than 4 type sizes in one frame.",
+    "No dark page in light mode; the page is cool pale grey, never cream or white."
+  ],
+  "tests": [
+    { "id": "W1", "check": "Page background is cool pale grey (#F0EFF5–#F2F2F7), not white or cream.", "auto": true },
+    { "id": "W2", "check": "Large title is ≥ 32pt bold near-black, top-left.", "auto": true },
+    { "id": "W3", "check": "Header controls are white glass circles/capsules (no tint, no border).", "auto": false },
+    { "id": "W4", "check": "Cards are 85–90% of screen width, radius 3–4% of card width.", "auto": true },
+    { "id": "W5", "check": "In the stack, each covered card shows 22–28% of its height and its header row is fully readable.", "auto": true },
+    { "id": "W6", "check": "Every card has a distinct solid finish; no two adjacent cards share one.", "auto": false },
+    { "id": "W7", "check": "Colour outside cards covers under 2% of the frame (system blue only).", "auto": true },
+    { "id": "W8", "check": "No borders or hairlines on cards, tiles or panels.", "auto": true },
+    { "id": "W9", "check": "Content below a card's header row is clipped by the next card at least once (the weird move is present).", "auto": false },
+    { "id": "W10", "check": "No more than 4 type sizes in the frame.", "auto": true },
+    { "id": "W11", "check": "Blind side-by-side with reference/stack.jpg: a viewer says 'Wallet' within 2 seconds.", "auto": false }
+  ],
+  "reconstruction": {
+    "attempted": true,
+    "rounds": 1,
+    "gaps_found": [
+      "Round 1 (2026-10-18): close at a glance (page, title, glass buttons, strip height, finishes all right). Gap 1: the builder filled the clipped zone with repeated spaced-caps filler text; in Wallet the clipped part is the card's own art or the second line of its wordmark. Added to weird_move.never.",
+      "Round 1: the rebuild ends the pile with empty page below; Wallet's stack runs to and past the bottom edge when there are many cards. Added to stack-home anatomy."
+    ],
+    "example": "example/rebuild-stack.html"
+  },
+  "uncertain": [
+    "Secondary grey (#8E8E93) inferred from system default; sampled text was anti-aliased.",
+    "Card radius 11–12pt estimated from a press image, not measured on device.",
+    "Strip height 25% measured on one screenshot at one stack depth; Wallet may compress strips as the stack grows.",
+    "Dark mode not captured; Jotful is light only for now."
+  ]
+}

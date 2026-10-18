@@ -1,0 +1,44 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=393"><title>Capture Writing</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="sheet.css"><style>
+.sheet{left:0;right:0;top:62px;bottom:0;border-radius:38px 38px 0 0;padding:0 20px}
+.top{display:flex;align-items:center;justify-content:space-between;margin-top:6px}
+.pr{color:var(--grey);font-size:17px;margin-top:14px}
+.h1{font-size:22px;font-weight:600;letter-spacing:-.45px;margin-top:10px}
+ul{list-style:none;margin-top:6px}
+li{font-size:17px;line-height:28px;padding-left:22px;position:relative}
+li::before{content:'';position:absolute;left:6px;top:12px;width:5px;height:5px;border-radius:3px;background:var(--ink)}
+.caret{display:inline-block;width:2px;height:21px;background:var(--blue);vertical-align:-4px;margin-left:1px}
+.tg{position:absolute;left:20px;right:0;top:340px}
+.tg .lbl{color:var(--grey);margin-bottom:8px}
+.acc{position:absolute;left:0;right:0;top:404px;height:56px;display:flex;align-items:center;gap:8px;padding:0 12px}
+.fmt{height:44px;border-radius:22px;background:var(--fill);display:flex;align-items:center;padding:0 4px}
+.fmt span{width:42px;height:36px;display:flex;align-items:center;justify-content:center}
+.fmt span.on{background:#fff;border-radius:18px;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.acc .sp{flex:1}
+</style></head><body><div class="phone">
+<div class="island"></div><div class="status"><span>9:41</span><span class="r"><svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg><svg width="26" height="12" viewBox="0 0 26 12"><rect x=".5" y=".5" width="22" height="11" rx="3.5" fill="none" stroke="#020204" opacity=".4"/><rect x="2" y="2" width="17" height="8" rx="2"/><rect x="23.5" y="4" width="1.8" height="4" rx="1" opacity=".4"/></svg></span></div>
+<iframe class="homef blur" src="../../r6/home.html" scrolling="no"></iframe>
+<style>.status{background:#F2F1F6}</style>
+<div class="sheet solid"><div class="grab"></div>
+ <div class="top"><span class="circ"><svg class="i" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></span><span class="caps" style="color:var(--grey)">Draft kept if you close</span></div>
+ <div class="pr">What are you daydreaming of?</div>
+ <div class="h1">Weekend</div>
+ <ul><li>farmers market</li><li>fix bike tire</li><li>finish the bo<span class="caret"></span></li></ul>
+ <div class="tg"><div class="lbl caps">Tags · To-do suggested from your list</div><div class="tags"><span class="pill tg6 on caps" style="--c:var(--todo);--tc:var(--todo)"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg>To-do</span><span class="pill add caps">+ Tag</span>
+<span class="pill tg6 caps" style="--c:var(--idea);--tc:#8A6A00">Idea</span>
+<span class="pill tg6 caps" style="--c:var(--place);--tc:var(--place)">Place</span>
+<span class="pill tg6 caps" style="--c:var(--question);--tc:var(--question)">Question</span>
+<span class="pill tg6 caps" style="--c:var(--book);--tc:var(--book)">Book</span>
+<span class="pill tg6 caps" style="--c:var(--person);--tc:var(--person)">Person</span>
+<span class="pill tg6 caps" style="--c:var(--movie);--tc:var(--movie)">Movie</span>
+<span class="pill tg6 caps" style="--c:var(--music);--tc:var(--music)">Music</span></div></div>
+ <div class="acc"><div class="fmt"><span><svg class="i" viewBox="0 0 24 24"><path d="M6 5v14M17 5v14M6 12h11"/></svg></span><span class="on"><svg class="i" viewBox="0 0 24 24"><path d="M9.5 6.5H20M9.5 12H20M9.5 17.5H20"/><circle cx="4.8" cy="6.5" r="1.1" fill="currentColor"/><circle cx="4.8" cy="12" r="1.1" fill="currentColor"/><circle cx="4.8" cy="17.5" r="1.1" fill="currentColor"/></svg></span><span><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3.5" width="6.5" height="6.5" rx="1.6"/><path d="M4.6 6.9l1.2 1.2 2.1-2.3"/><rect x="3" y="14" width="6.5" height="6.5" rx="1.6"/><path d="M13 6.8h8M13 17.2h8"/></svg></span></div><span class="circ"><svg class="i" viewBox="0 0 24 24"><path d="M3 8.5A2 2 0 0 1 5 6.5h2.5L9 4.5h6l1.5 2H19a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.6"/></svg></span><span class="circ"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="3"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M21 15.5l-4.5-4.5L8 19.5"/></svg></span><span class="sp"></span><span class="save">Save</span></div>
+</div>
+<div class="kb">
+ <div class="kr"><span class=k>q</span><span class=k>w</span><span class=k>e</span><span class=k>r</span><span class=k>t</span><span class=k>y</span><span class=k>u</span><span class=k>i</span><span class=k>o</span><span class=k>p</span></div>
+ <div class="kr"><span class=k>a</span><span class=k>s</span><span class=k>d</span><span class=k>f</span><span class=k>g</span><span class=k>h</span><span class=k>j</span><span class=k>k</span><span class=k>l</span></div>
+ <div class="kr"><span class="k f" style="width:44px">&#8679;</span><span style="width:6px"></span><span class=k>z</span><span class=k>x</span><span class=k>c</span><span class=k>v</span><span class=k>b</span><span class=k>n</span><span class=k>m</span><span style="width:6px"></span><span class="k f" style="width:44px">&#9003;</span></div>
+ <div class="kr"><span class="k f" style="width:92px">123</span><span class="k sp">space</span><span class="k f" style="width:92px">return</span></div>
+ <div class="bot"><svg class="i" viewBox="0 0 24 24" style="width:26px;height:26px"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></svg><span style="display:inline-flex"><svg class="i" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11.5" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3"/></svg></span></div>
+</div><div class="home-ind"></div></div></body></html>

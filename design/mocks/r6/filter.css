@@ -1,0 +1,49 @@
+/* ---- cards-left count: quiet footnote at the right of the front card's meta row ---- */
+.mt{overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}.meta svg{flex:none}
+.more{display:none;margin-left:auto;padding-left:10px;flex:none;font-size:13px;font-weight:400;letter-spacing:0;text-transform:none;color:#8E8E93}
+.card.front .more{display:block}
+/* ---- action buttons (APPLE_SPECS s8): 44pt capsules, 16pt sides, 6pt icon gap, 15pt semibold, sized to content, 12pt apart, 14pt card inset; Copy = 44pt icon-only circle ---- */
+.acts{left:14px;right:14px;bottom:14px;gap:12px}
+.pill{flex:0 0 auto!important;height:44px;border-radius:22px;padding:0 16px;gap:6px;font-size:15px;font-weight:600;letter-spacing:-.2px;white-space:nowrap}
+.pill svg{width:17px;height:17px}
+.pill.ai{order:-1}
+.pill.ic{width:44px;padding:0}
+/* 16pt side margins (header, filter row, sheet) */
+.hdr{left:16px;right:16px}.frow{left:16px!important;right:16px!important}.sheet{padding-left:16px;padding-right:16px}
+.card{width:341px}
+/* ---- filter row under the title: filter icon first, then active chips (or "All thoughts") ---- */
+.frow{position:absolute;top:110px;left:22px;right:22px;height:30px;display:flex;align-items:center;gap:8px;z-index:2000;overflow:hidden}
+.fchips{display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden}
+.fbtn{flex:none;width:30px;height:30px;margin-left:-4px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.fbtn svg{width:22px;height:22px;fill:none;stroke:var(--ink);stroke-width:1.9;stroke-linecap:round}
+.fbtn svg.ff{display:none}.fbtn.on svg.fo{display:none}.fbtn.on svg.ff{display:block}
+.fbtn svg.ff circle{fill:var(--ink);stroke:none}.fbtn svg.ff path{stroke:#fff}
+.fall{font-size:15px;color:#8E8E93}
+.fc{height:28px;padding:0 6px 0 11px;border-radius:14px;display:flex;align-items:center;gap:2px;flex:none;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  color:var(--c);background:color-mix(in srgb,var(--b) 15%,white);cursor:pointer;white-space:nowrap}
+.fc b{font-weight:500;font-size:15px;width:16px;text-align:center;opacity:.7}
+.fc[data-res]{--c:#3A3A3C;background:rgba(2,2,4,.06);text-transform:none;letter-spacing:0;font-size:13px;font-weight:500}
+/* ---- glass popover, anchored to the filter icon ---- */
+.scrim{position:absolute;inset:0;z-index:3400;display:none}.scrim.on{display:block}
+.pop{position:absolute;top:146px;left:16px;width:300px;z-index:3500;padding:16px 16px 6px;border-radius:26px;
+  background:rgba(249,248,254,.86);backdrop-filter:blur(24px) saturate(1.8);-webkit-backdrop-filter:blur(24px) saturate(1.8);
+  box-shadow:0 12px 40px rgba(0,0,0,.18),0 0 0 .5px rgba(0,0,0,.08);
+  transform-origin:12px 0;transform:scale(.6);opacity:0;pointer-events:none;transition:transform .32s cubic-bezier(.2,.9,.3,1.1),opacity .18s linear}
+.pop.on{transform:none;opacity:1;pointer-events:auto}
+.pop .ph{font-size:13px;color:#8E8E93;margin:0 2px 10px}
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+/* tag pills: ~15% tint, bold tag colour text; selected = stronger tint + check + 1.5pt border */
+.fp{height:30px;padding:0 12px;border-radius:15px;display:flex;align-items:center;gap:4px;font-size:13px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;
+  color:var(--c);background:color-mix(in srgb,var(--b) 15%,white);cursor:pointer}
+.fp.on{background:color-mix(in srgb,var(--b) 26%,white);box-shadow:inset 0 0 0 1.5px var(--b);padding-left:9px}
+.fp svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.pop .dv{height:.5px;background:rgba(60,60,67,.29);margin:14px 2px 0}
+.trow{display:flex;align-items:center;justify-content:space-between;height:50px;font-size:17px;padding:0 2px}
+.tog{width:51px;height:31px;border-radius:16px;background:rgba(120,120,128,.16);position:relative;cursor:pointer;transition:background .2s}
+.tog i{position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:14px;background:#fff;box-shadow:0 3px 8px rgba(0,0,0,.15),0 1px 1px rgba(0,0,0,.16);transition:transform .25s cubic-bezier(.3,1.3,.5,1)}
+.tog.on{background:#34C759}.tog.on i{transform:translateX(20px)}
+.empty{position:absolute;left:0;right:0;top:380px;text-align:center;font-size:17px;color:#8E8E93;display:none}.empty.on{display:block}
+/* ---- live count while the stack moves: plain floating grey text above the stack ---- */
+.ccap{position:absolute;top:177px;left:50%;font-size:12px;line-height:15px;font-weight:400;color:rgba(60,60,67,.3);white-space:nowrap;
+  z-index:2700;opacity:0;transform:translateX(-50%) translateY(-3px);transition:opacity .2s linear,transform .2s;pointer-events:none;font-variant-numeric:tabular-nums}
+.ccap.on{opacity:1;transform:translateX(-50%)}

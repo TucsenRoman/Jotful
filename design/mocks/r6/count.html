@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Live Count Frames</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1600px;background:#E4E3EA;font-family:-apple-system,'Inter',sans-serif;color:#1C1C1E;padding:32px 34px 40px}
+h1{font-size:24px;font-weight:700;letter-spacing:-.4px}
+.sub{font-size:14px;color:#6C6C70;margin-top:4px;max-width:1300px}
+.strip{display:flex;gap:40px;margin-top:22px;justify-content:center}
+.f{width:330px}
+.ph{width:330px;height:715px;border-radius:34px;overflow:hidden;box-shadow:0 8px 26px rgba(0,0,0,.14);background:#F2F1F6}
+.ph iframe{width:393px;height:852px;border:0;pointer-events:none;transform:scale(.8397);transform-origin:0 0}
+.lbl{font-size:16px;font-weight:700;margin-top:16px}
+.cap{font-size:13px;line-height:19px;color:#3A3A3C;margin-top:6px}
+.cap b{font-weight:600;color:#1C1C1E}
+</style></head><body>
+<h1>Cards left, while swiping</h1>
+<div class="sub">Subtle floating grey text fades in above the stack whenever it moves (drag, spring, wheel or scrubber) and counts down live as each card passes halfway. It fades out 0.6s after the stack settles. The quiet count stays on the front card at rest.</div>
+<div class="strip">
+ <div class="f"><div class="ph"><iframe src="home.html"></iframe></div>
+  <div class="lbl">1 · Rest</div>
+  <div class="cap"><b>Count text:</b> hidden.<br><b>Front card:</b> "14 more", 13pt grey on the meta row. Action pills now clear the capture sheet by 70pt (stack lifted 24pt; 4 cards behind, steps 60/56/52/48).</div></div>
+ <div class="f"><div class="ph"><iframe src="home.html?p=0.6&count=1&scrub=release"></iframe></div>
+  <div class="lbl">2 · Mid-drag (60%)</div>
+  <div class="cap"><b>Count text:</b> "13 more", 12pt regular, tertiary grey rgba(60,60,67,0.3), no background, centred 8pt above the top card of the fan; fades in 200ms. Updates when a card passes the halfway point of its fall.<br><b>Scrubber:</b> shows with it (thumb at the current card, no bubble unless the thumb is dragged); both fade out together 0.6s after the stack settles.</div></div>
+ <div class="f"><div class="ph"><iframe src="home.html?p=1"></iframe></div>
+  <div class="lbl">3 · Settled</div>
+  <div class="cap"><b>Count text:</b> fades out 0.6s after the spring stops.<br><b>Front card:</b> "13 more". On the oldest card both read "Last one".</div></div>
+</div>
+</body></html>

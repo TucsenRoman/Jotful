@@ -1,0 +1,30 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=393">
+<title>Detail 1-text</title><link rel="stylesheet" href="detail.css"></head><body>
+<div class="status"><span>9:41</span><span class="ic"><i data-lucide="signal"></i><i data-lucide="wifi"></i><i data-lucide="battery-full"></i></span></div>
+<div class="island glass i-l btn" title="Close"><i data-lucide="x"></i></div>
+<div class="island glass i-m"><b>Today</b><span>9:12 AM</span></div>
+<div class="island glass i-r"><div class="btn" title="Resolve"><i data-lucide="circle-check"></i></div><div class="btn" id="more" title="More"><i data-lucide="ellipsis"></i></div></div>
+<div class="menu" id="menu"><div>Unpin<i data-lucide="pin-off"></i></div><div>Edit<i data-lucide="pencil"></i></div><div>Share<i data-lucide="share"></i></div><div class="red">Delete<i data-lucide="trash-2"></i></div></div>
+<div class="hero"><div class="txt big" contenteditable="true">Birthday gift for Mom: the pottery class she keeps mentioning</div>
+<div class="acts">
+    <div class="gp glass"><i data-lucide="message-square-text"></i>Ask AI</div>
+    <div class="gp glass"><i data-lucide="globe"></i>Search Web</div>
+    <div class="gc glass" title="Copy"><i data-lucide="copy"></i></div>
+  </div></div>
+<div class="below"><div class="tags"><span class="pill" style="background:#F2B705;color:#000">Idea</span><span class="add"><i data-lucide="plus"></i>Add</span></div>
+<div class="group">
+    <div class="row"><span>Today · Oct 18 · 9:12 AM</span><span class="adj">Adjust</span></div>
+    <div class="row"><span>From</span><span class="val"><i data-lucide="smartphone"></i>iPhone</span></div>
+    
+    <div class="row"><span>Pinned</span><span class="sw on" onclick="this.classList.toggle('on')"></span></div>
+  </div>
+<div class="resolve"><i data-lucide="circle-check"></i>Resolve</div></div>
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script>lucide.createIcons();
+const m=document.getElementById('menu');document.getElementById('more').onclick=e=>{e.stopPropagation();m.classList.toggle('open')};document.body.addEventListener('click',()=>m.classList.remove('open'));
+const w=document.getElementById('wave');if(w){const bars=[...w.children],cur=document.getElementById('cur'),dur=0;let d=false;
+const seek=e=>{const r=w.getBoundingClientRect(),f=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));bars.forEach((b,i)=>b.classList.toggle('p',i/bars.length<f));const s=Math.round(f*dur);cur.textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+w.onpointerdown=e=>{d=true;seek(e)};addEventListener('pointermove',e=>d&&seek(e));addEventListener('pointerup',()=>d=false);}
+const tr=document.querySelector('.track'),dots=document.querySelectorAll('.dots i'),film=document.querySelectorAll('.film img');
+if(tr)tr.addEventListener('scroll',()=>{const i=Math.round(tr.scrollLeft/tr.clientWidth);dots.forEach((x,j)=>x.classList.toggle('on',i==j));film.forEach((x,j)=>x.classList.toggle('cur',i==j))});
+</script></body></html>

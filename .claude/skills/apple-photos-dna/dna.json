@@ -1,0 +1,111 @@
+{
+  "meta": {
+    "name": "Apple Photos (iOS 26)",
+    "slug": "apple-photos-dna",
+    "source": "Apple Photos on iPhone, iOS 26: library grid with glass tab capsule, single photo viewer, info panel, Memory pages, edit tools. Press screenshots (9to5Mac, AppleInsider, Tom's Guide) and Apple Support (reference/SOURCES.md).",
+    "captured": "2026-10-18",
+    "medium_of_origin": "iPhone app UI, light appearance",
+    "use": "Second reference for Jotful, paired with apple-wallet-dna. Wallet governs the home stack and cards; Photos governs the detail view, media viewing, the info panel and the date scrubber.",
+    "not_copied": ["Photos app icon", "Apple Intelligence glow", "SF Symbols as Apple marks (use Lucide equivalents in mocks)", "user photos in the references"]
+  },
+  "soul": {
+    "one_line": "Content edge to edge on a plain white page; every control floats above it as small separate glass islands, and details live in a sheet you pull up.",
+    "adjectives": ["content-first", "quiet", "airy", "precise", "touchable"],
+    "lineage": "iOS Photos since iOS 7; Liquid Glass controls (iOS 26).",
+    "read_distance": "3 metres: a full-bleed image with round floating controls in the corners.",
+    "energy": { "density": 3, "variance": 4, "contrast": 6, "warmth": 5 }
+  },
+  "palette": {
+    "colors": [
+      { "role": "page (viewer, info)", "hex": "#FFFFFF", "name": "white", "measured": true },
+      { "role": "grouped cards in info", "hex": "#F2F2F7", "name": "cool pale grey", "measured": false },
+      { "role": "glass controls", "hex": "#FEFEFE", "name": "white glass, soft shadow", "measured": true },
+      { "role": "primary text", "hex": "#000000", "name": "black", "measured": false },
+      { "role": "secondary text", "hex": "#8E8E93", "name": "system grey", "measured": false },
+      { "role": "the one link/accent", "hex": "#0A84FF", "name": "system blue (Adjust, active tab)", "measured": false },
+      { "role": "content", "hex": "varies", "name": "the photo itself", "measured": true }
+    ],
+    "coverage_pct": { "content (photo/media)": 45, "white page": 45, "glass controls": 6, "text": 3, "system blue": 1 },
+    "banned_behaviours": ["No coloured chrome; colour belongs to the content.", "Blue only for a text link or the active tab, never a filled button in the viewer."]
+  },
+  "type": {
+    "families": [{ "role": "all UI", "family": "SF Pro (system)", "fallback": "-apple-system, 'Inter', 'Helvetica Neue', Arial, sans-serif", "weights": [400, 600] }],
+    "scale": { "steps_pt": { "viewer_title": 17, "viewer_subtitle": 13, "info_row": 15, "info_meta": 13, "chip": 13 }, "max_sizes_per_frame": 3 },
+    "treatment": { "case": "Sentence case; relative dates ('Yesterday', 'Today') as the viewer title, time beneath", "numerals": "plain" }
+  },
+  "space": {
+    "viewer": "media full width, centred vertically in the space between the top and bottom control rows; no side margin, no radius",
+    "controls_inset_pt": 16,
+    "title_capsule": "~38% of screen width, title semibold 17pt over time regular 13pt grey",
+    "control_size_pt": 44,
+    "grid": "3 columns edge to edge, ~2pt gutters, square crops",
+    "info_sheet": "media slides up and shrinks to the top ~40%; white panel below with 16pt side margins, grouped rows in rounded cards (radius ~16)"
+  },
+  "surface": {
+    "edges": "media: square corners, full bleed. Controls: perfect circles and capsules. Info cards: ~16pt radius.",
+    "glass": "white Liquid Glass with a soft shadow; on dark content it reads as smoked glass",
+    "elevation": "only the glass controls float; nothing else has a shadow",
+    "iconography": "regular-weight line symbols, black on glass"
+  },
+  "signatures": [
+    { "move": "Three-island top bar", "how": "Viewer top: back circle (left), a centred glass capsule with the relative date title and time under it, a More circle (right).", "never": "Never a full-width nav bar." },
+    { "move": "Three-island bottom bar", "how": "Viewer bottom: Share circle left, a centred capsule of 3 actions (Favourite, Info, Adjust), Delete circle right.", "never": "Never more than 3 in the centre capsule; destructive sits alone at the trailing edge." },
+    { "move": "Edge-to-edge content", "how": "The item fills the width with square corners; chrome never sits on a coloured band.", "never": "No card frame around the media in the viewer." },
+    { "move": "Filmstrip of neighbours", "how": "A thin row of tiny thumbnails above the bottom bar; the current item is ~1.5x wider and set apart by a small gap on each side; scrubbable.", "never": "Never larger than ~32pt tall." },
+    { "move": "Pull-up info", "how": "Swipe up (or Info): media shrinks to the top, a white panel rises: one smart chip (Look Up …), two big grey pill buttons side by side, a caption field, then one grouped card of metadata with a blue 'Adjust' link, then a map.", "never": "Never metadata on top of the media." },
+    { "move": "One small chip on the content", "how": "A single context chip (Visual Look Up / Live Text) floats on the media's corner.", "never": "Never more than one chip on the media." },
+    { "move": "Date scrubber (inferred)", "how": "While scrolling a long timeline a thin handle appears on the edge; grab and drag to jump; a capsule bubble beside the thumb shows the month and year under the finger.", "never": "Never visible at rest; fades ~1s after the finger lifts." }
+  ],
+  "weird_move": {
+    "name": "Floating islands, not bars",
+    "what": "Controls are split into separate glass shapes (circle, capsule, circle) with empty space between them, symmetric left/centre/right, floating over edge-to-edge content.",
+    "rule": "Every control row is exactly three islands: a single circle at each edge and one capsule in the middle.",
+    "never": "Never merge them into one bar; never put a label on the edge circles."
+  },
+  "archetypes": [
+    { "id": "viewer", "purpose": "look at one item", "anatomy": "three-island top bar; media full width; optional chip on media; filmstrip; three-island bottom bar" },
+    { "id": "info", "purpose": "details of the item", "anatomy": "media shrunk to top; smart chip; two big pill buttons; caption field; grouped metadata card with blue Adjust; map" },
+    { "id": "grid", "purpose": "browse many", "anatomy": "edge-to-edge 3-col grid; floating glass tab capsule + separate search circle at the bottom; date scrubber while scrolling" },
+    { "id": "collection", "purpose": "a set/memory", "anatomy": "big hero image with title over it, then grid" }
+  ],
+  "motion": {
+    "viewer_open": "zoom from the tapped thumbnail into place (shared element), spring ~0.35s, no bounce",
+    "info": "media and sheet move together on the same pan (velocity-driven)",
+    "dismiss": "drag down on media shrinks it back to its thumbnail",
+    "scrubber": "appears on scroll, selection haptic as the bubble's month changes (inferred)",
+    "reduced_motion": "cross-fade"
+  },
+  "voice": { "register": "Apple terse", "examples": ["Yesterday / 10:15 AM", "Add a Caption", "Look Up Bengal Cat", "Adjust"] },
+  "bans": [
+    "No full-width navigation or tool bars; three islands only.",
+    "No colour on chrome; colour lives in the content.",
+    "No borders or frames around the media in the viewer.",
+    "No more than 3 actions in a centre capsule; Delete alone at the trailing edge.",
+    "No metadata over the media; it lives in the pull-up info panel.",
+    "No shadows except on floating glass controls.",
+    "No visible scrubber at rest."
+  ],
+  "tests": [
+    { "id": "P1", "check": "Top and bottom control rows are each exactly three islands (circle, capsule, circle).", "auto": false },
+    { "id": "P2", "check": "Media spans the full screen width with square corners in the viewer.", "auto": true },
+    { "id": "P3", "check": "Controls are 44pt circles/capsules, inset ~16pt, white glass with soft shadow.", "auto": true },
+    { "id": "P4", "check": "Viewer title is a relative date with the time beneath, in the centre capsule.", "auto": false },
+    { "id": "P5", "check": "Centre capsule holds ≤3 actions; the destructive action is alone at the trailing edge.", "auto": false },
+    { "id": "P6", "check": "Colour outside the content covers under 2% (blue link/active tab only).", "auto": true },
+    { "id": "P7", "check": "Info panel order: chip, two pill buttons, caption, grouped metadata card, map/extra.", "auto": false },
+    { "id": "P8", "check": "No more than 3 type sizes in a frame.", "auto": true },
+    { "id": "P9", "check": "Scrubber is hidden at rest and shows a month-year bubble while dragging.", "auto": false },
+    { "id": "P10", "check": "Blind side-by-side with reference/viewer-2.jpg: reads as Photos within 2 seconds.", "auto": false }
+  ],
+  "reconstruction": { "attempted": true, "rounds": 1, "example": "example/rebuild-viewer.html", "gaps_found": [
+    "Round 1 (2026-10-18): reads as Photos at a glance (islands, full-bleed photo, filmstrip, chip). Gap: the title capsule is wider in Photos (~38% of screen width) with a semibold 17pt title and regular 13pt time; the rebuild's was narrow and bold. Added to space.title_capsule.",
+    "Round 1: in the filmstrip the current item sits apart with a small gap on each side and is ~1.5x wider; the rebuild made all thumbs equal. Added to the filmstrip signature."
+  ] },
+  "uncertain": [
+    "Date scrubber look and haptics: no screenshot found; built from forum descriptions and memory. Verify on the user's phone.",
+    "Grey card colour, text greys and blue are system defaults, not sampled.",
+    "Info card radius ~16pt estimated.",
+    "Video player not captured.",
+    "Mobbin (user's link) blocked the built-in browser; screens there could replace these press shots."
+  ]
+}

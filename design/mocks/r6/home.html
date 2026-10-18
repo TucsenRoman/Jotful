@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=393"><title>Jotful Rolodex Motion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+:root{--page:#F2F1F6;--ink:#020204;--grey:#8E8E93;--glass:#F9F8FE}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:393px;height:852px;background:var(--page)}
+body{font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased;overflow:hidden}
+.phone{width:393px;height:852px;position:relative;overflow:hidden;background:var(--page);touch-action:none;user-select:none;-webkit-user-select:none}
+.status{position:absolute;top:0;left:0;right:0;height:54px;display:flex;align-items:center;justify-content:space-between;padding:6px 30px 0 44px;font-size:17px;font-weight:600;z-index:2000}
+.status .r{display:flex;gap:6px;align-items:center}
+.hdr{position:absolute;top:58px;left:22px;right:22px;height:46px;display:flex;align-items:center;justify-content:space-between;z-index:2000}
+.word{display:flex;align-items:center;gap:7px;font-size:34px;font-weight:700;letter-spacing:-.8px;line-height:1}
+.word svg{width:30px;height:30px;margin-top:2px}
+.g{height:44px;border-radius:22px;background:var(--glass);box-shadow:0 2px 10px rgba(0,0,0,.07),0 0 1px rgba(0,0,0,.06) inset;display:flex;align-items:center;justify-content:center;gap:22px;padding:0 16px;
+  backdrop-filter:blur(14px) saturate(1.6);-webkit-backdrop-filter:blur(14px) saturate(1.6)}
+.g svg{width:21px;height:21px;stroke:var(--ink);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---- the drum ---- */
+.drum{position:absolute;inset:0;perspective:1050px;perspective-origin:50% 96px}
+.card{position:absolute;left:23.5px;top:384px;width:346px;height:244px;border-radius:13px;
+  transform-origin:50% 50% -300px;will-change:transform;cursor:grab}
+.face{position:absolute;inset:0;border-radius:13px;overflow:hidden;padding:0 16px;box-shadow:0 -1px 3px rgba(0,0,0,.12)}
+.card.front .face{box-shadow:0 10px 28px rgba(0,0,0,.16),0 -1px 3px rgba(0,0,0,.10)}
+.ttl{position:relative;font-size:22px;font-weight:600;letter-spacing:-.45px;line-height:28px;padding-top:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:190px}
+.card.front .ttl{max-width:none}
+.card:not(.open) .acts{visibility:hidden}
+.meta{position:relative;display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;opacity:.75;line-height:13px;margin-top:3px}
+.meta svg{width:12px;height:12px;fill:currentColor}
+.body{position:relative;font-size:17px;font-weight:400;line-height:22px;margin-top:10px;opacity:.95}
+.chips{position:relative;display:flex;gap:6px;margin-top:10px}
+.chip{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;line-height:13px;padding:5px 9px;border-radius:9px;background:#EFEEF3;color:#020204}
+.chip i{width:7px;height:7px;border-radius:4px}
+.list{position:relative;list-style:none;font-size:17px;line-height:23px;margin-top:8px}
+.list li{display:flex;gap:9px;align-items:center}
+.list li::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.7}
+.acts{position:absolute;left:14px;right:14px;bottom:14px;display:flex;gap:8px}
+.pill{height:40px;border-radius:20px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:17px;font-weight:600;flex:1;background:rgba(255,255,255,.22)}
+.lt .pill{background:rgba(2,2,4,.09)}
+.pill.ai{flex:1.3;background:var(--ink);color:#fff}
+.pill svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* index tabs: stick up from the top edge in the fan, hang from the bottom edge once a card has gone under */
+.tab{position:absolute;width:66px;height:20px;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;line-height:20px;text-align:center;cursor:pointer}
+.tab.up{top:-17px;border-radius:7px 7px 0 0}
+.tab.dn{bottom:-17px;border-radius:0 0 7px 7px;display:none}
+.card.under .tab.up{display:none}.card.under .tab.dn{display:block}
+.tab.p0{left:208px}.tab.p1{left:276px}
+/* media */
+.pic{position:relative;margin-top:10px;height:100px;display:flex;gap:6px}
+.pic img{height:100%;border-radius:9px;object-fit:cover;min-width:0}
+.pic img:first-child{flex:2.2}.pic img+img{flex:1}
+.voicebg{position:absolute;inset:0;background-size:cover;background-position:center}
+.voicebg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(40,20,30,.55),rgba(40,20,30,.85))}
+.wave{position:relative;display:flex;align-items:center;gap:3px;height:44px;margin-top:14px}
+.wave u{flex:1;background:rgba(255,255,255,.88);border-radius:2px}
+.done .ttl{text-decoration:line-through;text-decoration-thickness:2px}
+.done .face{color:#8E8E93!important}
+
+/* capture sheet placeholder (owned by the sheet builder) */
+.sheet{position:absolute;left:0;right:0;bottom:0;height:136px;background:#fff;border-radius:26px 26px 0 0;box-shadow:0 -6px 28px rgba(0,0,0,.10);padding:8px 22px 0;z-index:3000}
+.grab{width:36px;height:5px;border-radius:3px;background:#D1D1D6;margin:0 auto 12px}
+.sheet .p{font-size:17px;font-weight:600;line-height:22px}
+.sheet .row{display:flex;align-items:center;gap:10px;margin-top:12px}
+.sheet .in{flex:1;height:44px;border-radius:22px;background:#EFEEF3;color:var(--grey);font-size:17px;line-height:44px;padding-left:16px}
+.sheet .ic{width:44px;height:44px;border-radius:22px;background:#EFEEF3;display:flex;align-items:center;justify-content:center}
+.sheet .ic.mic{background:var(--ink)}
+.sheet svg{width:20px;height:20px;stroke:var(--ink);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sheet .mic svg{stroke:#fff}
+.home{position:absolute;bottom:8px;left:50%;width:134px;height:5px;margin-left:-67px;border-radius:3px;background:var(--ink)}
+
+.tp{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;line-height:13px;padding:3px 8px;border-radius:999px;margin-right:3px}
+.chip.tp{padding:3px 8px;border-radius:999px;gap:0}
+.meta{opacity:1!important;color:#6C6C70}
+.body{opacity:1!important}
+.voicebg::after{background:linear-gradient(180deg,color-mix(in srgb,var(--w) 78%,transparent),color-mix(in srgb,var(--w) 94%,transparent))!important}
+.wave u{background:rgba(28,28,30,.72)!important}
+.pill{background:rgba(2,2,4,.09)!important}.pill.ai{background:#020204!important;color:#fff!important}
+/* ---- r6: simplified Rolodex ---- */
+.drum{perspective:900px;perspective-origin:50% 380px}
+.card{top:416px;left:36px;width:334px; /* left 36px keeps the date-scrubber gutter clear */ transform-origin:50% 0;cursor:grab}
+.card .ttl{max-width:none}
+.face{box-shadow:0 -1px 3px rgba(0,0,0,.10),0 -6px 14px rgba(0,0,0,.05)}
+.card.front .face{box-shadow:0 10px 28px rgba(0,0,0,.16),0 -1px 3px rgba(0,0,0,.10)}
+.hchip{position:absolute;top:13px;left:50%;transform:translateX(-50%) scale(.92);background:#1C1C1E;color:#fff;font-size:12px;font-weight:600;letter-spacing:.2px;padding:6px 12px;border-radius:999px;opacity:0;pointer-events:none;z-index:4000;transition:opacity .12s,transform .12s}
+.hchip.on{opacity:1;transform:translateX(-50%) scale(1)}
+.drum.xfade{transition:opacity .14s linear}
+.meta{white-space:nowrap;overflow:hidden}.meta .tp{flex:none}
+/* ---- date scrubber (Photos-style), lives in the left 36px gutter ---- */
+.scrub{position:absolute;left:0;top:0;width:0;height:0;z-index:2600;opacity:0;transition:opacity .25s linear;pointer-events:none}
+.scrub.on{opacity:1}.scrub.on .sthumb{pointer-events:auto}
+.strack{position:absolute;left:17px;top:170px;width:2px;height:500px;border-radius:1px;background:rgba(2,2,4,.06)}
+.strack b{position:absolute;left:-2px;width:6px;height:2px;border-radius:1px;background:rgba(2,2,4,.18)}
+.sthumb{position:absolute;left:-4px;width:44px;height:44px;margin-top:-22px;display:flex;align-items:center;justify-content:center;cursor:grab;touch-action:none}
+.sthumb i{display:block;width:6px;height:36px;border-radius:3px;background:rgba(249,248,254,.78);
+  backdrop-filter:blur(12px) saturate(1.6);-webkit-backdrop-filter:blur(12px) saturate(1.6);
+  background:#fff;box-shadow:0 1px 8px rgba(0,0,0,.30),0 0 0 .5px rgba(0,0,0,.16);transition:width .15s,transform .15s}
+.scrub.grab .sthumb i{width:7px;transform:scaleY(1.06)}
+.sbub{position:absolute;left:44px;height:34px;margin-top:-17px;padding:0 14px;border-radius:17px;display:flex;align-items:center;white-space:nowrap;
+  font-size:15px;font-weight:600;letter-spacing:-.2px;color:var(--ink);background:rgba(249,248,254,.80);
+  backdrop-filter:blur(14px) saturate(1.6);-webkit-backdrop-filter:blur(14px) saturate(1.6);
+  box-shadow:0 4px 16px rgba(0,0,0,.20),0 0 0 .5px rgba(0,0,0,.10);opacity:0;transform:translateX(-6px) scale(.96);transition:opacity .12s,transform .12s;pointer-events:none}
+.scrub.grab .sbub{opacity:1;transform:none}
+
+/* ---- cards-left count: quiet footnote at the right of the front card's meta row ---- */
+.mt{overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}.meta svg{flex:none}
+.more{display:none;margin-left:auto;padding-left:10px;flex:none;font-size:13px;font-weight:400;letter-spacing:0;text-transform:none;color:#8E8E93}
+.card.front .more{display:block}
+/* ---- action buttons (APPLE_SPECS s8): 44pt capsules, 16pt sides, 6pt icon gap, 15pt semibold, sized to content, 12pt apart, 14pt card inset; Copy = 44pt icon-only circle ---- */
+.acts{left:14px;right:14px;bottom:14px;gap:12px}
+.pill{flex:0 0 auto!important;height:44px;border-radius:22px;padding:0 16px;gap:6px;font-size:15px;font-weight:600;letter-spacing:-.2px;white-space:nowrap}
+.pill svg{width:17px;height:17px}
+.pill.ai{order:-1}
+.pill.ic{width:44px;padding:0}
+/* 16pt side margins (header, filter row, sheet) */
+.hdr{left:16px;right:16px}.frow{left:16px!important;right:16px!important}.sheet{padding-left:16px;padding-right:16px}
+.card{width:341px}
+/* ---- filter row under the title: filter icon first, then active chips (or "All thoughts") ---- */
+.frow{position:absolute;top:110px;left:22px;right:22px;height:30px;display:flex;align-items:center;gap:8px;z-index:2000;overflow:hidden}
+.fchips{display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden}
+.fbtn{flex:none;width:30px;height:30px;margin-left:-4px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.fbtn svg{width:22px;height:22px;fill:none;stroke:var(--ink);stroke-width:1.9;stroke-linecap:round}
+.fbtn svg.ff{display:none}.fbtn.on svg.fo{display:none}.fbtn.on svg.ff{display:block}
+.fbtn svg.ff circle{fill:var(--ink);stroke:none}.fbtn svg.ff path{stroke:#fff}
+.fall{font-size:15px;color:#8E8E93}
+.fc{height:28px;padding:0 6px 0 11px;border-radius:14px;display:flex;align-items:center;gap:2px;flex:none;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  color:var(--c);background:color-mix(in srgb,var(--b) 15%,white);cursor:pointer;white-space:nowrap}
+.fc b{font-weight:500;font-size:15px;width:16px;text-align:center;opacity:.7}
+.fc[data-res]{--c:#3A3A3C;background:rgba(2,2,4,.06);text-transform:none;letter-spacing:0;font-size:13px;font-weight:500}
+/* ---- glass popover, anchored to the filter icon ---- */
+.scrim{position:absolute;inset:0;z-index:3400;display:none}.scrim.on{display:block}
+.pop{position:absolute;top:146px;left:16px;width:300px;z-index:3500;padding:16px 16px 6px;border-radius:26px;
+  background:rgba(249,248,254,.86);backdrop-filter:blur(24px) saturate(1.8);-webkit-backdrop-filter:blur(24px) saturate(1.8);
+  box-shadow:0 12px 40px rgba(0,0,0,.18),0 0 0 .5px rgba(0,0,0,.08);
+  transform-origin:12px 0;transform:scale(.6);opacity:0;pointer-events:none;transition:transform .32s cubic-bezier(.2,.9,.3,1.1),opacity .18s linear}
+.pop.on{transform:none;opacity:1;pointer-events:auto}
+.pop .ph{font-size:13px;color:#8E8E93;margin:0 2px 10px}
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+/* tag pills: ~15% tint, bold tag colour text; selected = stronger tint + check + 1.5pt border */
+.fp{height:30px;padding:0 12px;border-radius:15px;display:flex;align-items:center;gap:4px;font-size:13px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;
+  color:var(--c);background:color-mix(in srgb,var(--b) 15%,white);cursor:pointer}
+.fp.on{background:color-mix(in srgb,var(--b) 26%,white);box-shadow:inset 0 0 0 1.5px var(--b);padding-left:9px}
+.fp svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.pop .dv{height:.5px;background:rgba(60,60,67,.29);margin:14px 2px 0}
+.trow{display:flex;align-items:center;justify-content:space-between;height:50px;font-size:17px;padding:0 2px}
+.tog{width:51px;height:31px;border-radius:16px;background:rgba(120,120,128,.16);position:relative;cursor:pointer;transition:background .2s}
+.tog i{position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:14px;background:#fff;box-shadow:0 3px 8px rgba(0,0,0,.15),0 1px 1px rgba(0,0,0,.16);transition:transform .25s cubic-bezier(.3,1.3,.5,1)}
+.tog.on{background:#34C759}.tog.on i{transform:translateX(20px)}
+.empty{position:absolute;left:0;right:0;top:380px;text-align:center;font-size:17px;color:#8E8E93;display:none}.empty.on{display:block}
+/* ---- live count while the stack moves: plain floating grey text above the stack ---- */
+.ccap{position:absolute;top:177px;left:50%;font-size:12px;line-height:15px;font-weight:400;color:rgba(60,60,67,.3);white-space:nowrap;
+  z-index:2700;opacity:0;transform:translateX(-50%) translateY(-3px);transition:opacity .2s linear,transform .2s;pointer-events:none;font-variant-numeric:tabular-nums}
+.ccap.on{opacity:1;transform:translateX(-50%)}
+
+</style></head><body><div class="phone" id="phone">
+
+<div class="status"><span>9:41</span><span class="r">
+<svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"></rect><rect x="5" y="5.5" width="3" height="6.5" rx="1"></rect><rect x="10" y="3" width="3" height="9" rx="1"></rect><rect x="15" y="0" width="3" height="12" rx="1"></rect></svg>
+<svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 11.5l2.4-2.6a3.4 3.4 0 00-4.8 0zM3.3 6.6a6.6 6.6 0 019.4 0l1.6-1.7a9 9 0 00-12.6 0zM.2 3.4a11 11 0 0115.6 0" fill="none" stroke="#020204" stroke-width="1.7" stroke-linecap="round"></path></svg>
+<svg width="27" height="13" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.5" fill="none" stroke="#020204" opacity=".4"></rect><rect x="2" y="2" width="20" height="9" rx="2"></rect><rect x="25" y="4.5" width="1.6" height="4" rx=".8" opacity=".4"></rect></svg></span></div>
+
+<div class="hdr">
+ <div class="word"><svg viewBox="0 0 32 32" fill="none"><path d="M15.8272 15.9448C8.12721 29.3448 -0.272795 26.6448 1.82721 15.8448C3.62721 6.44482 12.0272 7.34482 15.8272 14.5448V15.9448Z" fill="url(#ml)"></path><path d="M16.4272 16.3449C24.1272 2.9449 32.5272 5.6449 30.4272 16.4449C28.6272 25.8449 20.2272 24.9449 16.4272 17.7449V16.3449Z" fill="#58795C"></path><path d="M18.6547 9.98497C19.7477 10.4489 19.3917 13.7511 17.8596 17.3606C16.3274 20.9701 14.1993 23.5201 13.1063 23.0561C12.0133 22.5922 12.3692 19.29 13.9014 15.6805C15.4335 12.071 17.5616 9.52101 18.6547 9.98497Z" fill="#242019"></path><defs><linearGradient id="ml" x1="1.1272" y1="28.1448" x2="21.1272" y2="7.14482" gradientUnits="userSpaceOnUse"><stop stop-color="#EF705A"></stop><stop offset="0.72" stop-color="#EF705A"></stop><stop offset="1" stop-color="#F5F0E6"></stop></linearGradient></defs></svg>Jotful</div>
+ <div class="g"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M15.5 15.5l4.5 4.5"></path></svg><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"></path></svg></div>
+</div>
+
+<div class="drum" id="drum"><div data-i="0" class="card lt" data-tag="Idea" data-date="2026-10-18"><div class="face" style="background:color-mix(in srgb, #F2B705 9%, white);color:#1C1C1E"><div class="ttl">Birthday gift for Mom</div><div class="meta"><span class="tp" style="background:#F2B705;color:#000">Idea</span><svg viewBox="0 0 24 24"><path d="M15.6 2.6l5.8 5.8-2.2.9-3.4 3.4.4 4.8-1.9 1.9-4-4-5.6 5.6-1.2-1.2 5.6-5.6-4-4 1.9-1.9 4.8.4 3.4-3.4z"></path></svg><span class="mt">Pinned · Today 9:12</span><span class="more"></span></div><div class="body">The pottery class she keeps mentioning.</div><div class="acts"><div class="pill"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>Search Web</div><div class="pill ai"><svg viewBox="0 0 24 24"><path d="M5 5.5h14v10H10l-5 4z"></path></svg>Ask AI</div><div class="pill ic" aria-label="Copy" title="Copy"><svg viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"></rect><path d="M5 15.5V7a2.5 2.5 0 012.5-2.5h8"></path></svg></div></div></div></div><div data-i="1" class="card lt" data-tag="Question" data-date="2026-10-17"><div class="face" style="background:color-mix(in srgb, #0A6CFF 9%, white);color:#1C1C1E"><div class="ttl">Why do I always remember the dream</div><div class="meta"><span class="tp" style="background:#0A6CFF;color:#fff">Question</span><span class="mt">Yesterday 22:40</span><span class="more"></span></div><div class="body">…right after I stop thinking about it?</div><div class="acts"><div class="pill"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>Search Web</div><div class="pill ai"><svg viewBox="0 0 24 24"><path d="M5 5.5h14v10H10l-5 4z"></path></svg>Ask AI</div><div class="pill ic" aria-label="Copy" title="Copy"><svg viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"></rect><path d="M5 15.5V7a2.5 2.5 0 012.5-2.5h8"></path></svg></div></div></div></div><div data-i="2" class="card lt" data-tag="Movie" data-date="2026-10-13"><div class="face" style="background:color-mix(in srgb, #E5383B 9%, white);color:#1C1C1E"><div class="ttl">Perfect Days</div><div class="meta"><span class="tp" style="background:#E5383B;color:#fff">Movie</span><span class="mt">Oct 13</span><span class="more"></span></div><div class="body">The quiet one with the toilet cleaner.</div><div class="acts"><div class="pill"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>Search Web</div><div class="pill ai"><svg viewBox="0 0 24 24"><path d="M5 5.5h14v10H10l-5 4z"></path></svg>Ask AI</div><div class="pill ic" aria-label="Copy" title="Copy"><svg viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"></rect><path d="M5 15.5V7a2.5 2.5 0 012.5-2.5h8"></path></svg></div></div></div></div><div data-i="3" class="card lt" data-tag="Movie" data-date="2026-10-09"><div class="face" style="background:color-mix(in srgb, #E5383B 9%, white);color:#1C1C1E"><div class="ttl">Past Lives</div><div class="meta"><span class="tp" style="background:#E5383B;color:#fff">Movie</span><span class="mt">Oct 9</span><span class="more"></span></div><div class="body">Sara said watch it on a plane, not at home.</div><div class="acts"><div class="pill"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>Search Web</div><div class="pill ai"><svg viewBox="0 0 24 24"><path d="M5 5.5h14v10H10l-5 4z"></path></svg>Ask AI</div><div class="pill ic" aria-label="Copy" title="Copy"><svg viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"></rect><path d="M5 15.5V7a2.5 2.5 0 012.5-2.5h8"></path></svg></div></div></div></div><div data-i="4" class="card lt" data-tag="Idea" data-date="2026-10-04"><div class="face" style="background:color-mix(in srgb, #F2B705 9%, white);color:#1C1C1E"><div class="ttl">Shelf for the hallway</div><div class="meta"><span class="tp" style="background:#F2B705;color:#000">Idea</span><span class="mt">Oct 4</span><span class="more"></span></div><div class="body">Thin, just for keys and letters.</div><div class="acts"><div class="pill"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>Search Web</div><div class="pill ai"><svg viewBox="0 0 24 24"><path d="M5 5.5h14v10H10l-5 4z"></path></svg>Ask AI</div><div class="pill ic" aria-label="Copy" title="Copy"><svg viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"></rect><path d="M5 15.5V7a2.5 2.5 0 012.5-2.5h8"></path></svg></div></div></div></div><div data-i="5" class="card lt" data-tag="Music" data-date="2026-09-30"><div class="face" style="background:color-mix(in srgb, #E83E8C 9%, white);color:#1C1C1E"><div class="voicebg" style="--w:color-mix(in srgb, #E83E8C 9%, white)" style="background-image:url(../photos/car-2.jpg)"></div><div class="ttl">Melody idea in the car</div><div class="meta"><span class="tp" style="background:#E83E8C;color:#fff">Music</span><svg viewBox="0 0 24 24"><path d="M12 2.5a3.5 3.5 0 013.5 3.5v6a3.5 3.5 0 01-7 0V6A3.5 3.5 0 0112 2.5zM5 11h2a5 5 0 0010 0h2a7 7 0 01-6 6.9V21h-2v-3.1A7 7 0 015 11z"></path></svg><span class="mt">Sep 30 · Voice 0:42</span><span class="more"></span></div><div class="wave"><u style="height:22%"></u><u style="height:48%"></u><u style="height:70%"></u><u style="height:38%"></u><u style="height:86%"></u><u style="height:100%"></u><u style="height:62%"></u><u style="height:30%"></u><u style="height:54%"></u><u style="height:80%"></u><u style="height:44%"></u><u style="height:26%"></u><u style="height:66%"></u><u style="height:92%"></u><u style="height:58%"></u><u style="height:34%"></u><u style="height:72%"></u><u style="height:50%"></u><u style="height:24%"></u><u style="height:40%"></u><u style="height:76%"></u><u style="height:96%"></u><u style="height:60%"></u><u style="height:36%"></u><u style="height:52%"></u><u style="height:28%"></u><u style="height:68%"></u><u style="height:46%"></u><u style="height:20%"></u><u style="height:32%"></u><u style="height:58%"></u><u style="height:74%"></u></div><div class="acts"><div class="pill"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>Search Web</div><div class="pill ai"><svg viewBox="0 0 24 24"><path d="M5 5.5h14v10H10l-5 4z"></path></svg>Ask AI</div><div class="pill ic" aria-label="Copy" title="Copy"><svg viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"></rect><path d="M5 15.5V7a2.5 2.5 0 012.5-2.5h8"></path></svg></div></div></div></div><div data-i="6" class="card lt" data-tag="Music" data-date="2026-09-26"><div class="face" style="background:color-mix(in srgb, #E83E8C 9%, white);color:#1C1C1E"><div class="ttl">Song from the café</div><div class="meta"><span class="tp" style="background:#E83E8C;color:#fff">Music</span><span class="mt">Sep 26</span><span class="more"></span></div><div class="body">Ask what was playing next time.</div><div class="acts"><div class="pill"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>Search Web</div><div class="pill ai"><svg viewBox="0 0 24 24"><path d="M5 5.5h14v10H10l-5 4z"></path></svg>Ask AI</div><div class="pill ic" aria-label="Copy" title="Copy"><svg viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"></rect><path d="M5 15.5V7a2.5 2.5 0 012.5-2.5h8"></path></svg></div></div></div></div><div data-i="7" class="card lt" data-tag="Book" data-date="2026-09-21"><div class="face" style="background:color-mix(in srgb, #F57C1F 9%, white);color:#1C1C1E"><div class="ttl">The Overstory</div><div class="meta"><span class="tp" style="background:#F57C1F;color:#fff">Book</span><span class="mt">Sep 21</span><span class="more"></span></div><div class="body">Finish before the trip.</div><div class="acts"><div class="pill"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>Search Web</div><div class="pill ai"><svg viewBox="0 0 24 24"><path d="M5 5.5h14v10H10l-5 4z"></path></svg>Ask AI</div><div class="pill ic" aria-label="Copy" title="Copy"><svg viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"></rect><path d="M5 15.5V7a2.5 2.5 0 012.5-2.5h8"></path></svg></div></div></div></div><div data-i="8" class="card lt" data-tag="Question" data-date="2026-09-15"><div class="face" style="background:color-mix(in srgb, #0A6CFF 9%, white);color:#1C1C1E"><div class="ttl">Do plants sleep?</div><div class="meta"><span class="tp" style="background:#0A6CFF;color:#fff">Question</span><span class="mt">Sep 15</span><span class="more"></span></div><div class="body">The basil droops every night.</div><div class="acts"><div class="pill"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>Search Web</div><div class="pill ai"><svg viewBox="0 0 24 24"><path d="M5 5.5h14v10H10l-5 4z"></path></svg>Ask AI</div><div class="pill ic" aria-label="Copy" title="Copy"><svg viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"></rect><path d="M5 15.5V7a2.5 2.5 0 012.5-2.5h8"></path></svg></div></div></div></div><div data-i="9" class="card lt done" data-resolved="1" data-date="2026-09-12"><div class="face" style="background:#FFFFFF;color:#1C1C1E"><div class="ttl">Return the library books</div><div class="meta"><svg viewBox="0 0 24 24"><path d="M9.5 17.6L3.7 11.8l1.6-1.6 4.2 4.2L18.7 5.2l1.6 1.6z"></path></svg><span class="mt">Sep 12 · Resolved</span><span class="more"></span></div><div class="body">Three of them, due Friday.</div><div class="acts"><div class="pill"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>Search Web</div><div class="pill ai"><svg viewBox="0 0 24 24"><path d="M5 5.5h14v10H10l-5 4z"></path></svg>Ask AI</div><div class="pill ic" aria-label="Copy" title="Copy"><svg viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"></rect><path d="M5 15.5V7a2.5 2.5 0 012.5-2.5h8"></path></svg></div></div></div></div><div data-i="10" class="card lt" data-tag="Place" data-date="2026-09-08"><div class="face" style="background:color-mix(in srgb, #2DA44E 9%, white);color:#1C1C1E"><div class="ttl">That bakery sign on 5th</div><div class="meta"><span class="tp" style="background:#2DA44E;color:#fff">Place</span><svg viewBox="0 0 24 24"><path d="M8.5 4h7l1.6 2.5H21V20H3V6.5h3.9zM12 9a4 4 0 100 8 4 4 0 000-8z"></path></svg><span class="mt">Sep 8 · 2 photos · steal the lettering</span><span class="more"></span></div><div class="pic"><img src="../photos/bakery-2.jpg" alt=""><img src="../photos/bakery-1.jpg" alt=""></div><div class="acts"><div class="pill"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>Search Web</div><div class="pill ai"><svg viewBox="0 0 24 24"><path d="M5 5.5h14v10H10l-5 4z"></path></svg>Ask AI</div><div class="pill ic" aria-label="Copy" title="Copy"><svg viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"></rect><path d="M5 15.5V7a2.5 2.5 0 012.5-2.5h8"></path></svg></div></div></div></div><div data-i="11" class="card lt" data-tag="To-do" data-date="2026-09-03"><div class="face" style="background:color-mix(in srgb, #0FA3A3 9%, white);color:#1C1C1E"><div class="ttl">Before the trip</div><div class="meta"><span class="tp" style="background:#0FA3A3;color:#fff">To-do</span><span class="mt">Sep 3</span><span class="more"></span></div><div class="body">Passport, adapters, cancel the milk.</div><div class="acts"><div class="pill"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>Search Web</div><div class="pill ai"><svg viewBox="0 0 24 24"><path d="M5 5.5h14v10H10l-5 4z"></path></svg>Ask AI</div><div class="pill ic" aria-label="Copy" title="Copy"><svg viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"></rect><path d="M5 15.5V7a2.5 2.5 0 012.5-2.5h8"></path></svg></div></div></div></div><div data-i="12" class="card lt" data-tag="Person" data-date="2026-08-29"><div class="face" style="background:color-mix(in srgb, #8E44EC 9%, white);color:#1C1C1E"><div class="ttl">Ask Dev about the camera</div><div class="meta"><span class="tp" style="background:#8E44EC;color:#fff">Person</span><span class="mt">Aug 29</span><span class="more"></span></div><div class="body">The one he used for the wedding.</div><div class="chips"><span class="chip tp" style="background:#F2B705;color:#000">Idea</span></div><div class="acts"><div class="pill"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>Search Web</div><div class="pill ai"><svg viewBox="0 0 24 24"><path d="M5 5.5h14v10H10l-5 4z"></path></svg>Ask AI</div><div class="pill ic" aria-label="Copy" title="Copy"><svg viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"></rect><path d="M5 15.5V7a2.5 2.5 0 012.5-2.5h8"></path></svg></div></div></div></div><div data-i="13" class="card lt" data-tag="Place" data-date="2026-08-24"><div class="face" style="background:color-mix(in srgb, #2DA44E 9%, white);color:#1C1C1E"><div class="ttl">Bench by the river</div><div class="meta"><span class="tp" style="background:#2DA44E;color:#fff">Place</span><span class="mt">Aug 24</span><span class="more"></span></div><div class="body">Good spot to read around 6pm.</div><div class="acts"><div class="pill"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>Search Web</div><div class="pill ai"><svg viewBox="0 0 24 24"><path d="M5 5.5h14v10H10l-5 4z"></path></svg>Ask AI</div><div class="pill ic" aria-label="Copy" title="Copy"><svg viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"></rect><path d="M5 15.5V7a2.5 2.5 0 012.5-2.5h8"></path></svg></div></div></div></div><div data-i="14" class="card lt" data-tag="To-do" data-date="2026-08-16"><div class="face" style="background:color-mix(in srgb, #0FA3A3 9%, white);color:#1C1C1E"><div class="ttl">Weekend</div><div class="meta"><span class="tp" style="background:#0FA3A3;color:#fff">To-do</span><span class="mt">Aug 16</span><span class="more"></span></div><ul class="list"><li>farmers market</li><li>fix bike tire</li><li>finish the book</li></ul><div class="acts"><div class="pill"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>Search Web</div><div class="pill ai"><svg viewBox="0 0 24 24"><path d="M5 5.5h14v10H10l-5 4z"></path></svg>Ask AI</div><div class="pill ic" aria-label="Copy" title="Copy"><svg viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"></rect><path d="M5 15.5V7a2.5 2.5 0 012.5-2.5h8"></path></svg></div></div></div></div><div data-i="15" class="card lt" data-tag="Idea" data-date="2026-08-10"><div class="face" style="background:color-mix(in srgb, #F2B705 9%, white);color:#1C1C1E"><div class="ttl">Name for the newsletter</div><div class="meta"><span class="tp" style="background:#F2B705;color:#000">Idea</span><span class="mt">Aug 10</span><span class="more"></span></div><div class="body">Something with moths in it?</div><div class="acts"><div class="pill"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>Search Web</div><div class="pill ai"><svg viewBox="0 0 24 24"><path d="M5 5.5h14v10H10l-5 4z"></path></svg>Ask AI</div><div class="pill ic" aria-label="Copy" title="Copy"><svg viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"></rect><path d="M5 15.5V7a2.5 2.5 0 012.5-2.5h8"></path></svg></div></div></div></div><div data-i="16" class="card lt done" data-resolved="1" data-date="2026-08-03"><div class="face" style="background:#FFFFFF;color:#1C1C1E"><div class="ttl">Call the dentist back</div><div class="meta"><svg viewBox="0 0 24 24"><path d="M9.5 17.6L3.7 11.8l1.6-1.6 4.2 4.2L18.7 5.2l1.6 1.6z"></path></svg><span class="mt">Aug 3 · Resolved</span><span class="more"></span></div><div class="body">Ask about moving Thursday.</div><div class="acts"><div class="pill"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>Search Web</div><div class="pill ai"><svg viewBox="0 0 24 24"><path d="M5 5.5h14v10H10l-5 4z"></path></svg>Ask AI</div><div class="pill ic" aria-label="Copy" title="Copy"><svg viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"></rect><path d="M5 15.5V7a2.5 2.5 0 012.5-2.5h8"></path></svg></div></div></div></div></div>
+
+<div class="sheet"><div class="grab"></div>
+ <div class="p">What are you daydreaming of?</div>
+ <div class="row"><div class="in">Write it down…</div>
+  <div class="ic"><svg viewBox="0 0 24 24"><path d="M4 8.5h3l1.8-2.8h6.4L17 8.5h3V19H4z"></path><circle cx="12" cy="13.3" r="3.3"></circle></svg></div>
+  <div class="ic mic"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21"></path></svg></div></div>
+ <div class="home"></div>
+</div>
+<div class="scrub" id="scrub"><div class="strack"></div><div class="sthumb" id="sthumb"><i></i></div><div class="sbub" id="sbub">Oct 18</div></div><div class="frow" id="frow"><span class="fbtn" id="fbtn"><svg class="fo" viewBox="0 0 24 24"><path d="M4 7h16M7 12h10M10 17h4"></path></svg><svg class="ff" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5"></circle><path d="M7 8.5h10M9 12h6M11 15.5h2"></path></svg></span><span class="fchips" id="fchips"></span></div><div class="empty" id="empty">No thoughts match.</div><div class="scrim" id="scrim"></div><div class="pop" id="pop"><div class="ph">Tags</div><div class="pills" id="pills"></div><div class="dv"></div><div class="trow"><span>Show resolved</span><span class="tog" id="tog"><i></i></span></div></div><div class="ccap" id="ccap">14 more</div><div class="hchip" id="hchip">haptic: rigid tap</div>
+</div>
+<script>
+// ---- Rolodex motion (r6). One number drives everything: p = how many cards have fallen.
+// Cards are in time order, newest first; p runs 0 (newest in front) .. N-1 (oldest in front). No loop. ----
+const M={
+  D:320,            // px of drag for one full card fall (1:1 finger tracking)
+  STEP:[60,56,52,48], // px each card behind sits higher
+  SCALE_STEP:.06,   // smaller per step back
+  DIM_STEP:.025,    // dimmer per step back
+  SHOW:4,           // cards visible behind the front one (leaves room for the count capsule)
+  ROT_MAX:84,       // deg rotateX at full fall
+  GROW:.06,         // scale-up at full fall
+  FADE_FROM:.7,     // falling card fades from this progress to 1
+  COMMIT:.35,       // fraction of D that commits on release
+  FLICK:.5,         // px/ms flick velocity that commits regardless
+  RUBBER:.3,        // friction past either end of the timeline
+  SPRING:{duration:400,dampingRatio:.8}
+};
+const allCards=[...document.querySelectorAll('.card')], drum=document.getElementById('drum');
+let cards=allCards, N=cards.length, MAX=N-1;   // cards = the current (filtered) stack, newest first
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
+function stackY(d){d=Math.min(d,M.SHOW);let y=0,i=0;for(;i<Math.floor(d);i++)y+=M.STEP[i];if(i<M.SHOW)y+=M.STEP[i]*(d-i);return -y}
+function stacked(d){ // d = depth, 0 front, continuous
+  const dc=Math.min(d,M.SHOW);
+  return {y:stackY(d),rot:0,scale:1-M.SCALE_STEP*dc,bright:1-M.DIM_STEP*dc,opacity:clamp(M.SHOW+1-d,0,1),z:1000-Math.round(d*10)};
+}
+function falling(t){ // t = fall progress 0..1 (beyond 1 allowed by spring overshoot)
+  return {y:t*M.D,rot:M.ROT_MAX*t,scale:1+M.GROW*t,bright:1,opacity:clamp((1-t)/(1-M.FADE_FROM),0,1),z:1500};
+}
+function stateFor(i,p){
+  if(p<0){const s=stacked(i);if(i===0)s.y=p*M.D;return s}   // rubber-band at the newest end: front card lifts a little
+  const f=Math.floor(p),t=p-f,k=i-f;
+  if(k<0)return falling(1);                                  // newer cards that already fell
+  return k===0?falling(t):stacked(k-t);
+}
+const rubber=raw=>raw>MAX?MAX+(raw-MAX)*M.RUBBER:raw<0?raw*M.RUBBER:raw;
+const unrubber=p=>p>MAX?MAX+(p-MAX)/M.RUBBER:p<0?p/M.RUBBER:p;
+function render(p){
+  if(!N)return;
+  cards.forEach((c,i)=>{
+    const s=stateFor(i,p);
+    c.style.transform=`translateY(${s.y.toFixed(2)}px) rotateX(${s.rot.toFixed(2)}deg) scale(${s.scale.toFixed(4)})`;
+    c.style.opacity=s.opacity.toFixed(3);
+    c.style.filter=s.bright<.999?`brightness(${s.bright.toFixed(3)})`:'none';
+    c.style.zIndex=s.z;
+    c.style.visibility=s.opacity<.002?'hidden':'visible';
+    const front=i===clamp(Math.round(p),0,MAX);
+    c.classList.toggle('front',front);c.classList.toggle('open',front);
+  });
+}
+// ---- haptic stub ----
+let chipT;
+function haptic(kind){
+  const tick=kind==='tick';
+  console.log('haptic:',kind,tick?'(Haptics.selectionAsync())':'(Haptics.impactAsync(Rigid))');
+  const el=document.getElementById('hchip');el.textContent=tick?'haptic: selection tick':'haptic: rigid tap';el.classList.add('on');clearTimeout(chipT);chipT=setTimeout(()=>el.classList.remove('on'),600);
+}
+window.haptic=haptic;
+// ---- spring: duration/dampingRatio -> stiffness/damping (mass 1), carries release velocity ----
+const W=2*Math.PI/(M.SPRING.duration/1000), K=W*W, C=2*M.SPRING.dampingRatio*W;
+let p=0,v=0,target=0,raf=0,notified=0;
+function animateTo(tg,vel){
+  target=tg;v=vel;cancelAnimationFrame(raf);let last=performance.now();
+  const step=now=>{let dt=Math.min(.05,(now-last)/1000);last=now;
+    while(dt>0){const h=Math.min(dt,1/240);const a=-K*(p-target)-C*v;v+=a*h;p+=v*h;dt-=h}
+    if(Math.abs(p-target)<.0005&&Math.abs(v)<.005){p=target;v=0;render(p);return}
+    render(p);raf=requestAnimationFrame(step)};
+  raf=requestAnimationFrame(step);
+}
+function notify(n){n=clamp(n,0,MAX);if(n!==notified){notified=n;haptic('tap')}}
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function crossfadeTo(tg){
+  drum.classList.add('xfade');drum.style.opacity=0;
+  setTimeout(()=>{p=target=tg;render(p);drum.style.opacity=1;setTimeout(()=>drum.classList.remove('xfade'),160)},140);
+}
+function settle(vel,dir){ // vel in px/ms, dir = sign of gesture
+  const f=Math.floor(p),frac=p-f;let tg;
+  if(p>MAX)tg=MAX;else if(p<0)tg=0;                        // past an end: spring back, no commit, no haptic
+  else if(frac<1e-4)tg=f;
+  else if(vel>M.FLICK)tg=f+1;
+  else if(vel<-M.FLICK)tg=f;
+  else if(dir>=0)tg=frac>M.COMMIT?f+1:f;
+  else tg=frac<1-M.COMMIT?f:f+1;
+  tg=clamp(tg,0,MAX);notify(tg);
+  if(reduced){if(tg!==Math.round(target))crossfadeTo(tg);else{p=target=tg;render(p)}return}
+  animateTo(tg,vel*1000/M.D);
+}
+// ---- pointer drag ----
+const zone=document.getElementById('phone');let drag=null;
+zone.addEventListener('pointerdown',e=>{
+  if(e.clientY<110||e.clientY>716||!N||e.target.closest('.frow,.pop,.scrim,.sthumb'))return; // stack area only
+  cancelAnimationFrame(raf);zone.setPointerCapture(e.pointerId);
+  drag={y0:e.clientY,p0:reduced?target:unrubber(p),samples:[[performance.now(),e.clientY]]};
+});
+zone.addEventListener('pointermove',e=>{
+  if(!drag)return;const now=performance.now();drag.samples.push([now,e.clientY]);
+  while(drag.samples.length>2&&now-drag.samples[0][0]>80)drag.samples.shift();
+  const dy=e.clientY-drag.y0;
+  if(reduced){drag.pv=clamp(drag.p0+dy/M.D,0,MAX);return}
+  p=rubber(drag.p0+dy/M.D);render(p);
+  if(p>=0&&p<=MAX){
+    if(Math.floor(p)>notified)notify(Math.floor(p));      // a card fully left mid-drag
+    else if(Math.ceil(p)<notified)notify(Math.ceil(p));   // a card fully returned mid-drag
+  }
+});
+const end=e=>{
+  if(!drag)return;const s=drag.samples,a=s[0],b=s[s.length-1];
+  const vel=b[0]>a[0]?(b[1]-a[1])/(b[0]-a[0]):0,dir=Math.sign(e.clientY-drag.y0);
+  if(reduced){p=drag.pv??drag.p0}
+  drag=null;settle(vel,dir);
+};
+zone.addEventListener('pointerup',end);zone.addEventListener('pointercancel',end);
+// ---- wheel / trackpad ----
+let wheelT,wheelDir=0;
+zone.addEventListener('wheel',e=>{
+  e.preventDefault();if(!N||e.target.closest('.pop'))return;cancelAnimationFrame(raf);
+  const d=e.deltaY*(e.deltaMode===1?16:1);wheelDir=Math.sign(d)||wheelDir;
+  if(reduced){clearTimeout(wheelT);wheelT=setTimeout(()=>{const tg=clamp(Math.round(target)+wheelDir,0,MAX);if(tg!==Math.round(target)){notify(tg);crossfadeTo(tg)}},120);return}
+  p=rubber(unrubber(p)+d/M.D);render(p);
+  if(p>=0&&p<=MAX){if(Math.floor(p)>notified)notify(Math.floor(p));else if(Math.ceil(p)<notified)notify(Math.ceil(p));}
+  clearTimeout(wheelT);wheelT=setTimeout(()=>settle(0,wheelDir),140);
+},{passive:false});
+// ---- frozen frames: home.html?p=0.5 ----
+const q=new URLSearchParams(location.search).get('p');
+if(q!==null){p=target=notified=parseFloat(q)||0;}
+window.__rolodex={M,stateFor,render,get p(){return p}};
+render(p);
+
+// ---- Date scrubber (Photos-style). Hidden at rest; shows while the stack moves; grab to jump through time. ----
+const S={TOP:170,H:500,HIDE_AFTER:600,JUMP:2};   // track in screen px; jumps of more than 2 cards skip the fall animation
+const scrub=document.getElementById('scrub'),thumb=document.getElementById('sthumb'),bub=document.getElementById('sbub');
+let DATES=[];
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const label=d=>MON[d.getMonth()]+' '+d.getDate()+(d.getFullYear()!==2026?', '+d.getFullYear():'');
+// faint month ticks at the first (newest) card of each month
+function rebuildScrub(){ // dates + month ticks for the current stack
+  DATES=cards.map(c=>new Date(c.dataset.date+'T12:00:00'));
+  const tr=scrub.querySelector('.strack');tr.innerHTML='';let last=-1;
+  DATES.forEach((d,i)=>{if(d.getMonth()!==last){last=d.getMonth();const b=document.createElement('b');b.style.top=((MAX>0?i/MAX:0)*S.H-1)+'px';tr.appendChild(b)}});
+  thumb.style.top=yFor(p)+'px';
+}
+let hideT,lastP=p,grab=null,frozen=false;
+const yFor=v=>S.TOP+(MAX>0?clamp(v,0,MAX)/MAX:0)*S.H;
+function showScrub(){scrub.classList.add('on');clearTimeout(hideT);if(!grab&&!frozen)hideT=setTimeout(()=>scrub.classList.remove("on"),S.HIDE_AFTER)}
+const renderStack=render;
+render=function(v){renderStack(v);if(!grab)thumb.style.top=yFor(v)+'px';if(v!==lastP){lastP=v;showScrub()}};
+function placeBubble(y,i){bub.style.top=y+'px';bub.textContent=label(DATES[i])}
+thumb.addEventListener('pointerdown',e=>{
+  e.stopPropagation();if(MAX<1)return;e.preventDefault();thumb.setPointerCapture(e.pointerId);cancelAnimationFrame(raf);
+  const idx=clamp(Math.round(p),0,MAX);
+  grab={dy:e.clientY-yFor(p),idx,month:DATES[idx].getMonth()};p=target=idx;
+  scrub.classList.add('grab');clearTimeout(hideT);scrub.classList.add('on');
+  placeBubble(yFor(idx),idx);thumb.style.top=yFor(idx)+'px';
+});
+thumb.addEventListener('pointermove',e=>{
+  if(!grab)return;e.stopPropagation();
+  const y=clamp(e.clientY-grab.dy,S.TOP,S.TOP+S.H),i=Math.round((y-S.TOP)/S.H*MAX);
+  thumb.style.top=y+'px';placeBubble(y,i);
+  if(i===grab.idx)return;
+  const far=Math.abs(i-Math.round(target))>S.JUMP;
+  if(DATES[i].getMonth()!==grab.month){grab.month=DATES[i].getMonth();haptic('tick')}
+  grab.idx=i;
+  if(far||reduced){cancelAnimationFrame(raf);p=target=i;v=0;renderStack(p);  // fast-flip: no per-card fall
+    drum.animate([{opacity:.55},{opacity:1}],{duration:120,easing:'linear'})}
+  else animateTo(i,0);
+});
+const release=e=>{
+  if(!grab)return;e.stopPropagation();const i=grab.idx;grab=null;scrub.classList.remove('grab');
+  if(Math.abs(p-i)>1e-3&&!reduced)animateTo(i,0);else{p=target=i;renderStack(p)}
+  notify(i);thumb.style.top=yFor(i)+'px';showScrub();
+};
+thumb.addEventListener('pointerup',release);thumb.addEventListener('pointercancel',release);
+// frozen frames: ?scrub=grab or ?scrub=release (with ?p=)
+const sq=new URLSearchParams(location.search).get('scrub');
+thumb.style.top=yFor(p)+'px';
+if(sq){frozen=true;scrub.style.transition="none";scrub.classList.add('on');if(sq==='grab'){scrub.classList.add('grab');bub.style.transition='none';placeBubble(yFor(p),Math.round(p))}}
+rebuildScrub();
+window.__scrub={label,DATES,get on(){return scrub.classList.contains('on')}};
+
+// ---- Live count capsule: "14 more" fades in while the stack moves (drag, spring, wheel, scrubber), out 0.6s after it settles ----
+const ccap=document.getElementById('ccap');let capT,capP=p;
+const leftText=v=>{const left=MAX-clamp(Math.round(v),0,Math.max(0,MAX));return left>0?`${left} more`:'Last one'};
+const renderWithScrub=render;
+render=function(v){renderWithScrub(v);
+  if(v!==capP){capP=v;if(N){ccap.textContent=leftText(v);ccap.classList.add('on');clearTimeout(capT);capT=setTimeout(()=>ccap.classList.remove('on'),600)}}};
+if(new URLSearchParams(location.search).get('count')){window.addEventListener('load',()=>{clearTimeout(capT);ccap.style.transition='none';ccap.textContent=leftText(p);ccap.classList.add('on')})}
+
+// ---- Filter + resolved + cards-left count. The stack is always the matching thoughts in time order. ----
+const TAGS={Idea:['#F2B705','#000'],Question:['#0A6CFF','#fff'],'To-do':['#0FA3A3','#fff'],Music:['#E83E8C','#fff'],
+  Movie:['#E5383B','#fff'],Book:['#F57C1F','#fff'],Place:['#2DA44E','#fff'],Person:['#8E44EC','#fff']};
+const F={tags:new Set(),resolved:false};
+const pop=document.getElementById('pop'),scrim=document.getElementById('scrim'),fbtn=document.getElementById('fbtn'),
+  frow=document.getElementById('frow'),fchips=document.getElementById('fchips'),pills=document.getElementById('pills'),tog=document.getElementById('tog'),empty=document.getElementById('empty');
+const CHECK='<svg viewBox="0 0 12 12"><path d="M2.5 6.3l2.3 2.3 4.7-5"/></svg>';
+function drawPills(){
+  pills.innerHTML=Object.entries(TAGS).map(([t,[c,tc]])=>{const on=F.tags.has(t);
+    return `<span class="fp${on?' on':''}" data-tag="${t}" style="--c:${t==='Idea'?'#B88A00':c};--b:${c}">${on?CHECK:''}${t}</span>`}).join('');
+  tog.classList.toggle('on',F.resolved);
+}
+function drawChips(){
+  const chips=[...F.tags].map(t=>`<span class="fc" data-tag="${t}" style="--c:${t==='Idea'?'#B88A00':TAGS[t][0]};--b:${TAGS[t][0]}">${t}<b>×</b></span>`);
+  if(F.resolved)chips.push('<span class="fc" data-res="1">Resolved shown<b>×</b></span>');
+  fchips.innerHTML=chips.length?chips.join(''):'<span class="fall">All thoughts</span>';
+  fbtn.classList.toggle('on',F.tags.size>0||F.resolved);
+}
+function applyFilter(keepP){
+  const list=allCards.filter(c=>(F.resolved||!c.dataset.resolved)&&(!F.tags.size||F.tags.has(c.dataset.tag)));
+  allCards.forEach(c=>{c.style.display=list.includes(c)?'':'none';c.classList.remove('front','open')});
+  cards=list;N=list.length;MAX=N-1;
+  cards.forEach((c,i)=>{const m=c.querySelector('.more');if(m)m.textContent=i<MAX?`${MAX-i} more`:'Last one'});
+  cancelAnimationFrame(raf);v=0;p=target=notified=keepP?clamp(keepP,0,Math.max(0,MAX)):0;
+  render(p);rebuildScrub();
+  empty.classList.toggle('on',!N);
+  drawPills();drawChips();
+}
+function openPop(open){pop.classList.toggle('on',open);scrim.classList.toggle('on',open)}
+const stop=e=>e.stopPropagation();
+[pop,scrim,frow].forEach(el=>el.addEventListener('pointerdown',stop));
+fbtn.addEventListener('click',()=>openPop(!pop.classList.contains('on')));
+scrim.addEventListener('click',()=>openPop(false));
+pills.addEventListener('click',e=>{const t=e.target.closest('.fp');if(!t)return;
+  const k=t.dataset.tag;F.tags.has(k)?F.tags.delete(k):F.tags.add(k);haptic('tick');applyFilter()});
+tog.addEventListener('click',()=>{F.resolved=!F.resolved;haptic('tick');applyFilter()});
+frow.addEventListener('click',e=>{const c=e.target.closest('.fc');if(!c)return;
+  if(c.dataset.res)F.resolved=false;else F.tags.delete(c.dataset.tag);applyFilter()});
+// frozen frames: ?tags=Music,Movie&resolved=1&menu=1 (with optional ?p=)
+const fq=new URLSearchParams(location.search);
+(fq.get('tags')||'').split(',').filter(Boolean).forEach(t=>F.tags.add(t));
+if(fq.get('resolved'))F.resolved=true;
+applyFilter(parseFloat(fq.get('p'))||0);
+if(fq.get('menu')){pop.style.transition='none';openPop(true)}
+window.__filter={F,applyFilter,get n(){return N}};
+
+</script>
+</body></html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Rolodex Swap Frames</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1600px;background:#E4E3EA;font-family:-apple-system,'Inter',sans-serif;color:#1C1C1E;padding:32px 34px 40px}
+h1{font-size:24px;font-weight:700;letter-spacing:-.4px}
+.sub{font-size:14px;color:#6C6C70;margin-top:4px}
+.strip{display:flex;gap:22px;margin-top:22px}
+.f{width:290px}
+.ph{width:290px;height:629px;border-radius:30px;overflow:hidden;box-shadow:0 8px 26px rgba(0,0,0,.14);background:#F2F1F6}
+.ph iframe{width:393px;height:852px;border:0;transform:scale(.7379);transform-origin:0 0;pointer-events:none}
+.lbl{font-size:15px;font-weight:700;margin-top:14px}
+.cap{font-size:12.5px;line-height:18px;color:#3A3A3C;margin-top:6px;font-variant-numeric:tabular-nums}
+.cap b{font-weight:600;color:#1C1C1E}
+.bar{height:4px;border-radius:2px;background:#C7C7CC;margin-top:10px;overflow:hidden}.bar i{display:block;height:100%;background:#1C1C1E}
+.foot{font-size:13px;color:#6C6C70;margin-top:26px;line-height:19px}
+</style></head><body>
+<h1>One swap, frozen</h1>
+<div class="sub">Drag down on the stack. The front card turns forward on a hinge at its top edge (rotateX toward you, perspective 900px), drops and grows a little, then fades behind the capture sheet. 1 card = 320px of drag.</div>
+<div class="strip">
+ <div class="f"><div class="ph"><iframe src="home.html?p=0"></iframe></div><div class="bar"><i style="width:0"></i></div>
+  <div class="lbl">1 · Rest (0%)</div>
+  <div class="cap"><b>Front:</b> translateY 0 · rotateX 0° · scale 1<br><b>Behind:</b> 4 behind, each 60/56/52/48px higher, scale −0.06, brightness −2.5% per step</div></div>
+ <div class="f"><div class="ph"><iframe src="home.html?p=0.25"></iframe></div><div class="bar"><i style="width:25%"></i></div>
+  <div class="lbl">2 · 25% (80px drag)</div>
+  <div class="cap"><b>Front:</b> translateY 80px · rotateX 21° · scale 1.015 · opacity 1<br><b>Next:</b> translateY −45px · scale 0.955<br>Release here: springs back (under 35%)</div></div>
+ <div class="f"><div class="ph"><iframe src="home.html?p=0.5"></iframe></div><div class="bar"><i style="width:50%"></i></div>
+  <div class="lbl">3 · 50% (160px)</div>
+  <div class="cap"><b>Front:</b> translateY 160px · rotateX 42° · scale 1.03 · opacity 1<br><b>Next:</b> translateY −30px · scale 0.97<br>Past 35%: release commits, haptic fires</div></div>
+ <div class="f"><div class="ph"><iframe src="home.html?p=0.8"></iframe></div><div class="bar"><i style="width:80%"></i></div>
+  <div class="lbl">4 · 80% (256px)</div>
+  <div class="cap"><b>Front:</b> translateY 256px · rotateX 67° · scale 1.048 · opacity 0.67 (fades 70→100%)<br><b>Next:</b> translateY −12px · scale 0.988</div></div>
+ <div class="f"><div class="ph"><iframe src="home.html?p=1"></iframe></div><div class="bar"><i style="width:100%"></i></div>
+  <div class="lbl">5 · Settled</div>
+  <div class="cap"><b>Fallen:</b> translateY 320px · rotateX 84° · opacity 0; stays fallen until you drag up<br><b>New front:</b> translateY 0 · scale 1<br>Spring 400ms · damping 0.8 · carries release velocity</div></div>
+</div>
+<div class="foot">Commit: drag past 35% of 320px, or flick faster than 0.5px/ms. Drag up brings the last fallen card back on the same path in reverse. Newest card in front; dragging down walks back in time. At the oldest or newest card the stack stops: drag rubber-bands at 0.3×, springs back, no commit, no haptic. One rigid haptic per swap. Reduced motion: no tilt, a 140ms crossfade.</div>
+</body></html>
