@@ -9,7 +9,6 @@ import Animated, {
   useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
-  withDecay,
   withDelay,
   withSequence,
   withSpring,
@@ -26,7 +25,6 @@ import {
   CARD_H,
   CARD_LEFT,
   CARD_RIGHT,
-  COMMIT,
   D,
   FAN_H,
   FLICK,
@@ -49,12 +47,12 @@ const COUNT_LINE = 15;
 const Z_GAP = 600;
 // Mounted card slots. Wide enough that a hard fling runs into cards that are already
 // mounted and drawn (with 10, cards ahead popped in late and the fling looked choppy).
+// Seconds a release coasts at its speed when projecting where it lands (iOS feel, a bit longer).
+const GLIDE = 0.8;
 const POOL = 18;
 const AHEAD = 12; // slots from the front card back; the other 6 hold cards that already fell (a drag up brings them back)
-const FLING = 900; // pt/s: below, a release moves at most one card
 // iOS scroll-view deceleration (0.998 per ms): a hard flick coasts through several cards.
 // the same feel as an iOS scroll view decelerating at 0.997/ms.
-const FLING_DECEL = 0.998;
 
 const selection = () => {
   void Haptics.selectionAsync();
@@ -230,48 +228,38 @@ export function ThoughtStack(props: ThoughtStackProps) {
           else if (Math.ceil(p.value) < notified.value) notify(Math.ceil(p.value));
         })
         .onEnd((e) => {
+          // One continuous glide: project where the flick would coast (like an iOS scroll
+          // view), land on the nearest card there, and spring straight to it. The old
+          // coast-then-snap had a seam in the middle that felt choppy.
           const max = maxIdx.value;
-          if (Math.abs(e.velocityY) >= FLING && p.value >= 0 && p.value <= max && max > 0) {
-            // Hard flick: decay with the release velocity (rubber band at the ends),
-            // then snap to the nearest card. Ticks per card on the way, one rigid tap at the end.
-            flying.value = 1;
-            const dir = Math.sign(e.velocityY);
-            p.value = withDecay(
-              {
-                velocity: e.velocityY / D,
-                deceleration: FLING_DECEL,
-                clamp: [0, max],
-                rubberBandEffect: false, // a fling stops at the end; it never overshoots and springs back
-              },
-              (finished) => {
-                flying.value = 0;
-                if (!finished) return;
-                const tg = clamp(Math.round(p.value), 0, maxIdx.value);
-                target.value = tg;
-                notify(tg);
-                // Decay stops at ~1 card/s; hand that speed to the spring when it points at the target.
-                const vel = (tg - p.value) * dir > 0 ? dir : 0;
-                p.value = withSpring(tg, { ...SPRING, velocity: vel });
-              },
-            );
-            return;
-          }
-          const v = e.velocityY / 1000; // px/ms
-          const f = Math.floor(p.value);
-          const frac = p.value - f;
+          const v = e.velocityY / D; // cards per second
           let tg: number;
           if (p.value > max) tg = max;
           else if (p.value < 0) tg = 0;
-          else if (frac < 1e-4) tg = f;
-          else if (v > FLICK) tg = f + 1;
-          else if (v < -FLICK) tg = f;
-          else if (e.translationY >= 0) tg = frac > COMMIT ? f + 1 : f;
-          else tg = frac < 1 - COMMIT ? f : f + 1;
+          else {
+            const projected = p.value + v * GLIDE;
+            tg = Math.round(projected);
+            // A small flick always moves one card in its direction.
+            if (Math.abs(e.velocityY) / 1000 > FLICK) {
+              if (v > 0 && tg <= Math.floor(p.value)) tg = Math.floor(p.value) + 1;
+              if (v < 0 && tg >= Math.ceil(p.value)) tg = Math.ceil(p.value) - 1;
+            }
+          }
           tg = clamp(tg, 0, max);
-          notify(tg);
+          const dist = Math.abs(tg - p.value);
+          flying.value = dist >= 1.5 ? 1 : 0; // ticks per card on long glides
+          notified.value = flying.value ? clamp(Math.round(p.value), 0, max) : notified.value;
           target.value = tg;
-          // At either end, settle without bouncing past it.
-          p.value = withSpring(tg, { ...SPRING, velocity: e.velocityY / D, overshootClamping: tg === 0 || tg === max });
+          if (!flying.value) notify(tg);
+          p.value = withSpring(
+            tg,
+            { duration: Math.min(1600, 380 + 110 * dist), dampingRatio: 1, velocity: v, overshootClamping: true },
+            (finished) => {
+              if (!flying.value) return;
+              flying.value = 0;
+              if (finished) notify(tg);
+            },
+          );
         })
         .onFinalize(() => {
           dragging.value = 0;

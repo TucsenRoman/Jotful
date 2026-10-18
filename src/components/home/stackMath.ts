@@ -19,6 +19,7 @@ export const FADE_FROM = 0.7;
 export const COMMIT = 0.35;
 export const FLICK = 0.5; // px/ms
 export const RUBBER = 0.3;
+export const POP_RISE = 26; // how far below its place a new back card starts
 export const JUMP = 2; // scrubber jumps past this many cards skip the fall
 
 // tokens.motion.spring = { duration, dampingRatio } -> stiffness / damping (mass 1),
@@ -100,10 +101,14 @@ export function poseFor(i: number, p: number, fan = 1, max = Number.MAX_SAFE_INT
   const d = k - t;
   const dc = Math.min(d, SHOW);
   const sc = 1 - SCALE_STEP * dc;
+  // A card arriving at the back pops up into the fan: from half size and a little lower,
+  // easing up to its place as it fades in (e = 1 hidden, 0 in place).
+  const e = clamp(d - SHOW, 0, 1);
+  const pop = e * e * (3 - 2 * e);
   return {
-    y: stackY(d, fan),
-    scaleX: sc,
-    scaleY: sc,
+    y: stackY(d, fan) + POP_RISE * pop,
+    scaleX: sc * (1 - 0.5 * pop),
+    scaleY: sc * (1 - 0.5 * pop),
     dim: DIM_STEP * dc,
     opacity: clamp(SHOW + 1 - d, 0, 1),
   };
