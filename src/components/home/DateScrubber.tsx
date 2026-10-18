@@ -1,4 +1,4 @@
-// Photos-style date scrubber in the left gutter (design/mocks/r6/scrubber.js, NOTES.md "Date scrubber").
+// Photos-style date scrubber in the right gutter (design/mocks/r6/scrubber.js, NOTES.md "Date scrubber").
 // Hidden at rest; shows while the stack moves; grab the thumb to jump through time.
 import { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -15,12 +15,13 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 import * as Haptics from 'expo-haptics';
 import { JUMP, SPRING, clamp } from './stackMath';
+import { Glass } from '../ui/Glass';
 
 const tokens = require('../../theme/tokens');
 const c = tokens.color;
 const ink: string = tokens.primitive.ink;
 
-const TRACK_X = 7; // inside the 16pt left margin; cards stay centred
+const TRACK_X = 7; // inside the 16pt right margin (like Photos); cards stay centred
 const HIT = 44;
 
 type Props = {
@@ -137,7 +138,7 @@ export function DateScrubber({ p, maxIdx, target, visible, grabbing, stackFade, 
     opacity: withTiming(grabbing.value ? 1 : 0, { duration: 120 }),
     transform: [
       { translateY: grabY.value - 17 },
-      { translateX: withTiming(grabbing.value ? 0 : -6, { duration: 120 }) },
+      { translateX: withTiming(grabbing.value ? 0 : 6, { duration: 120 }) },
       { scale: withTiming(grabbing.value ? 1 : 0.96, { duration: 120 }) },
     ],
   }));
@@ -155,10 +156,11 @@ export function DateScrubber({ p, maxIdx, target, visible, grabbing, stackFade, 
           accessibilityRole="adjustable"
           accessibilityLabel="Date scrubber"
         >
-          <Animated.View style={[styles.thumb, thumbPill]} />
+          <Animated.View style={[styles.thumb, thumbPill]}><Glass interactive style={[StyleSheet.absoluteFill, { borderRadius: 3.5 }]} /></Animated.View>
         </Animated.View>
       </GestureDetector>
       <Animated.View pointerEvents="none" style={[styles.bubble, bubbleStyle]}>
+        <Glass style={[StyleSheet.absoluteFill, { borderRadius: 17 }]} />
         <Text style={styles.bubbleText}>{labels[bubble] ?? ''}</Text>
       </Animated.View>
     </Animated.View>
@@ -166,12 +168,12 @@ export function DateScrubber({ p, maxIdx, target, visible, grabbing, stackFade, 
 }
 
 const styles = StyleSheet.create({
-  track: { position: 'absolute', left: TRACK_X, width: 2, borderRadius: 1, backgroundColor: c.fill },
+  track: { position: 'absolute', right: TRACK_X, width: 2, borderRadius: 1, backgroundColor: c.fill },
   tick: { position: 'absolute', left: -2, width: 6, height: 2, borderRadius: 1, backgroundColor: ink, opacity: 0.18 },
   hit: {
     position: 'absolute',
     top: 0,
-    left: TRACK_X + 1 - HIT / 2,
+    right: TRACK_X + 1 - HIT / 2,
     width: HIT,
     height: HIT,
     alignItems: 'center',
@@ -180,7 +182,6 @@ const styles = StyleSheet.create({
   thumb: {
     height: 36,
     borderRadius: 3.5,
-    backgroundColor: c.surface,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.separator,
     shadowColor: ink,
@@ -191,12 +192,11 @@ const styles = StyleSheet.create({
   bubble: {
     position: 'absolute',
     top: 0,
-    left: 28, // the bubble may overlap the cards while dragging
+    right: 28, // the bubble may overlap the cards while dragging
     height: 34,
     paddingHorizontal: 14,
     borderRadius: 17,
     justifyContent: 'center',
-    backgroundColor: c.surface,
     shadowColor: ink,
     shadowOpacity: 0.2,
     shadowRadius: 8,

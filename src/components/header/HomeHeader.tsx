@@ -1,9 +1,9 @@
-import { BlurView } from 'expo-blur';
 import { ListFilter, Search, Settings, X } from 'lucide-react-native';
 import { Modal, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Stop, Text as SvgText } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { MothMark } from '../../brand/MothMark';
+import { Glass } from '../ui/Glass';
 import type { Tag } from '../../storage';
 
 const tokens = require('../../theme/tokens');
@@ -18,12 +18,11 @@ export function Wordmark() {
 
 // White Liquid-Glass-style capsule holding icon buttons (APPLE_SPECS: glass only on controls).
 export function GlassGroup({ children }: { children: React.ReactNode }) {
-  // BlurView ignores NativeWind classes, so the glass is a fill behind the row.
+  // iOS 26 Liquid Glass capsule (blur fallback), shadow on the outer view.
   return <View style={{ borderRadius: 999, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } }}>
-    <View style={{ borderRadius: 999, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4, backgroundColor: 'rgba(255,255,255,0.72)' }}>
-      <BlurView intensity={40} tint="light" style={StyleSheet.absoluteFill} />
+    <Glass interactive style={{ borderRadius: 999, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4 }}>
       {children}
-    </View>
+    </Glass>
   </View>;
 }
 
@@ -88,15 +87,14 @@ export function FilterMenu({ visible, top, tags, selectedIds, showResolved, onTo
   return <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
     <Pressable className="flex-1" onPress={onClose} accessibilityLabel="Close filter">
       <Pressable onPress={() => {}} className="absolute overflow-hidden rounded-card" style={{ top, left: tokens.space.margin, width: 300, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 24, shadowOffset: { width: 0, height: 10 } }}>
-        <View style={{ padding: 16, backgroundColor: 'rgba(255,255,255,0.86)' }}>
-          <BlurView intensity={60} tint="light" style={StyleSheet.absoluteFill} />
+        <Glass style={{ padding: 16 }} fallbackFill="rgba(255,255,255,0.88)">
           <Text className="mb-2 text-footnote text-secondary">Tags</Text>
           <View className="flex-row flex-wrap gap-2">
             {tags.map((tag) => <TagPill key={tag.id} tag={tag} selected={selectedIds.includes(tag.id)} onPress={() => { void Haptics.selectionAsync(); onToggleTag(tag.id); }} />)}
           </View>
           <View className="my-3 h-px bg-fill" />
           <View className="flex-row items-center justify-between"><Text className="text-body text-ink">Show resolved</Text><Switch value={showResolved} onValueChange={onToggleResolved} /></View>
-        </View>
+        </Glass>
       </Pressable>
     </Pressable>
   </Modal>;

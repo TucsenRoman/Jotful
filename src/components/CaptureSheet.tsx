@@ -59,6 +59,7 @@ import {
   type AttachmentKind,
 } from "../storage";
 import AudioTimeline from "./AudioTimeline";
+import { Glass } from "./ui/Glass";
 import {
   capturePeekHeight,
   sheetBottomPad,
@@ -1033,7 +1034,6 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
         style={[StyleSheet.absoluteFill, { zIndex: 20, elevation: 20 }]}
       >
         <Animated.View
-          className="bg-surface"
           style={[
             {
               position: "absolute",
@@ -1052,6 +1052,11 @@ const CaptureSheet = forwardRef<CaptureSheetHandle, Props>(
             sheetStyle,
           ]}
         >
+          {/* iOS 26 Liquid Glass sheet (blur fallback on older iOS). */}
+          <Glass
+            style={[StyleSheet.absoluteFill, { borderTopLeftRadius: tokens.radius.sheet, borderTopRightRadius: tokens.radius.sheet }]}
+            fallbackFill="rgba(255,255,255,0.9)"
+          />
           <GestureDetector gesture={bodyPan}>
             <View style={{ flex: 1 }}>
               {/* Peek: gone entirely while the sheet is open. */}

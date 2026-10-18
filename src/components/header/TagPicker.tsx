@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import type { Tag } from '../../storage';
 import { TagPill } from './HomeHeader';
+import { Glass } from '../ui/Glass';
 
 const tokens = require('../../theme/tokens');
 
@@ -16,7 +17,7 @@ export function TagPicker({ visible, tags, selectedIds, onChange, onClose }: { v
   };
   return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
     <Pressable className="flex-1 bg-black/20" onPress={onClose} accessibilityLabel="Close tags" />
-    <View className="rounded-t-sheet bg-surface px-margin pt-3" style={{ paddingBottom: insets.bottom + 16 }}>
+    <Glass style={{ borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 16, paddingTop: 12, paddingBottom: insets.bottom + 16 }} fallbackFill="rgba(255,255,255,0.92)">
       <View className="mb-3 h-1.5 w-10 self-center rounded-full bg-fill" />
       <View className="mb-3 flex-row items-center justify-between">
         <Text className="text-title2 font-bold text-ink">Tags</Text>
@@ -30,6 +31,6 @@ export function TagPicker({ visible, tags, selectedIds, onChange, onClose }: { v
           {on ? <Check size={20} color={tokens.color.action} /> : null}
         </Pressable>;
       })}
-    </View>
+    </Glass>
   </Modal>;
 }
