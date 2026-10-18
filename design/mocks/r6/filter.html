@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Filter And Count Frames</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1600px;background:#E4E3EA;font-family:-apple-system,'Inter',sans-serif;color:#1C1C1E;padding:32px 34px 40px}
+h1{font-size:24px;font-weight:700;letter-spacing:-.4px}
+.sub{font-size:14px;color:#6C6C70;margin-top:4px;max-width:1300px}
+.strip{display:flex;gap:28px;margin-top:22px;justify-content:center}
+.f{width:330px}
+.ph{width:330px;height:715px;border-radius:34px;overflow:hidden;box-shadow:0 8px 26px rgba(0,0,0,.14);background:#F2F1F6}
+.ph iframe{width:393px;height:852px;border:0;pointer-events:none;transform:scale(.8397);transform-origin:0 0}
+.lbl{font-size:16px;font-weight:700;margin-top:16px}
+.cap{font-size:13px;line-height:19px;color:#3A3A3C;margin-top:6px}
+.cap b{font-weight:600;color:#1C1C1E}
+</style></head><body>
+<h1>Filter, resolved and cards left</h1>
+<div class="sub">The stack is always the matching thoughts in time order, newest first. Resolved thoughts are hidden by default; "Show resolved" puts them back at their own date, greyed and struck through. Filter lives at the left of the row under the title.</div>
+<div class="strip">
+ <div class="f"><div class="ph"><iframe src="home.html"></iframe></div>
+  <div class="lbl">1 · Default</div>
+  <div class="cap"><b>Row:</b> plain filter icon + muted "All thoughts". Header capsule is Search · Settings only.<br><b>Count:</b> "14 more", 13pt grey, on the front card's meta row.<br><b>Actions:</b> Ask AI · Search Web (globe) · Copy (44pt icon circle). 44pt capsules, 16pt sides, 6pt icon gap, 15pt semibold, sized to content, 12pt apart, 14pt inside the card. 16pt page margins.</div></div>
+ <div class="f"><div class="ph"><iframe src="home.html?tags=Music,Movie&menu=1"></iframe></div>
+  <div class="lbl">2 · Menu, Music + Movie picked</div>
+  <div class="cap"><b>Pills:</b> 15% tag tint, bold tag-colour text. Picked: stronger tint, check, 1.5pt tag-colour border.<br><b>Menu:</b> glass popover from the filter icon; divider; "Show resolved" switch. Applies live, tick haptic per change.</div></div>
+ <div class="f"><div class="ph"><iframe src="home.html?tags=Music,Movie"></iframe></div>
+  <div class="lbl">3 · Filtered</div>
+  <div class="cap"><b>Row:</b> filled filter icon, then tinted chips "Music ×  Movie ×".<br><b>Stack:</b> the 4 matches, newest first; "3 more".</div></div>
+</div>
+</body></html>

@@ -1,0 +1,31 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=393">
+<title>Detail 2-voice</title><link rel="stylesheet" href="detail.css"></head><body>
+<div class="status"><span>9:41</span><span class="ic"><i data-lucide="signal"></i><i data-lucide="wifi"></i><i data-lucide="battery-full"></i></span></div>
+<div class="island glass i-l btn" title="Close"><i data-lucide="x"></i></div>
+<div class="island glass i-m"><b>Yesterday</b><span>6:48 PM</span></div>
+<div class="island glass i-r"><div class="btn" title="Resolve"><i data-lucide="circle-check"></i></div><div class="btn" id="more" title="More"><i data-lucide="ellipsis"></i></div></div>
+<div class="menu" id="menu"><div>Pin<i data-lucide="pin"></i></div><div>Edit<i data-lucide="pencil"></i></div><div>Share<i data-lucide="share"></i></div><div class="red">Delete<i data-lucide="trash-2"></i></div></div>
+<div class="hero dark"><div class="vtop"><div class="vbig"><i data-lucide="play"></i></div><div class="wave" id="wave"><u class="p" style="height:22%"></u><u class="p" style="height:40%"></u><u class="p" style="height:62%"></u><u class="p" style="height:38%"></u><u class="p" style="height:80%"></u><u class="p" style="height:100%"></u><u class="p" style="height:62%"></u><u class="p" style="height:30%"></u><u class="p" style="height:54%"></u><u class="p" style="height:80%"></u><u class="p" style="height:44%"></u><u class="" style="height:26%"></u><u class="" style="height:66%"></u><u class="" style="height:92%"></u><u class="" style="height:58%"></u><u class="" style="height:34%"></u><u class="" style="height:72%"></u><u class="" style="height:50%"></u><u class="" style="height:24%"></u><u class="" style="height:40%"></u><u class="" style="height:76%"></u><u class="" style="height:96%"></u><u class="" style="height:60%"></u><u class="" style="height:36%"></u><u class="" style="height:52%"></u><u class="" style="height:28%"></u><u class="" style="height:68%"></u><u class="" style="height:46%"></u><u class="" style="height:20%"></u><u class="" style="height:32%"></u><u class="" style="height:58%"></u><u class="" style="height:74%"></u><u class="" style="height:48%"></u><u class="" style="height:30%"></u><u class="" style="height:64%"></u><u class="" style="height:86%"></u></div></div>
+      <div class="vt"><span id="cur">0:12</span><span>0:42</span></div>
+<div class="acts">
+    <div class="gp glass"><i data-lucide="message-square-text"></i>Ask AI</div>
+    <div class="gp glass"><i data-lucide="globe"></i>Search Web</div>
+    <div class="gc glass" title="Copy"><i data-lucide="copy"></i></div>
+  </div></div>
+<div class="below"><div class="tags"><span class="pill" style="background:#E83E8C;color:#fff">Music</span><span class="add"><i data-lucide="plus"></i>Add</span></div>
+<div class="group">
+    <div class="row"><span>Friday · Oct 17 · 6:48 PM</span><span class="adj">Adjust</span></div>
+    <div class="row"><span>From</span><span class="val"><i data-lucide="watch"></i>Watch</span></div>
+    <div class="row"><span>Attachments</span><span class="val">1 recording</span></div>
+    <div class="row"><span>Pinned</span><span class="sw" onclick="this.classList.toggle('on')"></span></div>
+  </div>
+<div class="resolve"><i data-lucide="circle-check"></i>Resolve</div></div>
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script>lucide.createIcons();
+const m=document.getElementById('menu');document.getElementById('more').onclick=e=>{e.stopPropagation();m.classList.toggle('open')};document.body.addEventListener('click',()=>m.classList.remove('open'));
+const w=document.getElementById('wave');if(w){const bars=[...w.children],cur=document.getElementById('cur'),dur=42;let d=false;
+const seek=e=>{const r=w.getBoundingClientRect(),f=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));bars.forEach((b,i)=>b.classList.toggle('p',i/bars.length<f));const s=Math.round(f*dur);cur.textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+w.onpointerdown=e=>{d=true;seek(e)};addEventListener('pointermove',e=>d&&seek(e));addEventListener('pointerup',()=>d=false);}
+const tr=document.querySelector('.track'),dots=document.querySelectorAll('.dots i'),film=document.querySelectorAll('.film img');
+if(tr)tr.addEventListener('scroll',()=>{const i=Math.round(tr.scrollLeft/tr.clientWidth);dots.forEach((x,j)=>x.classList.toggle('on',i==j));film.forEach((x,j)=>x.classList.toggle('cur',i==j))});
+</script></body></html>

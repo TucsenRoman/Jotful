@@ -1,0 +1,38 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=393"><title>Capture Voice</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="sheet.css"><style>
+.sheet{left:0;right:0;top:400px;bottom:0;border-radius:38px 38px 0 0;padding:0 20px}
+.top{display:flex;align-items:center;gap:8px;margin-top:16px;color:var(--grey)}
+.dot{width:9px;height:9px;border-radius:5px;background:#FF3B30}
+.time{font-size:34px;font-weight:700;letter-spacing:-.6px;font-variant-numeric:tabular-nums;margin-top:2px}
+.hint{color:var(--grey);margin-top:2px}
+.hint b{color:var(--ink);font-weight:600}
+.wave{height:68px;display:flex;align-items:center;gap:3px;margin-top:12px;overflow:hidden}
+.wave i{display:block;width:5px;border-radius:3px;background:var(--ink);flex:none}
+.wave i:nth-last-child(-n+5){opacity:.25}
+.tx{font-size:17px;line-height:23px;margin-top:10px}.tx span{color:var(--grey)}
+/* the one button: same spot and size as in peek (60pt, centre 339,789) */
+.one{position:absolute;top:359px;left:309px;width:60px;height:60px}
+.one .mic{width:60px;height:60px;position:relative;z-index:2}
+.one .mic svg{width:26px;height:26px}
+.halo{position:absolute;border-radius:50%;background:rgba(2,2,4,.07);z-index:1}
+.lk{position:absolute;z-index:3;right:-2px;top:-2px;width:24px;height:24px;border-radius:12px;background:var(--ink);box-shadow:0 0 0 2.5px #fff;display:flex;align-items:center;justify-content:center}
+.stopsq{width:20px;height:20px;border-radius:5px;background:#fff}
+.tring{position:absolute;inset:-58px;border-radius:50%;box-shadow:inset 0 0 0 1.5px rgba(2,2,4,.22);z-index:0}
+.tring.on{box-shadow:inset 0 0 0 2.5px var(--ink)}
+.grow{position:absolute;border-radius:50%;background:rgba(2,2,4,.10);z-index:1}
+.grow.on{background:rgba(2,2,4,.16)}
+.fing{position:absolute;z-index:4;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:20px;background:rgba(2,2,4,.10);box-shadow:0 0 0 1.5px rgba(2,2,4,.25)}
+.ghost{position:absolute;top:359px;left:309px;width:60px;height:60px;border-radius:30px;box-shadow:inset 0 0 0 1.5px rgba(2,2,4,.12)}
+</style></head><body><div class="phone">
+<div class="island"></div><div class="status"><span>9:41</span><span class="r"><svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg><svg width="26" height="12" viewBox="0 0 26 12"><rect x=".5" y=".5" width="22" height="11" rx="3.5" fill="none" stroke="#020204" opacity=".4"/><rect x="2" y="2" width="17" height="8" rx="2"/><rect x="23.5" y="4" width="1.8" height="4" rx="1" opacity=".4"/></svg></span></div>
+<iframe class="homef soft" src="../../r6/home.html" scrolling="no"></iframe>
+<style>.status{background:#F2F1F6}</style>
+<div class="sheet"><div class="grab"></div>
+ <div class="top"><span class="dot"></span><span class="caps">Recording</span></div>
+ <div class="time">0:09</div>
+ <div class="hint caps">Drag out to the ring to lock</div>
+ <div class="wave"><i style="height:8px"></i><i style="height:14px"></i><i style="height:22px"></i><i style="height:30px"></i><i style="height:18px"></i><i style="height:10px"></i><i style="height:26px"></i><i style="height:40px"></i><i style="height:52px"></i><i style="height:34px"></i><i style="height:20px"></i><i style="height:44px"></i><i style="height:58px"></i><i style="height:46px"></i><i style="height:28px"></i><i style="height:16px"></i><i style="height:36px"></i><i style="height:50px"></i><i style="height:62px"></i><i style="height:48px"></i><i style="height:30px"></i><i style="height:22px"></i><i style="height:40px"></i><i style="height:54px"></i><i style="height:38px"></i><i style="height:24px"></i><i style="height:14px"></i><i style="height:30px"></i><i style="height:44px"></i><i style="height:56px"></i><i style="height:42px"></i><i style="height:26px"></i><i style="height:18px"></i><i style="height:34px"></i><i style="height:48px"></i><i style="height:30px"></i><i style="height:20px"></i><i style="height:12px"></i><i style="height:8px"></i><i style="height:6px"></i><i style="height:6px"></i><i style="height:6px"></i><i style="height:6px"></i></div>
+ <div class="tx">Melody idea in the car, it goes up on the third bar <span>then da da daa</span></div>
+ <div class="one"><span class="tring"></span><span class="grow" style="inset:-23px"></span><span class="mic"><svg class="i" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11.5" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3"/></svg></span><span class="fing" style="left:-7px;top:-7px"></span></div>
+</div><div class="home-ind"></div></div></body></html>

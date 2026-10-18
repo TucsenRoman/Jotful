@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=393, initial-scale=1">
+<title>Wallet Stack</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #F2F1F6; }
+  body { font-family: -apple-system, 'Inter', 'Helvetica Neue', Arial, sans-serif; color: #020204; }
+  .screen { position: relative; width: 393px; height: 852px; overflow: hidden; background: #F2F1F6; margin: 0 auto; }
+
+  /* type sizes in this frame: 34, 22, 17, 11 */
+  .status { position: absolute; top: 0; left: 0; right: 0; height: 54px; display: flex; align-items: center; justify-content: space-between; padding: 6px 32px 0 40px; font-size: 17px; font-weight: 600; }
+  .status .icons { display: flex; gap: 6px; align-items: center; }
+
+  h1 { position: absolute; left: 22px; top: 66px; font-size: 34px; line-height: 41px; font-weight: 700; letter-spacing: -0.4px; color: #020204; }
+
+  .glass { position: absolute; top: 62px; height: 44px; background: #F9F8FE; border-radius: 22px; box-shadow: 0 1px 6px rgba(0,0,0,.10); display: flex; align-items: center; justify-content: space-around; }
+  .glass svg { width: 22px; height: 22px; stroke: #020204; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .plus { right: 128px; width: 44px; }
+  .group { right: 22px; width: 96px; }
+
+  .stack { position: absolute; left: 23.5px; top: 140px; width: 346px; }
+  .card { position: absolute; left: 0; width: 346px; height: 218px; border-radius: 11.5px; overflow: hidden; padding: 16px; }
+  .card .hd { display: flex; justify-content: space-between; align-items: baseline; font-size: 22px; line-height: 26px; font-weight: 600; position: relative; z-index: 2; }
+  .card .hd b { font-weight: 600; }
+  .card .hd .meta { font-weight: 600; }
+  .card .hd .caps { font-size: 11px; letter-spacing: .6px; font-weight: 600; text-transform: uppercase; }
+  /* weird move: artwork under the header row, sliced by the next card */
+  .card .art { position: absolute; left: 16px; right: 16px; top: 44px; font-size: 22px; line-height: 26px; font-weight: 700; letter-spacing: 6px; text-transform: uppercase; white-space: nowrap; opacity: .35; }
+  .card .foot { position: absolute; left: 16px; right: 16px; bottom: 16px; display: flex; justify-content: space-between; font-size: 11px; letter-spacing: .6px; font-weight: 600; text-transform: uppercase; }
+  .card .foot span:last-child { font-size: 17px; letter-spacing: 0; text-transform: none; }
+
+  .c1 { top: 0;   background: #FFC93C; color: #020204; z-index: 1; }
+  .c2 { top: 54px;  background: #081F49; color: #fff; z-index: 2; }
+  .c3 { top: 108px; background: #fff; color: #020204; z-index: 3; }
+  .c4 { top: 162px; background: #171717; color: #fff; z-index: 4; }
+  .c5 { top: 216px; background: #0066CA; color: #fff; z-index: 5; }
+  .c6 { top: 270px; background: linear-gradient(115deg, #141C2C 0%, #2A3650 28%, #121A2A 46%, #33425F 64%, #131B2B 100%); color: #fff; z-index: 6; }
+  .c7 { top: 324px; background: linear-gradient(120deg, #F6F6FA 0%, #E3EEF8 22%, #F4E6F1 44%, #E8F5EC 66%, #EEE8F8 85%, #F9F9FB 100%); color: #020204; z-index: 7; box-shadow: 0 8px 24px rgba(0,0,0,.16); }
+
+  .home { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 134px; height: 5px; border-radius: 3px; background: #020204; }
+</style>
+</head>
+<body>
+<div class="screen">
+  <div class="status">
+    <span>9:41</span>
+    <span class="icons">
+      <svg width="18" height="12" viewBox="0 0 18 12" fill="#020204"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+      <svg width="17" height="12" viewBox="0 0 17 12" fill="none" stroke="#020204" stroke-width="1.8" stroke-linecap="round"><path d="M1.5 4.2a10 10 0 0 1 14 0"/><path d="M4 7a6.5 6.5 0 0 1 9 0"/><circle cx="8.5" cy="10" r="1" fill="#020204" stroke="none"/></svg>
+      <svg width="27" height="13" viewBox="0 0 27 13" fill="none"><rect x=".5" y=".5" width="23" height="12" rx="3.5" stroke="#020204" opacity=".4"/><rect x="2" y="2" width="20" height="9" rx="2.2" fill="#020204"/><path d="M25 4.5v4" stroke="#020204" opacity=".5" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </span>
+  </div>
+
+  <h1>Wallet</h1>
+
+  <div class="glass plus">
+    <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+  </div>
+  <div class="glass group">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+    <svg viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.2" fill="#020204"/><circle cx="12" cy="12" r="1.2" fill="#020204"/><circle cx="18.5" cy="12" r="1.2" fill="#020204"/></svg>
+  </div>
+
+  <div class="stack">
+    <div class="card c1">
+      <div class="hd"><b>Skyline Park</b><span class="caps meta">Annual Pass</span></div>
+      <div class="art">Skyline Park Annual</div>
+    </div>
+    <div class="card c2">
+      <div class="hd"><b>Harbor Hotels</b><span class="caps meta">Credit</span></div>
+      <div class="art">Boundless Rewards</div>
+    </div>
+    <div class="card c3">
+      <div class="hd"><b>Account</b><span class="meta">$44.67</span></div>
+      <div class="art">Balance Available</div>
+    </div>
+    <div class="card c4">
+      <div class="hd"><b>Cash</b><span class="caps meta">Debit</span></div>
+      <div class="art">Send Receive Spend</div>
+    </div>
+    <div class="card c5">
+      <div class="hd"><b>Streamly</b><span class="caps meta">Member</span></div>
+      <div class="art">Watch Anywhere Plus</div>
+    </div>
+    <div class="card c6">
+      <div class="hd"><b>Meridian Metal</b><span class="caps meta">&bull;&bull;4821</span></div>
+      <div class="art">Meridian Metal Card</div>
+    </div>
+    <div class="card c7">
+      <div class="hd"><b>Prism Card</b><span class="caps meta">&bull;&bull;0917</span></div>
+      <div class="foot"><span>Credit</span><span>Prism</span></div>
+    </div>
+  </div>
+
+  <div class="home"></div>
+</div>
+</body>
+</html>

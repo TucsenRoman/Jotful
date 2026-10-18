@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=393, initial-scale=1">
+<title>Photos Viewer</title>
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<style>
+  :root{
+    --page:#FFFFFF; --glass:#FEFEFE; --text:#000000; --muted:#8E8E93;
+    --inset:16px; --ctl:44px;
+    --shadow:0 2px 10px rgba(0,0,0,.12), 0 0 1px rgba(0,0,0,.18);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#e5e5ea}
+  body{display:flex;justify-content:center;font-family:-apple-system,'Inter','Helvetica Neue',Arial,sans-serif;font-weight:400;color:var(--text)}
+  .phone{position:relative;width:393px;height:852px;background:var(--page);overflow:hidden}
+  /* media: full width, square corners, centred between control rows */
+  .media{position:absolute;left:0;right:0;top:118px;bottom:158px;display:flex;align-items:center;justify-content:center}
+  .media img{display:block;width:100%;height:auto;max-height:100%;object-fit:cover;border-radius:0}
+  /* islands */
+  .row{position:absolute;left:var(--inset);right:var(--inset);display:flex;align-items:center;justify-content:space-between}
+  .top{top:58px}
+  .bottom{bottom:34px}
+  .island{background:var(--glass);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;height:var(--ctl);color:var(--text);border:0}
+  .circle{width:var(--ctl);border-radius:50%}
+  .capsule{border-radius:22px}
+  .island svg{width:22px;height:22px;stroke-width:1.75}
+  .title{flex-direction:column;padding:0 22px;min-width:132px;line-height:1.15}
+  .title b{font-size:17px;font-weight:600}
+  .title span{font-size:13px;color:var(--muted)}
+  .actions{gap:6px;padding:0 10px}
+  .actions .a{width:48px;height:44px;display:flex;align-items:center;justify-content:center}
+  /* single chip on media corner */
+  .chip{position:absolute;right:12px;bottom:12px;height:30px;padding:0 10px;border-radius:15px;background:var(--glass);box-shadow:var(--shadow);display:flex;align-items:center;gap:6px;font-size:13px;font-weight:400}
+  .chip svg{width:15px;height:15px;stroke-width:1.75}
+  .mwrap{position:relative;width:100%}
+  /* filmstrip */
+  .film{position:absolute;left:var(--inset);right:var(--inset);bottom:92px;height:32px;display:flex;gap:2px;align-items:center;justify-content:center}
+  .film i{display:block;width:12px;height:32px;background:#d1d1d6;background-image:url("../../../../design/mocks/photos/market-2.jpg");background-size:cover;background-position:center}
+  .film i.cur{width:30px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="row top">
+    <button class="island circle" aria-label="Back"><i data-lucide="chevron-left"></i></button>
+    <div class="island capsule title"><b>Yesterday</b><span>10:15 AM</span></div>
+    <button class="island circle" aria-label="More"><i data-lucide="ellipsis"></i></button>
+  </div>
+
+  <div class="media">
+    <div class="mwrap">
+      <img src="../../../../design/mocks/photos/market-2.jpg" alt="">
+      <div class="chip"><i data-lucide="scan-search"></i>Look Up</div>
+    </div>
+  </div>
+
+  <div class="film" id="film"></div>
+
+  <div class="row bottom">
+    <button class="island circle" aria-label="Share"><i data-lucide="share"></i></button>
+    <div class="island capsule actions">
+      <span class="a"><i data-lucide="heart"></i></span>
+      <span class="a"><i data-lucide="info"></i></span>
+      <span class="a"><i data-lucide="sliders-horizontal"></i></span>
+    </div>
+    <button class="island circle" aria-label="Delete"><i data-lucide="trash-2"></i></button>
+  </div>
+</div>
+<script>
+  var f=document.getElementById('film');
+  for(var n=0;n<21;n++){var e=document.createElement('i');if(n===10)e.className='cur';f.appendChild(e);}
+  lucide.createIcons();
+</script>
+</body>
+</html>

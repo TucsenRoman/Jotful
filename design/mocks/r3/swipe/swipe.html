@@ -1,0 +1,132 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=393"><title>Swipe Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="cards.css">
+<style>
+html,body{width:393px;height:852px;background:var(--page);overflow:hidden;user-select:none}
+.ph{width:393px;height:852px;position:relative;overflow:hidden;background:var(--page)}
+.status{position:absolute;top:0;left:0;right:0;height:54px;display:flex;align-items:center;justify-content:space-between;padding:6px 32px 0 46px;font-size:17px;font-weight:600}
+.ph .hdr{top:58px;left:22px;right:22px}
+.slot{left:23.5px;width:346px;height:244px;transition:top .38s cubic-bezier(.2,.9,.3,1),opacity .18s ease-out,transform .18s ease-out}
+#stack.solo .slot:not(.active){opacity:0;transform:scale(.97)}
+.mover{position:absolute;inset:0;cursor:grab;touch-action:pan-y}
+.mover.anim{transition:transform .18s ease-out}
+.mover.spring{transition:transform .42s cubic-bezier(.3,1.5,.5,1)}
+.mover{z-index:1}
+.hint{position:absolute;left:0;right:0;bottom:30px;text-align:center;font-size:11px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;color:#8E8E93}
+.hap{position:absolute;top:112px;left:50%;transform:translate(-50%,-6px);opacity:0;font-size:11px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;display:flex;align-items:center;gap:5px;background:#1C1C1E;color:#fff;border-radius:11px;padding:5px 10px;transition:opacity .15s,transform .15s;z-index:50;pointer-events:none}
+.hap.show{opacity:1;transform:translate(-50%,0)}
+.hap svg{width:13px;height:13px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round}
+#toast{bottom:34px;transform:translate(-50%,90px);transition:transform .32s cubic-bezier(.2,.9,.3,1);z-index:60;height:48px;border-radius:24px}
+#toast.show{transform:translate(-50%,0)}
+#toast.nobtn{padding-right:20px}#toast.nobtn button{display:none}
+</style></head><body><div class="ph" id="ph">
+<div class="status"><span>9:41</span><span>●●● ◔ ▮</span></div>
+<div class="hdr"><div class="word" id="word"></div><div class="g" id="glass"></div></div>
+<div id="stack"></div>
+<div class="hint">Drag a card left or right</div>
+<div class="hap" id="hap"></div>
+<div class="toast" id="toast"><span id="tmsg">Resolved</span><button id="undo">Undo</button></div>
+<div class="homebar"></div></div>
+<script src="cards.js"></script>
+<script>
+document.getElementById('word').innerHTML=MOTH+'Jotful';
+document.getElementById('glass').innerHTML=SEARCH+GEAR;
+let items=[
+ {id:1,tag:'Idea',title:'Birthday gift for Mom',body:'The pottery class she keeps mentioning.',meta:'Today 9:12',pinned:true},
+ {id:2,tag:'Movie',title:'Past Lives',body:'Sara said watch it on a plane, not at home.',meta:'Oct 9'},
+ {id:3,tag:'Music',title:'Melody idea in the car',body:wave(),meta:'0:42',mic:true},
+ {id:5,tag:'Place',title:'That bakery sign on 5th',body:'Steal the lettering.',meta:'Oct 4'},
+ {id:6,tag:'Book',title:'The Overstory',body:'Finish before the trip.',meta:'Oct 2'},
+ {id:7,tag:'To-do',title:'Weekend',body:'• farmers market<br>• fix bike tire<br>• finish the book',meta:'Sep 30'},
+ {id:8,tag:'',title:'Call the dentist back',body:'',meta:'Sep 28',done:true},
+ {id:4,tag:'Question',title:'Why do I always remember the dream',body:'…right after I stop thinking about it?',meta:'Yesterday 22:40'}
+];
+const stack=document.getElementById('stack');
+const STRIP=58, TOP=120;
+function order(){ return [...items.filter(i=>i.pinned),...items.filter(i=>!i.pinned)]; }
+function render(){
+  const ord=order();
+  ord.forEach((it,i)=>{
+    let el=document.getElementById('s'+it.id);
+    if(!el){el=document.createElement('div');el.className='slot';el.id='s'+it.id;stack.appendChild(el);bind(el,it);}
+    const front=i===ord.length-1;
+    el.classList.toggle('front',front);
+    el.innerHTML=`<div class="actwrap"></div><div class="mover">${faceHTML(it,front)}</div>`;
+    el.style.top=(TOP+i*STRIP)+'px';el.style.zIndex=i+1;
+  });
+  ord.forEach(it=>stack.appendChild(document.getElementById('s'+it.id)));
+}
+const hapEl=document.getElementById('hap');let hapT;
+function haptic(kind){
+  hapEl.innerHTML=BUZZ+kind; hapEl.classList.add('show'); clearTimeout(hapT); hapT=setTimeout(()=>hapEl.classList.remove('show'),700);
+  try{navigator.vibrate&&navigator.vibrate(kind==='Heavy tap'?30:kind==='Medium tap'?18:[12,40,12]);}catch(e){}
+}
+const toast=document.getElementById('toast'),tmsg=document.getElementById('tmsg');let toastT,undoFn=null;
+function showToast(msg,undo){
+  tmsg.textContent=msg; undoFn=undo; toast.classList.toggle('nobtn',!undo); toast.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>{toast.classList.remove('show');undoFn=null;},4000);
+}
+document.getElementById('undo').onclick=()=>{ if(undoFn){undoFn();undoFn=null;} toast.classList.remove('show'); };
+
+// Gesture: right = resolve, left = pin, long left (past 122) = reserved "Coming soon".
+// Detents: |x| >= 64 medium tap; x <= -122 heavy tap. Clamp 150. Release past 64 snaps to 110, commits (success), springs back.
+function setAct(slot,x,pop){
+  const el=slot.querySelector('.actwrap'); el.innerHTML=actHTML(x,346,pop);
+}
+function solo(slot,on){ stack.classList.toggle('solo',on); document.querySelectorAll('.slot.active').forEach(s=>s.classList.remove('active')); if(on) slot.classList.add('active'); }
+function bind(slot,it){
+  let sx=0,sy=0,x=0,active=false,decided=false,det=0,mv;
+  slot.addEventListener('pointerdown',e=>{
+    mv=slot.querySelector('.mover');
+    sx=e.clientX;sy=e.clientY;x=0;active=true;decided=false;det=0;try{slot.setPointerCapture(e.pointerId);}catch(_){}
+    mv.classList.remove('anim','spring');
+  });
+  slot.addEventListener('pointermove',e=>{
+    if(!active)return;
+    const dx=e.clientX-sx,dy=e.clientY-sy;
+    if(!decided){ if(Math.abs(dy)>12&&Math.abs(dy)>Math.abs(dx)){active=false;return;} if(Math.abs(dx)<12)return; decided=true; solo(slot,true); }
+    x=Math.max(-150,Math.min(150,dx));
+    mv.style.transform=`translateX(${x}px)`;
+    const nd = x<=-122?2:Math.abs(x)>=64?1:0;
+    if(nd!==det){ det=nd; if(nd>0) haptic(nd===2?'Heavy tap':'Medium tap'); }
+    setAct(slot,x,false);
+  });
+  function end(){
+    if(!active||!decided){active=false;return;} active=false;
+    const action = x>=64?'resolve' : x<=-122?'later' : x<=-64?'pin' : null;
+    mv.classList.add('anim');
+    if(action){
+      const off = action==='resolve'?110:action==='later'?-130:-110;
+      mv.style.transform=`translateX(${off}px)`; setAct(slot,off<0&&action==='later'?-130:off,false);
+      setTimeout(()=>{
+        setAct(slot,action==='later'?-130:off,true);            // pop at commit
+        haptic('Success');
+        setTimeout(()=>{
+          commit(it,action);
+          if(action==='pin') solo(slot,false);
+          const nm=slot.querySelector('.mover');
+          if(action!=='pin'){ nm.style.transform=`translateX(${off}px)`; setAct(slot,action==='later'?-130:off,false);
+            requestAnimationFrame(()=>requestAnimationFrame(()=>{nm.classList.add('spring');nm.style.transform='translateX(0)';
+              let t0=performance.now();(function f(){const k=Math.min(1,(performance.now()-t0)/300);setAct(slot,k<1?off*(1-k):0,false);if(k<1)requestAnimationFrame(f);})();setTimeout(()=>solo(slot,false),420);}));
+          }
+        },120);
+      },180);
+    } else { mv.classList.remove('anim'); mv.classList.add('spring'); mv.style.transform='translateX(0)';
+      const x1=x,t0=performance.now();(function f(){const k=Math.min(1,(performance.now()-t0)/260);setAct(slot,k<1?x1*(1-k):0,false);if(k<1)requestAnimationFrame(f);})(); setTimeout(()=>solo(slot,false),300); }
+  }
+  slot.addEventListener('pointerup',end); slot.addEventListener('pointercancel',end);
+}
+function commit(it,action){
+  if(action==='resolve'){
+    const was=!!it.done; it.done=!was; render();
+    if(!was) showToast('Resolved',()=>{it.done=false;render();}); else showToast('Back in the stack',null);
+  } else if(action==='later'){
+    showToast('Long swipe: coming soon',null);
+  } else {
+    it.pinned=!it.pinned;
+    if(it.pinned){ items=[it,...items.filter(i=>i!==it)]; }
+    render(); showToast(it.pinned?'Pinned to the front':'Unpinned',null);
+  }
+}
+render();
+</script></body></html>

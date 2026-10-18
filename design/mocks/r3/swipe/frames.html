@@ -1,0 +1,60 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=1600"><title>Swipe Frames</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="cards.css">
+<style>
+html,body{width:1600px;background:#E6E5EB}
+body{padding:36px 0 40px}
+.head{padding:0 40px 26px;display:flex;align-items:baseline;gap:18px}
+.head h1{font-size:34px;font-weight:700;letter-spacing:-.8px}
+.head p{font-size:15px;color:#55555B;line-height:20px;max-width:900px}
+.strip{display:flex;gap:14px;padding:0 24px;zoom:.83}
+.col{width:360px;flex:none}
+.cap{margin-top:14px;font-size:17px;line-height:22px;padding:0 4px}
+.cap b{display:block;font-size:13px;letter-spacing:.6px;text-transform:uppercase;color:#55555B;margin-bottom:3px}
+.ph{width:360px;height:620px;border-radius:40px;background:var(--page);position:relative;overflow:hidden;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 12px 40px rgba(0,0,0,.10)}
+.ph .hdr{top:30px;left:20px;right:20px}
+.ph .slot{left:14px;width:332px;height:240px}
+/* ruler */
+.rul{position:absolute;left:21.5px;width:317px;top:476px;height:70px}
+.rul .track{position:absolute;left:0;right:0;top:30px;height:2px;background:#C7C7CC;border-radius:1px}
+.rul .zero{position:absolute;top:22px;width:2px;height:18px;background:#8E8E93;left:157.5px}
+.rul .mk{position:absolute;top:24px;width:2px;height:14px;background:#AEAEB2}
+.rul .mk i{position:absolute;top:18px;left:50%;transform:translateX(-50%);font-style:normal;font-size:11px;font-weight:600;color:#8E8E93;letter-spacing:.4px}
+.rul .mk.on{background:var(--ink)}.rul .mk.on i{color:var(--ink)}
+.rul .finger{position:absolute;top:21px;width:20px;height:20px;border-radius:50%;background:var(--ink);transform:translateX(-50%);box-shadow:0 0 0 5px rgba(2,2,4,.12)}
+.hap{position:absolute;top:-6px;transform:translateX(-50%);font-size:11px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;white-space:nowrap;display:flex;align-items:center;gap:5px;background:#fff;border-radius:11px;padding:4px 9px;box-shadow:0 1px 6px rgba(0,0,0,.10)}
+.hap svg{width:13px;height:13px;stroke:var(--ink);fill:none;stroke-width:2;stroke-linecap:round}
+.rlab{position:absolute;bottom:-4px;left:0;right:0;display:flex;justify-content:space-between;font-size:11px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;color:#8E8E93}
+.ph .toast{bottom:24px;transform:translateX(-50%)}
+</style></head><body>
+<div class="head"><h1>Swipe a thought</h1><p>Swipe right resolves, swipe left pins, a long left swipe is the reserved slot (flipped from today's code; changes at build). Thresholds 64 pt and 122 pt, card clamped at 150 pt. As the card slides, a 52 pt action circle appears beside it, 12 pt from its edge, with a 13 pt caption: graphite for Resolve, white for Pin, grey for the reserved slot. It grows from 0.6 to full size by the 64 pt detent and pops on commit. While a card slides, the rest of the stack fades away and returns when it settles.</p></div>
+<div class="strip" id="strip"></div>
+<script src="cards.js"></script>
+<script>
+const Q={tag:'Question',title:'Why do I always remember the dream',body:'…right after I stop thinking about it?',meta:'Yesterday 22:40'};
+function frame(f){
+  const x=f.x||0;
+  const back=actHTML(x,332,false);
+  const front=`<div style="position:absolute;inset:0;z-index:1;transform:translateX(${x}px)">${faceHTML({...Q,done:f.done},true)}</div>`;
+  const px=v=>158.5+v*(158.5/150);
+  const mk=(v,lab)=>`<div class="mk ${f.on===v?'on':''}" style="left:${px(v)-1}px"><i>${lab}</i></div>`;
+  const hap=f.hap?`<div class="hap" style="left:${Math.min(250,Math.max(60,px(f.hapAt)))}px">${BUZZ}${f.hap}</div>`:'';
+  const finger=f.done?'':`<div class="finger" style="left:${px(x)}px"></div>`;
+  return `<div class="col"><div class="ph">
+   <div class="hdr"><div class="word">${MOTH}Jotful</div><div class="g">${SEARCH}${GEAR}</div></div>
+   <div class="slot" style="top:96px;opacity:${f.solo?0:1}">${faceHTML({tag:'Idea',title:'Birthday gift for Mom',meta:'Today 9:12',pinned:true})}</div>
+   <div class="slot" style="top:156px;opacity:${f.solo?0:1}">${faceHTML({tag:'Movie',title:'Past Lives',meta:'Oct 9'})}</div>
+   <div class="slot front" style="top:216px">${back}${front}</div>
+   <div class="rul"><div class="track"></div><div class="zero"></div>${mk(-122,'122')}${mk(-64,'64')}${mk(64,'64')}${finger}${hap}<div class="rlab"><span>← Pin</span><span>Resolve →</span></div></div>
+   ${f.toast||''}<div class="homebar"></div></div>
+   <div class="cap"><b>${f.k}</b>${f.cap}</div></div>`;
+}
+const frames=[
+ {k:'a · Rest',x:0,cap:'Card at rest. A sideways drag of 12 pt starts the swipe; a vertical drag scrolls the stack instead. Once it starts sliding, every other card fades out (180 ms) so only this card and its circle remain.'},
+ {k:'b · Right past 64 pt',solo:1,x:92,on:64,hap:'Medium tap',hapAt:64,cap:'The thought slides right and reveals the Resolve circle beside it: graphite, white check, caption under. Crossing 64 pt plays a medium tap.'},
+ {k:'c · Release: resolved',solo:1,done:true,hap:'Success',hapAt:0,toast:'<div class="toast">Resolved<u>Undo</u></div>',cap:'Release snaps the card to 110 pt, the circle pops, it commits with a success haptic and springs back greyed and struck through. Undo stays for 4 seconds; the other cards fade back once it settles.'},
+ {k:'d · Left past 64 pt',solo:1,x:-92,on:-64,hap:'Medium tap',hapAt:-64,cap:'The other way reveals the Pin circle: white with a soft shadow, black pin. Medium tap at 64 pt; release pins it to the front of the stack.'},
+ {k:'e · Left past 122 pt',solo:1,x:-146,on:-122,hap:'Heavy tap',hapAt:-122,cap:'Keep going and the circle turns grey: the reserved slot, "Coming soon". A heavy tap marks 122 pt. Release only shows a note.'}
+];
+document.getElementById('strip').innerHTML=frames.map(frame).join('');
+</script></body></html>

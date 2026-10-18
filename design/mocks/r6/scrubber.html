@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Date Scrubber Frames</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1600px;background:#E4E3EA;font-family:-apple-system,'Inter',sans-serif;color:#1C1C1E;padding:32px 34px 40px}
+h1{font-size:24px;font-weight:700;letter-spacing:-.4px}
+.sub{font-size:14px;color:#6C6C70;margin-top:4px;max-width:1300px}
+.strip{display:flex;gap:40px;margin-top:22px;justify-content:center}
+.f{width:393px}
+.ph{width:393px;height:852px;border-radius:40px;overflow:hidden;box-shadow:0 8px 26px rgba(0,0,0,.14);background:#F2F1F6}
+.ph iframe{width:393px;height:852px;border:0;pointer-events:none}
+.lbl{font-size:16px;font-weight:700;margin-top:16px}
+.cap{font-size:13px;line-height:19px;color:#3A3A3C;margin-top:6px}
+.cap b{font-weight:600;color:#1C1C1E}
+</style></head><body>
+<h1>Date scrubber, frozen</h1>
+<div class="sub">Photos-style scroll indicator in the 36px left gutter. Track spans the stack (y 170–670), newest at the top, oldest at the bottom; one card per step, faint ticks where each month starts.</div>
+<div class="strip">
+ <div class="f"><div class="ph"><iframe src="home.html?p=0"></iframe></div>
+  <div class="lbl">1 · At rest</div>
+  <div class="cap"><b>Scrubber:</b> hidden (opacity 0, not tappable). It fades in (250ms) as soon as the stack moves: drag, spring or wheel.</div></div>
+ <div class="f"><div class="ph"><iframe src="home.html?p=7&scrub=grab"></iframe></div>
+  <div class="lbl">2 · Grabbed, finger on Sep 21</div>
+  <div class="cap"><b>Thumb:</b> 6×36 glass, 44×44 hit area, follows the finger.<br><b>Bubble:</b> glass capsule 34 tall, right of the thumb, month + day (year when not 2026).<br><b>Stack:</b> jumps of more than 2 cards fast-flip (120ms fade-in, no fall); 1–2 cards spring. <b>Haptic:</b> selection tick each month change.</div></div>
+ <div class="f"><div class="ph"><iframe src="home.html?p=7&scrub=release"></iframe></div>
+  <div class="lbl">3 · Released</div>
+  <div class="cap"><b>Stack:</b> settles on Sep 21 with the 400ms / 0.8 spring; rigid tap.<br><b>Bubble:</b> gone (120ms). <b>Thumb:</b> stays put, then the whole scrubber fades out 1s after lift.</div></div>
+</div>
+</body></html>
