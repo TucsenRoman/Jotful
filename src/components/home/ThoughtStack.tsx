@@ -17,7 +17,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import * as Haptics from 'expo-haptics';
-import type { Thought } from '../../storage';
+import { getPreference, type Thought } from '../../storage';
 import { StackCard, type SwipeAction } from './StackCard';
 import { DateScrubber } from './DateScrubber';
 import { EmptyStack } from './EmptyStack';
@@ -74,6 +74,7 @@ const rigid = () => {
 export function ThoughtStack(props: ThoughtStackProps) {
   const { thoughts, bottomInset, resetKey } = props;
   const N = thoughts.length;
+  const debug = useMemo(() => ({ flat: getPreference('debug.flat', '0') === '1', noShadow: getPreference('debug.noShadow', '0') === '1', plain: getPreference('debug.plain', '0') === '1' }), []);
 
   const propsRef = useRef(props);
   propsRef.current = props;
@@ -325,8 +326,11 @@ export function ThoughtStack(props: ThoughtStackProps) {
     setSize((s) => (s.w === width && s.h === height ? s : { w: width, h: height }));
   }, []);
   const cardW = Math.max(0, size.w - CARD_LEFT - CARD_RIGHT);
-  const cardTop = Math.max(FAN_H + COUNT_LINE + 16, size.h - bottomInset - SHEET_GAP - CARD_H);
-  const trackTop = cardTop - FAN_H;
+  // The front card always sits SHEET_GAP above the capture sheet; if the fan behind it
+  // would not fit above, the fan squeezes (fan < 1) instead of pushing the card down.
+  const cardTop = Math.max(COUNT_LINE + 16, size.h - bottomInset - SHEET_GAP - CARD_H);
+  const fan = Math.min(1, Math.max(0.35, (cardTop - COUNT_LINE - 16) / FAN_H));
+  const trackTop = cardTop - FAN_H * fan;
   // The scrubber stops 12pt above the capture sheet so the peek never covers it.
   const trackH = Math.max(0, Math.min(cardTop + CARD_H, size.h - bottomInset - 12 - 22) - trackTop);
 
@@ -339,7 +343,7 @@ export function ThoughtStack(props: ThoughtStackProps) {
     const depth = Math.min(SHOW, max - clamp(p.value, 0, max));
     return {
       opacity: visible.value,
-      transform: [{ translateY: cardTop + stackY(depth) - 8 - COUNT_LINE }],
+      transform: [{ translateY: cardTop + stackY(depth, fan) - 8 - COUNT_LINE }],
     };
   });
 
@@ -374,6 +378,8 @@ export function ThoughtStack(props: ThoughtStackProps) {
                     more={moreLabel(i, N)}
                     cardW={cardW}
                     cardTop={cardTop}
+                    fan={fan}
+                    debug={debug}
                     p={p}
                     maxIdx={maxIdx}
                     solo={solo}

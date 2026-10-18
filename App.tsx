@@ -71,6 +71,8 @@ function JotfulApp() {
   const [detail, setDetail] = useState<{ thought: Thought; attachments: Attachment[] } | null>(null);
   const [tagTarget, setTagTarget] = useState<'draft' | number | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
+  const readStackDebug = () => ({ flat: getPreference('debug.flat', '0') === '1', noShadow: getPreference('debug.noShadow', '0') === '1', plain: getPreference('debug.plain', '0') === '1' });
+  const [stackDebug, setStackDebug] = useState(readStackDebug);
   const [capturePromptIndex] = useState(() => Math.floor(Math.random() * capturePrompts.length));
   const sheetRef = useRef<CaptureSheetHandle>(null);
   const recoveredDraft = useRef(false);
@@ -283,7 +285,7 @@ function JotfulApp() {
     <Pressable onPress={() => setTagTarget('draft')} className="rounded-full bg-fill px-2.5 py-1" accessibilityLabel="Add a tag"><Text className="text-caption2 font-bold uppercase tracking-[0.6px] text-secondary">+ Tag</Text></Pressable>
   </View>;
 
-  if (screen === 'settings') return <><StatusBar style="dark" /><SettingsScreen preferredAI={preferredAI} preferredBrowser={preferredBrowser} tagCount={tags.length} onChooseAI={chooseAI} onChooseBrowser={chooseBrowser} onAddSampleData={IS_DEV_APP ? () => { addSampleThoughts(); refresh(); void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); setScreen('thoughts'); } : undefined} onClearSampleData={IS_DEV_APP ? () => { removeSampleThoughts(); refresh(); void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } : undefined} onClose={() => setScreen('thoughts')} /></>;
+  if (screen === 'settings') return <><StatusBar style="dark" /><SettingsScreen preferredAI={preferredAI} preferredBrowser={preferredBrowser} tagCount={tags.length} onChooseAI={chooseAI} onChooseBrowser={chooseBrowser} onAddSampleData={IS_DEV_APP ? () => { addSampleThoughts(); refresh(); void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); setScreen('thoughts'); } : undefined} onClearSampleData={IS_DEV_APP ? () => { removeSampleThoughts(); refresh(); void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } : undefined} stackDebug={IS_DEV_APP ? stackDebug : undefined} onToggleStackDebug={IS_DEV_APP ? (key) => { setPreference('debug.' + key, stackDebug[key] ? '0' : '1'); setStackDebug(readStackDebug()); } : undefined} onClose={() => setScreen('thoughts')} /></>;
 
   return <View className="flex-1 bg-page"><StatusBar style="dark" />
     <HomeHeader topInset={insets.top} searchOpen={false} search="" onSearchChange={() => {}} onOpenSearch={() => { closeSheet(); setSearchOpen(true); }} onCloseSearch={() => { setSearch(''); setSearchOpen(false); }} onOpenSettings={() => { setSheetExpanded(false); setScreen('settings'); }} />

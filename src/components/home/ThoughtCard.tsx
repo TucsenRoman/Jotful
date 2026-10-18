@@ -25,6 +25,7 @@ export function cardBackground(t: Thought) {
 
 type Props = {
   thought: Thought;
+  plain?: boolean; // dev switch: title only, no photo/body (flicker hunt)
   isFront: boolean;
   more: string; // "14 more" / "Last one"
   moreStyle?: ComponentProps<typeof Animated.Text>['style']; // animated: visible on the front card only
@@ -34,15 +35,15 @@ type Props = {
   onCopy?: () => void;
 };
 
-function ThoughtCardBase({ thought: t, isFront, more, moreStyle, onPress, onAskAI, onSearchWeb, onCopy }: Props) {
+function ThoughtCardBase({ thought: t, plain, isFront, more, moreStyle, onPress, onAskAI, onSearchWeb, onCopy }: Props) {
   const resolved = !!t.resolvedAt;
   const tag = t.tags[0];
   const title = titleOf(t);
   const body = bodyOf(t);
 
-  const hasImage = t.attachmentKind === 'image' && !!t.attachmentUri;
-  const hasAudio = t.attachmentKind === 'audio' && !!t.attachmentUri;
-  const hasBody = !!body;
+  const hasImage = !plain && t.attachmentKind === 'image' && !!t.attachmentUri;
+  const hasAudio = !plain && t.attachmentKind === 'audio' && !!t.attachmentUri;
+  const hasBody = !plain && !!body;
   const textColor = resolved ? p.grey : p.graphite;
   const strike = resolved ? styles.strike : null;
 
@@ -76,7 +77,7 @@ function ThoughtCardBase({ thought: t, isFront, more, moreStyle, onPress, onAskA
 
           <View style={styles.body}>
             {/* Plain text on the stack: a native rich-text view per card redrew (flickered) on every swap. */}
-            {body ? (
+            {hasBody ? (
               <Text numberOfLines={hasImage ? 1 : hasAudio ? 2 : 4} style={[styles.bodyText, { color: textColor }, strike]}>
                 {body}
               </Text>

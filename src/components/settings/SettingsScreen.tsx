@@ -19,6 +19,9 @@ export type SettingsScreenProps = {
   // Dev app only: fill or clear the sample thoughts.
   onAddSampleData?(): void;
   onClearSampleData?(): void;
+  // Dev app only: stack switches to find the flicker on device.
+  stackDebug?: { flat: boolean; noShadow: boolean; plain: boolean };
+  onToggleStackDebug?(key: 'flat' | 'noShadow' | 'plain'): void;
   onClose(): void;
 };
 
@@ -63,7 +66,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-export default function SettingsScreen({ preferredAI, preferredBrowser, tagCount, onChooseAI, onChooseBrowser, onManageTags, onAddSampleData, onClearSampleData, onClose }: SettingsScreenProps) {
+export default function SettingsScreen({ preferredAI, preferredBrowser, tagCount, onChooseAI, onChooseBrowser, onManageTags, onAddSampleData, onClearSampleData, stackDebug, onToggleStackDebug, onClose }: SettingsScreenProps) {
   const insets = useSafeAreaInsets();
   return (
     <View className="flex-1 bg-page">
@@ -97,7 +100,12 @@ export default function SettingsScreen({ preferredAI, preferredBrowser, tagCount
         </Section>
         {onAddSampleData && onClearSampleData ? <Section title="Developer (Jotful Dev only)">
           <Row title="Add sample thoughts" detail="17 thoughts, Aug–Oct" onPress={onAddSampleData} />
-          <Row title="Remove sample thoughts" detail="Keeps your own" onPress={onClearSampleData} last />
+          <Row title="Remove sample thoughts" detail="Keeps your own" onPress={onClearSampleData} />
+          {stackDebug && onToggleStackDebug ? <>
+            <Row title="Flat flip (no 3D)" detail={stackDebug.flat ? "On" : "Off"} onPress={() => onToggleStackDebug("flat")} />
+            <Row title="No card shadows" detail={stackDebug.noShadow ? "On" : "Off"} onPress={() => onToggleStackDebug("noShadow")} />
+            <Row title="Plain cards (no photos or text)" detail={stackDebug.plain ? "On" : "Off"} onPress={() => onToggleStackDebug("plain")} last />
+          </> : null}
         </Section> : null}
         <Section title="About">
           <Row title="Jotful" detail="Private thought inbox · version 1.0" last />

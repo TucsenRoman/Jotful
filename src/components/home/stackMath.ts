@@ -30,14 +30,15 @@ export const SPRING = {
   damping: 2 * tokens.motion.spring.dampingRatio * W,
 };
 
-export function stackY(d: number) {
+// k (0-1) squeezes the fan on short screens so the front card never slides under the sheet.
+export function stackY(d: number, k = 1) {
   'worklet';
   const dc = Math.min(Math.max(d, 0), SHOW);
   let y = 0;
   let i = 0;
   for (; i < Math.floor(dc); i++) y += STEP[i];
   if (i < SHOW) y += STEP[i] * (dc - i);
-  return -y;
+  return -y * k;
 }
 
 export function clamp(x: number, a: number, b: number) {
@@ -58,13 +59,13 @@ export function unrubber(v: number, max: number) {
 export type CardPose = { y: number; rot: number; scale: number; dim: number; opacity: number };
 
 // Pose of the card at time-order index i for a given p.
-export function poseFor(i: number, p: number): CardPose {
+export function poseFor(i: number, p: number, fan = 1): CardPose {
   'worklet';
   if (p < 0) {
     // Rubber band at the newest end: the front card lifts a little, the rest stay put.
     const dc = Math.min(i, SHOW);
     return {
-      y: i === 0 ? p * D : stackY(i),
+      y: i === 0 ? p * D : stackY(i, fan),
       rot: 0,
       scale: 1 - SCALE_STEP * dc,
       dim: DIM_STEP * dc,
@@ -87,10 +88,13 @@ export function poseFor(i: number, p: number): CardPose {
   const d = k - t;
   const dc = Math.min(d, SHOW);
   return {
-    y: stackY(d),
+    y: stackY(d, fan),
     rot: 0,
     scale: 1 - SCALE_STEP * dc,
     dim: DIM_STEP * dc,
     opacity: clamp(SHOW + 1 - d, 0, 1),
   };
 }
+
+// Dev-only switches (Settings > Developer) to find what makes the stack flicker on device.
+export type StackDebug = { flat: boolean; noShadow: boolean; plain: boolean };

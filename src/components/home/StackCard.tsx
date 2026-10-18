@@ -18,7 +18,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 import type { Thought } from '../../storage';
 import { ThoughtCard, cardBackground } from './ThoughtCard';
 import { SwipeActions } from './SwipeActions';
-import { CARD_H, CARD_LEFT, SPRING, clamp, poseFor } from './stackMath';
+import { CARD_H, CARD_LEFT, SPRING, clamp, poseFor, type StackDebug } from './stackMath';
 
 const tokens = require('../../theme/tokens');
 const M = tokens.motion;
@@ -35,6 +35,8 @@ type Props = {
   more: string;
   cardW: number;
   cardTop: number;
+  fan: number;
+  debug: StackDebug;
   p: SharedValue<number>;
   maxIdx: SharedValue<number>;
   solo: SharedValue<number>;
@@ -47,19 +49,19 @@ type Props = {
 };
 
 function StackCardBase(props: Props) {
-  const { index, zIndex, thought, isFront, interactive, more, cardW, cardTop, p, maxIdx, solo, swipeX, pop } = props;
+  const { index, zIndex, thought, isFront, interactive, more, cardW, cardTop, fan, debug, p, maxIdx, solo, swipeX, pop } = props;
   const { onPressCard, onAction, onSwipeDetent, onSwipeCommit } = props;
   const id = thought.id;
 
   const outer = useAnimatedStyle(() => {
-    const s = poseFor(index, p.value);
+    const s = poseFor(index, p.value, fan);
     const front = clamp(Math.round(p.value), 0, maxIdx.value) === index;
     const others = front ? 0 : solo.value;
     const scale = s.scale * (1 - 0.03 * others);
     // Only the falling card gets a 3D transform. With perspective on every card, iOS
     // treated the whole stack as coplanar 3D layers and kept re-deciding which drew on
     // top (z-fighting), which read as cards flickering through each other.
-    if (s.rot > 0.01) {
+    if (s.rot > 0.01 && !debug.flat) {
       return {
         opacity: s.opacity * (1 - others),
         transform: [{ perspective: 900 }, { translateY: s.y }, { rotateX: `${s.rot}deg` }, { scale }],
@@ -77,7 +79,7 @@ function StackCardBase(props: Props) {
   const face = useAnimatedStyle(() => {
     const d = clamp(Math.abs(index - p.value), 0, 1);
     return {
-      shadowOpacity: 0.16 - 0.06 * d,
+      shadowOpacity: debug.noShadow ? 0 : 0.16 - 0.06 * d,
       shadowRadius: 14 - 10 * d,
       shadowOffset: { width: 0, height: 10 - 12 * d },
       transform: [{ translateX: isFront ? swipeX.value : 0 }],
@@ -137,6 +139,7 @@ function StackCardBase(props: Props) {
       <GestureDetector gesture={swipe}>
         <Animated.View style={[styles.card, { backgroundColor: cardBackground(thought) }, face]}>
           <ThoughtCard
+            plain={debug.plain}
             thought={thought}
             isFront={isFront}
             more={more}
