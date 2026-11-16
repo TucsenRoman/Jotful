@@ -38,7 +38,7 @@ Persimmon `#EF705A` and Moth Green `#58795C` now live only in the moth's wings a
 - **System font (SF Pro; Inter on the web):** everything else, Apple Dynamic Type steps only: 34 / 22 / 17 / 15 / 13 / 12 / 11. Max four sizes per screen.
 - Button labels in title case ("Ask AI", "Search Web", "Copy"). Small all-caps for tag pills only.
 
-## Sizes (Apple's documented specs, see `.claude/skills/apple-wallet-dna/research/APPLE_SPECS.md`)
+## Sizes (Apple's documented specs, see `.claude/skills/dna-apple-wallet/research/APPLE_SPECS.md`)
 
 - Buttons: 44pt capsules, 16pt side padding, 6pt icon gap, 12pt between controls; icon-only actions are 44pt circles.
 - Side margins 16pt. Nested radii are concentric (detail card 24, its media 12).

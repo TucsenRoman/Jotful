@@ -98,7 +98,7 @@ Notes for the build:
 - Judge feel on the phone, not the emulator.
 
 ## Date scrubber (Photos-style, left gutter)
-Spec: apple-photos-dna "Date scrubber" + ban "No visible scrubber at rest". Code: `scrubber.js`, frames: `scrubber.html`.
+Spec: dna-apple-photos "Date scrubber" + ban "No visible scrubber at rest". Code: `scrubber.js`, frames: `scrubber.html`.
 
 | What | Value |
 |---|---|

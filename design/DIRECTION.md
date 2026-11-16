@@ -7,7 +7,7 @@ Chosen: **Apple Wallet's skin on Jotful's structure** (like Apple Fitness → Vi
 - Home stack becomes a Rolodex (rotary card file) take on Wallet's stack.
 - No + in the header: title + one glass group (Search, Settings). Capture lives in the sheet.
 - Detail view stays (card on top, panels below), placement driven by NOTES.md reasoning.
-- Spec: .claude/skills/apple-wallet-dna (Wallet DNA, local refs). Research: design/RESEARCH.md.
+- Spec: .claude/skills/dna-apple-wallet (Wallet DNA, local refs). Research: design/RESEARCH.md.
 
 ## Settled in round 4 (2026-10-18, user feedback on round 3)
 - Tag colours stay, but calmer: deep, muted finishes like real Wallet cards (brick, mulberry, rust, mustard, forest, slate, dusk violet, deep teal), white text, faint top sheen. Too bright = cartoony.
@@ -30,7 +30,7 @@ Chosen: **Apple Wallet's skin on Jotful's structure** (like Apple Fitness → Vi
 ## Settled in round 7 (2026-10-18)
 - Rolodex flip animation approved ("really clean"). No loop: time order (newest in front), stops at both ends.
 - Add a date scrubber on the LEFT edge, modelled on Apple Photos' scroll-indicator date bubble.
-- Second reference: Apple Photos (apple-photos-dna), combined with Wallet: Wallet = home stack and cards; Photos = detail view, media, date scrubber. Detail: Photos-style, with actions moved to the top-right glass group or a vertical floating glass bar on the left over the image.
+- Second reference: Apple Photos (dna-apple-photos), combined with Wallet: Wallet = home stack and cards; Photos = detail view, media, date scrubber. Detail: Photos-style, with actions moved to the top-right glass group or a vertical floating glass bar on the left over the image.
 
 ## Settled in round 8 (2026-10-18)
 - Detail A and B rejected (too much negative space). Info-style layout liked: it becomes the base.
@@ -59,7 +59,7 @@ Chosen: **Apple Wallet's skin on Jotful's structure** (like Apple Fitness → Vi
 ## Settled in round 12 (2026-10-18)
 - Detail content card is grey (#F2F2F7) for every thought; tag colour only on the pill.
 - Swipe actions: small circle revealed beside the card, not a full-height back card.
-- Follow Apple's documented specs (APPLE_SPECS.md in apple-wallet-dna/research): 44pt capsules, 16pt padding, 12pt between controls, title-case labels ("Search Web").
+- Follow Apple's documented specs (APPLE_SPECS.md in dna-apple-wallet/research): 44pt capsules, 16pt padding, 12pt between controls, title-case labels ("Search Web").
 
 ## Settled in round 13 (2026-10-18)
 - Detail view (grey card, Apple-spec buttons) approved.

@@ -1,6 +1,6 @@
 # Apple iOS specs for Jotful (cited)
 
-Copied 2026-10-18 from viseez's apple-fitness-dna research (researched 2026-10-11), Fitness-only parts removed. Shared by apple-wallet-dna and apple-photos-dna. Source tags as below.
+Copied 2026-10-18 from viseez's dna-apple-fitness research (researched 2026-10-11), Fitness-only parts removed. Shared by dna-apple-wallet and dna-apple-photos. Source tags as below.
 
 Researched 2026-10-11. Source tags: **[HIG]** = developer.apple.com Human Interface Guidelines (fetched from Apple's own page JSON, `developer.apple.com/tutorials/data/design/human-interface-guidelines/<page>.json`); **[WWDC]** = Apple WWDC25 session page; **[APPLE]** = apple.com / newsroom; **[3P]** = third-party, fills a gap Apple does not publish.
 
