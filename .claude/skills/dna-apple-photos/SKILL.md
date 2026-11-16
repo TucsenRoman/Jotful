@@ -1,6 +1,6 @@
 ---
-name: apple-photos-dna
-description: Apple Photos' iOS 26 design system (edge-to-edge content on white, controls as three floating glass islands per row, relative-date title capsule, filmstrip, pull-up info panel, edge date scrubber), codified as Jotful's second reference alongside apple-wallet-dna. Use when building or judging Jotful's detail view, media viewing, info panel or date scrubber.
+name: dna-apple-photos
+description: Apple Photos' iOS 26 design system (edge-to-edge content on white, controls as three floating glass islands per row, relative-date title capsule, filmstrip, pull-up info panel, edge date scrubber), codified as Jotful's second reference alongside dna-apple-wallet. Use when building or judging Jotful's detail view, media viewing, info panel or date scrubber.
 ---
 
 # Apple Photos DNA
@@ -13,7 +13,7 @@ Picked by the user on 2026-10-18 as the second half of Jotful's reskin: Wallet f
 - `reference/`: press and Apple Support screenshots, sources in `reference/SOURCES.md`. **Local only** (excluded through `.git/info/exclude`; the repo is public).
 - `example/`: rebuilds from dna.json alone.
 
-## Pairing with apple-wallet-dna
+## Pairing with dna-apple-wallet
 One style per spec; the split is by screen. Home stack, cards, tags: Wallet. Detail view, media, info, scrubber: Photos. Shared ground: system font, white glass controls, colour only in content (Jotful's tag colours are content).
 
 ## Known gaps

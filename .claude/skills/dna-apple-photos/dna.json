@@ -1,11 +1,11 @@
 {
   "meta": {
     "name": "Apple Photos (iOS 26)",
-    "slug": "apple-photos-dna",
+    "slug": "dna-apple-photos",
     "source": "Apple Photos on iPhone, iOS 26: library grid with glass tab capsule, single photo viewer, info panel, Memory pages, edit tools. Press screenshots (9to5Mac, AppleInsider, Tom's Guide) and Apple Support (reference/SOURCES.md).",
     "captured": "2026-10-18",
     "medium_of_origin": "iPhone app UI, light appearance",
-    "use": "Second reference for Jotful, paired with apple-wallet-dna. Wallet governs the home stack and cards; Photos governs the detail view, media viewing, the info panel and the date scrubber.",
+    "use": "Second reference for Jotful, paired with dna-apple-wallet. Wallet governs the home stack and cards; Photos governs the detail view, media viewing, the info panel and the date scrubber.",
     "not_copied": ["Photos app icon", "Apple Intelligence glow", "SF Symbols as Apple marks (use Lucide equivalents in mocks)", "user photos in the references"]
   },
   "soul": {

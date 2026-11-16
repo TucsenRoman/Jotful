@@ -1,5 +1,5 @@
 ---
-name: apple-wallet-dna
+name: dna-apple-wallet
 description: Apple Wallet's iOS 26 design system (pale grey page, deep stack of saturated pass cards showing only their top strip, large black title, white glass buttons, white panels under an open card), codified as the bar for Jotful's reskin. Use when building or judging Jotful UI against the Wallet reference (home stack, thought detail, capture sheet, any new screen).
 ---
 
